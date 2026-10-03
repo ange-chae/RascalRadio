@@ -8,26 +8,24 @@
     "net10.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Angeline Bajo\\.nuget\\packages\\": {}
+    "C:\\Users\\USER\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Angeline Bajo\\Desktop\\CODING\\Rascal Radio\\Main Game\\Main Game.csproj",
+      "projectUniqueName": "C:\\Users\\USER\\Documents\\GitHub\\RascalRadio\\Main Game\\Main Game.csproj",
       "projectName": "Main Game",
-      "projectPath": "C:\\Users\\Angeline Bajo\\Desktop\\CODING\\Rascal Radio\\Main Game\\Main Game.csproj",
-      "packagesPath": "C:\\Users\\Angeline Bajo\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Angeline Bajo\\Desktop\\CODING\\Rascal Radio\\Main Game\\obj\\",
+      "projectPath": "C:\\Users\\USER\\Documents\\GitHub\\RascalRadio\\Main Game\\Main Game.csproj",
+      "packagesPath": "C:\\Users\\USER\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\USER\\Documents\\GitHub\\RascalRadio\\Main Game\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Angeline Bajo\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\USER\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -47,7 +45,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.400"
+      "SdkAnalysisLevel": "10.0.300"
     },
     "frameworks": {
       "net10.0": {
@@ -69,7 +67,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
