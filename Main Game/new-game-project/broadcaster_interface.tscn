@@ -24,3 +24,65 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="Center" unique_id=281252157]
+custom_minimum_size = Vector2(900, 600)
+layout_mode = 2
+
+[node name="TopBar" type="HBoxContainer" parent="Center/Layout" unique_id=997219487]
+layout_mode = 2
+
+[node name="TimerLabel" type="Label" parent="Center/Layout/TopBar" unique_id=1306470832]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "05:00"
+
+[node name="QualityBar" type="ProgressBar" parent="Center/Layout/TopBar" unique_id=871171522]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="StrikesLabel" type="Label" parent="Center/Layout/TopBar" unique_id=1161676781]
+layout_mode = 2
+text = "Strikes: 0/3
+"
+
+[node name="CallerCard" type="PanelContainer" parent="Center/Layout" unique_id=1405761941]
+layout_mode = 2
+
+[node name="CardLayout" type="VBoxContainer" parent="Center/Layout/CallerCard" unique_id=1808593027]
+layout_mode = 2
+
+[node name="QuotaLabel" type="Label" parent="Center/Layout/CallerCard/CardLayout" unique_id=369015022]
+layout_mode = 2
+text = "Quota: Drama"
+
+[node name="CallerNameLabel" type="Label" parent="Center/Layout/CallerCard/CardLayout" unique_id=118588016]
+layout_mode = 2
+text = "Caller: Maria"
+
+[node name="CallerBlurbLabel" type="Label" parent="Center/Layout/CallerCard/CardLayout" unique_id=899092590]
+layout_mode = 2
+text = "Wants to share a story about her family."
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/Layout/CallerCard/CardLayout" unique_id=1049303819]
+layout_mode = 2
+
+[node name="AcceptButton" type="Button" parent="Center/Layout/CallerCard/CardLayout/ButtonRow" unique_id=942248857]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Accept"
+
+[node name="RejectButton" type="Button" parent="Center/Layout/CallerCard/CardLayout/ButtonRow" unique_id=833533715]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reject"
+
+[node name="NotepadTitle" type="Label" parent="Center/Layout" unique_id=1877533102]
+layout_mode = 2
+text = "Notepad"
+
+[node name="Notepad" type="TextEdit" parent="Center/Layout" unique_id=604068230]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+placeholder_text = "Write the quota here"
