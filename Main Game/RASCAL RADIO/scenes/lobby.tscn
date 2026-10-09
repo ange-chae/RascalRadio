@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://tqykh5rxjluu"]
+
+[node name="lobby" type="Node2D" unique_id=1442498673]
+
+[node name="Label" type="Label" parent="." unique_id=1301905957]
+offset_left = 498.0
+offset_top = 305.0
+offset_right = 585.0
+offset_bottom = 328.0
+text = "Lobby here"
