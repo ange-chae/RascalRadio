@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://duic8x1pcjdmp"]
 
+[ext_resource type="Script" uid="uid://cav1xjiwpc24o" path="res://BroadcasterInterface.cs" id="1_6n6mc"]
+
 [node name="BroadcasterInterface" type="Control" unique_id=359303951]
 layout_mode = 3
 anchors_preset = 15
@@ -7,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_6n6mc")
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1716137333]
 layout_mode = 1
@@ -65,6 +68,9 @@ text = "Caller: Maria"
 layout_mode = 2
 text = "Wants to share a story about her family."
 
+[node name="PatienceBar" type="ProgressBar" parent="Center/Layout/CallerCard/CardLayout" unique_id=633808896]
+layout_mode = 2
+
 [node name="ButtonRow" type="HBoxContainer" parent="Center/Layout/CallerCard/CardLayout" unique_id=1049303819]
 layout_mode = 2
 
@@ -77,6 +83,10 @@ text = "Accept"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Reject"
+
+[node name="FeedbackLabel" type="Label" parent="Center/Layout/CallerCard/CardLayout" unique_id=908519815]
+layout_mode = 2
+text = "Waiting for a caller..."
 
 [node name="NotepadTitle" type="Label" parent="Center/Layout" unique_id=1877533102]
 layout_mode = 2
