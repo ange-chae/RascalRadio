@@ -1,5 +1,0 @@
-C:\Users\Angeline Bajo\Documents\CODING\RASCALRADIOGAME\Main Game\obj\Debug\net10.0\Main Game.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Angeline Bajo\Documents\CODING\RASCALRADIOGAME\Main Game\obj\Debug\net10.0\Main Game.AssemblyInfoInputs.cache
-C:\Users\Angeline Bajo\Documents\CODING\RASCALRADIOGAME\Main Game\obj\Debug\net10.0\Main Game.AssemblyInfo.cs
-C:\Users\Angeline Bajo\Documents\CODING\RASCALRADIOGAME\Main Game\obj\Debug\net10.0\Main Game.csproj.CoreCompileInputs.cache
-C:\Users\Angeline Bajo\Documents\CODING\RASCALRADIOGAME\Main Game\obj\Debug\net10.0\Main Game.sourcelink.json
