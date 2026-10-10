@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cvkvtb25je5tc"]
 
-[ext_resource type="Script" uid="uid://bh3ysj6s5od0p" path="res://Menu.cs" id="1_vjb58"]
+[ext_resource type="Script" uid="uid://bh3ysj6s5od0p" path="res://Scripts/Menu.cs" id="1_con2f"]
 [ext_resource type="Texture2D" uid="uid://ed77vo1usk0j" path="res://assets/MAINMENU_BG.png" id="2_con2f"]
 [ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="2_ouk20"]
 
@@ -47,7 +47,7 @@ offset_right = 26.0
 offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_vjb58")
+script = ExtResource("1_con2f")
 PlayButton = NodePath("VBoxContainer/PlayHolder/PlayButton")
 QuitButton = NodePath("VBoxContainer/PlayHolder2/QuitButton")
 Fade = NodePath("Fade")
