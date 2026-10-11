@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://dcur2oooe7h8m"]
+
+[ext_resource type="PackedScene" uid="uid://tqykh5rxjluu" path="res://scenes/lobby.tscn" id="1_xn8vk"]
+[ext_resource type="PackedScene" uid="uid://dyvgbhnn2mgxc" path="res://scenes/player_lists.tscn" id="2_peudt"]
+
+[node name="RadioConsole" type="Node2D" unique_id=1009970245]
+
+[node name="Screens" type="Control" parent="." unique_id=540680186]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="lobby" parent="Screens" unique_id=1442498673 instance=ExtResource("1_xn8vk")]
+
+[node name="PlayerLists" parent="Screens" unique_id=84991491 instance=ExtResource("2_peudt")]

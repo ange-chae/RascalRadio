@@ -56,19 +56,5 @@ public partial class Menu : Control
         GD.Print("Backend Event: Exit requested. Safely terminating engine lifecycle...");
         GetTree().Quit();
     }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            if (PlayButton != null)
-                PlayButton.Pressed -= OnPlayButtonPressed;
-
-            if (QuitButton != null)
-                QuitButton.Pressed -= OnQuitButtonPressed;
-        }
-
-        base.Dispose(disposing);
-    }
 }
 
