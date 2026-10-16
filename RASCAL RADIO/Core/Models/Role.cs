@@ -2,8 +2,8 @@ namespace RascalRadio.Core.Models;
 
 public enum Role
 {
-    Broadcaster,
-    RadioTechnician,
-    RadioOperator,
-    Role4
+	Broadcaster,
+	RadioTechnician,
+	RadioOperator,
+	Role4
 }

@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://bcxk16tqkiq24"]
+
+[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_wvqts"]
+[ext_resource type="Script" uid="uid://bukevg7beafaa" path="res://Scripts/RoleCard.cs" id="2_gmygq"]
+
+[node name="RoleCard" type="PanelContainer" unique_id=1955762217]
+custom_minimum_size = Vector2(260, 400)
+offset_right = 40.0
+offset_bottom = 40.0
+theme = ExtResource("1_wvqts")
+script = ExtResource("2_gmygq")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1898197398]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Margin" unique_id=1148809856]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="IconFrame" type="PanelContainer" parent="Margin/VBox" unique_id=1306646214]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+theme_type_variation = &"DarkPanel"
+
+[node name="RoleIcon" type="TextureRect" parent="Margin/VBox/IconFrame" unique_id=715244479]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RoleNameLabel" type="Label" parent="Margin/VBox" unique_id=1774981755]
+layout_mode = 2
+theme_type_variation = &"CardTitle"
+text = "Broadcaster"
+horizontal_alignment = 1
+
+[node name="RoleBlurbLabel" type="Label" parent="Margin/VBox" unique_id=1622731511]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"SubtitleLabel"
+text = "Runs the show. Picks the callers."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TakenByLabel" type="Label" parent="Margin/VBox" unique_id=299887529]
+layout_mode = 2
+text = "Available"
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="Margin/VBox" unique_id=886188183]
+layout_mode = 2
+text = "Select"
