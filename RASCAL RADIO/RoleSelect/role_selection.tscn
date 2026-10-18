@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://dmoxg6nt3ng2g"]
+
+[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_r4xox"]
+[ext_resource type="Script" uid="uid://dmrg8m5tpb470" path="res://Scripts/RoleSelection.cs" id="2_rpun8"]
+
+[node name="RoleSelection" type="Control" unique_id=1499459392]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_r4xox")
+script = ExtResource("2_rpun8")
+
+[node name="Background" type="ColorRect" parent="." unique_id=294616286]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0.3019608, 0.3019608, 0.3019608, 1)
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=2145801026]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Main" type="VBoxContainer" parent="Margin" unique_id=2015297952]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TopBar" type="HBoxContainer" parent="Margin/Main" unique_id=425510462]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="Margin/Main/TopBar" unique_id=483643081]
+layout_mode = 2
+text = "Back"
+
+[node name="Spacer" type="Control" parent="Margin/Main/TopBar" unique_id=139707155]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RoomCodeLabel" type="Label" parent="Margin/Main/TopBar" unique_id=1504521159]
+layout_mode = 2
+text = "Room: ----"
+
+[node name="TitleLabel" type="Label" parent="Margin/Main" unique_id=1986878595]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Choose Your Role"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Margin/Main" unique_id=1247933241]
+layout_mode = 2
+theme_type_variation = &"SubtitleLabel"
+text = "One player per role. Pick fast, or roll."
+horizontal_alignment = 1
+
+[node name="CardsRow" type="HBoxContainer" parent="Margin/Main" unique_id=146505139]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BottomBar" type="HBoxContainer" parent="Margin/Main" unique_id=320483905]
+layout_mode = 2
+
+[node name="RandomizeButton" type="Button" parent="Margin/Main/BottomBar" unique_id=718988887]
+layout_mode = 2
+text = "Randomize Roles"
+
+[node name="StatusLabel" type="Label" parent="Margin/Main/BottomBar" unique_id=833625498]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Waiting for players..."
+horizontal_alignment = 1
+
+[node name="ReadyButton" type="Button" parent="Margin/Main/BottomBar" unique_id=1036450557]
+layout_mode = 2
+text = "Ready"
