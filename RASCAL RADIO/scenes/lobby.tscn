@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://tqykh5rxjluu"]
 
-[ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="1_o1atq"]
 [ext_resource type="Script" uid="uid://cxas0736hb8gq" path="res://Scripts/Lobby.cs" id="1_q60fs"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_pc087"]
 [ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/panel-style.tres" id="3_yad6j"]
@@ -109,8 +108,14 @@ offset_left = 29.0
 offset_top = 18.0
 offset_right = 132.0
 offset_bottom = 66.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = ExtResource("5_ncsg4")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
 text = "Back"
 
 [node name="JoinPanel" type="Panel" parent="." unique_id=1214808467]
