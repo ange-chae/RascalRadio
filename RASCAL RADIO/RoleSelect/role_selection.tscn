@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dmoxg6nt3ng2g"]
 
-[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_r4xox"]
-[ext_resource type="Script" uid="uid://dmrg8m5tpb470" path="res://Scripts/RoleSelection.cs" id="2_rpun8"]
+[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_oprw3"]
+[ext_resource type="Script" uid="uid://dmrg8m5tpb470" path="res://Scripts/RoleSelection.cs" id="2_hpu7o"]
 
 [node name="RoleSelection" type="Control" unique_id=1499459392]
 layout_mode = 3
@@ -10,8 +10,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_r4xox")
-script = ExtResource("2_rpun8")
+theme = ExtResource("1_oprw3")
+script = ExtResource("2_hpu7o")
 
 [node name="Background" type="ColorRect" parent="." unique_id=294616286]
 layout_mode = 0

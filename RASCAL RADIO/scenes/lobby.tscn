@@ -2,17 +2,101 @@
 
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="1_o1atq"]
 [ext_resource type="Script" uid="uid://cxas0736hb8gq" path="res://Scripts/Lobby.cs" id="1_q60fs"]
-[ext_resource type="FontFile" uid="uid://hd4bvqjo0egh" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_5gu6x"]
+[ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_pc087"]
+[ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/panel-style.tres" id="3_yad6j"]
+[ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="4_apkv3"]
+[ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="5_ncsg4"]
+[ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/buttonPressed.tres" id="6_07nfq"]
+[ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/buttonHover.tres" id="7_oipnb"]
+[ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="8_ncsg4"]
+[ext_resource type="StyleBox" uid="uid://7rm2nvlyj4ir" path="res://assets/normal_input.tres" id="8_oipnb"]
+[ext_resource type="StyleBox" uid="uid://cbl51u0ito6nv" path="res://assets/focus_input.tres" id="9_yad6j"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sggwb"]
+[sub_resource type="Theme" id="Theme_0mg3e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oipnb"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1f8g2"]
+bg_color = Color(0.7882353, 0.7882353, 0.7882353, 1)
+border_width_left = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_st1gu"]
+bg_color = Color(0.34117648, 0.24313726, 0.4, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m36wf"]
+bg_color = Color(0.98039216, 0.9411765, 0.8509804, 1)
 border_width_left = 5
 border_width_top = 5
 border_width_right = 5
 border_width_bottom = 5
+border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
-[sub_resource type="Theme" id="Theme_5gu6x"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m1sns"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn6xx"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ncsg4"]
+bg_color = Color(0.972549, 0.92156863, 0.8039216, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.3137255, 0.60784316, 0.17254902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_71c8c"]
+bg_color = Color(0.972549, 0.92156863, 0.8039216, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9059873, 0.77757484, 0.4734046, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_07nfq"]
+bg_color = Color(0.7228715, 0.25179353, 0.21727306, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.24087247, 0.0454394, 0.017448997, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yad6j"]
+bg_color = Color(0.98039216, 0.9411765, 0.8509804, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.24087247, 0.0454394, 0.017448997, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="lobby" type="Control" unique_id=775682213]
 layout_mode = 3
@@ -31,241 +115,423 @@ text = "Back"
 
 [node name="JoinPanel" type="Panel" parent="." unique_id=1214808467]
 layout_mode = 0
-offset_left = 59.0
-offset_top = 97.0
-offset_right = 410.0
-offset_bottom = 325.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_sggwb")
+offset_left = 218.0
+offset_top = 233.0
+offset_right = 521.0
+offset_bottom = 618.0
+theme_override_styles/panel = ExtResource("3_yad6j")
 
 [node name="btnJoin" type="Button" parent="JoinPanel" unique_id=674449098]
 modulate = Color(0.99215686, 1, 1, 1)
 layout_mode = 0
-offset_left = 15.0
-offset_top = 151.0
-offset_right = 334.0
-offset_bottom = 211.0
-theme = SubResource("Theme_5gu6x")
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 32
+offset_left = 84.0
+offset_top = 284.0
+offset_right = 209.0
+offset_bottom = 344.0
+theme = SubResource("Theme_0mg3e")
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("5_ncsg4")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
 text = "Join
 "
 
 [node name="descJoin" type="RichTextLabel" parent="JoinPanel" unique_id=1941167816]
 layout_mode = 0
-offset_left = 17.0
-offset_top = 52.0
-offset_right = 319.0
-offset_bottom = 92.0
-theme_override_fonts/normal_font = ExtResource("1_o1atq")
-theme_override_font_sizes/normal_font_size = 24
-text = "Enter the host's code"
+offset_left = 20.0
+offset_top = 223.0
+offset_right = 299.0
+offset_bottom = 288.0
+theme_override_colors/default_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/normal_font = ExtResource("4_apkv3")
+theme_override_font_sizes/normal_font_size = 18
+text = "Enter the host's code and jump into the broadcast.
+"
+horizontal_alignment = 1
 
 [node name="txtJoin" type="Label" parent="JoinPanel" unique_id=1691855606]
 layout_mode = 0
-offset_left = 17.0
+offset_left = 42.0
 offset_top = 21.0
-offset_right = 251.0
-offset_bottom = 47.0
-theme_override_fonts/font = ExtResource("2_5gu6x")
-theme_override_font_sizes/font_size = 26
+offset_right = 271.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 46
 text = "Join Game"
 
-[node name="HostPanel" type="Panel" parent="." unique_id=840317315]
+[node name="HostPanel" type="Panel" parent="." unique_id=1316113836]
 layout_mode = 0
-offset_left = 59.0
-offset_top = 349.0
-offset_right = 410.0
-offset_bottom = 577.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_sggwb")
+offset_left = 603.0
+offset_top = 233.0
+offset_right = 906.0
+offset_bottom = 618.0
+theme_override_styles/panel = ExtResource("3_yad6j")
 
-[node name="btnHost" type="Button" parent="HostPanel" unique_id=845114864]
+[node name="btnHost" type="Button" parent="HostPanel" unique_id=669741061]
 modulate = Color(0.99215686, 1, 1, 1)
 layout_mode = 0
-offset_left = 15.0
-offset_top = 151.0
-offset_right = 334.0
-offset_bottom = 211.0
-theme = SubResource("Theme_5gu6x")
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 32
-text = "Host"
+offset_left = 92.0
+offset_top = 284.0
+offset_right = 217.0
+offset_bottom = 344.0
+theme = SubResource("Theme_0mg3e")
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("5_ncsg4")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
+text = "Host
+"
 
-[node name="descJoin" type="RichTextLabel" parent="HostPanel" unique_id=1880919190]
+[node name="descHost" type="RichTextLabel" parent="HostPanel" unique_id=1106582571]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 55.0
-offset_right = 323.0
-offset_bottom = 105.0
-theme_override_fonts/normal_font = ExtResource("1_o1atq")
-theme_override_font_sizes/normal_font_size = 24
-text = "Create a room and invite other players."
+offset_left = 14.0
+offset_top = 223.0
+offset_right = 293.0
+offset_bottom = 288.0
+theme_override_colors/default_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/normal_font = ExtResource("4_apkv3")
+theme_override_font_sizes/normal_font_size = 18
+text = "Create a room and invite other players to  join."
+horizontal_alignment = 1
 
-[node name="txtJoin" type="Label" parent="HostPanel" unique_id=487981079]
+[node name="txtHost" type="Label" parent="HostPanel" unique_id=1208891390]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 20.0
-offset_right = 255.0
-offset_bottom = 46.0
-theme_override_fonts/font = ExtResource("2_5gu6x")
-theme_override_font_sizes/font_size = 26
+offset_left = 44.0
+offset_top = 21.0
+offset_right = 273.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 46
 text = "Host Game"
 
-[node name="rightPanel" type="PanelContainer" parent="." unique_id=2144879692]
-layout_mode = 0
-offset_left = 445.0
-offset_top = 97.0
-offset_right = 1108.0
-offset_bottom = 577.0
+[node name="JoinPopup" type="PopupPanel" parent="." unique_id=1143480754]
+oversampling_override = 1.0
+size = Vector2i(500, 500)
+theme_override_styles/panel = SubResource("StyleBoxFlat_oipnb")
 
-[node name="JoinContent" type="Control" parent="rightPanel" unique_id=2011387689]
-visible = false
-layout_mode = 2
+[node name="diskShape" type="Polygon2D" parent="JoinPopup" unique_id=1711107542]
+color = Color(0.34370592, 0.24340588, 0.4003095, 1)
+polygon = PackedVector2Array(0, 0, 410, 0, 500, 70, 500, 500, 0, 500)
+uv = PackedVector2Array(0, -2, 410, -2, 497, 70, 499, 495, 5, 494)
 
-[node name="MainText" type="Label" parent="rightPanel/JoinContent" unique_id=2070889420]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 30.0
-offset_right = 402.0
-offset_bottom = 80.0
-theme_override_fonts/font = ExtResource("2_5gu6x")
-theme_override_font_sizes/font_size = 28
-text = "Join Selected"
+[node name="MetalShutter" type="Panel" parent="JoinPopup/diskShape" unique_id=683665525]
+offset_left = 72.0
+offset_right = 357.0
+offset_bottom = 84.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1f8g2")
 
-[node name="labelConfirmRoom" type="Label" parent="rightPanel/JoinContent" unique_id=1900157229]
+[node name="Panel" type="Panel" parent="JoinPopup/diskShape/MetalShutter" unique_id=1595972859]
 layout_mode = 0
-offset_left = 38.0
-offset_top = 237.0
-offset_right = 220.0
-offset_bottom = 262.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
-text = "Room Status"
+offset_left = 232.0
+offset_top = 10.0
+offset_right = 266.0
+offset_bottom = 66.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_st1gu")
 
-[node name="labelRoomCode" type="Label" parent="rightPanel/JoinContent" unique_id=171427766]
+[node name="DiskLabel" type="Panel" parent="JoinPopup/diskShape" unique_id=1902054914]
+offset_left = 42.0
+offset_top = 120.0
+offset_right = 463.0
+offset_bottom = 469.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_m36wf")
+
+[node name="JoinContent" type="Control" parent="JoinPopup/diskShape/DiskLabel" unique_id=1736218047]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -38.0
+offset_top = -116.0
+offset_right = 9.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainText" type="Label" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=432508977]
 layout_mode = 0
-offset_left = 344.0
-offset_top = 92.0
-offset_right = 565.0
-offset_bottom = 117.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
+offset_left = 109.0
+offset_top = 127.0
+offset_right = 373.0
+offset_bottom = 186.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 48
+text = "Join Game"
+horizontal_alignment = 1
+
+[node name="labelCode" type="Label" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=1145834752]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 290.0
+offset_right = 250.0
+offset_bottom = 315.0
+theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_fonts/font = ExtResource("4_apkv3")
+theme_override_font_sizes/font_size = 18
+text = "Player Room"
+
+[node name="labelIP" type="Label" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=1232745149]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 195.0
+offset_right = 289.0
+offset_bottom = 220.0
+theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_fonts/font = ExtResource("4_apkv3")
+theme_override_font_sizes/font_size = 18
 text = "Enter Room Code"
 
-[node name="labelPlayer" type="Label" parent="rightPanel/JoinContent" unique_id=709341105]
+[node name="btnCancel" type="Button" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=1166512109]
 layout_mode = 0
-offset_left = 38.0
-offset_top = 92.0
-offset_right = 220.0
-offset_bottom = 117.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
-text = "Enter Player's Name"
+offset_left = 77.0
+offset_top = 393.0
+offset_right = 225.0
+offset_bottom = 448.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_m1sns")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
+text = "Cancel
+"
 
-[node name="inputCode" type="LineEdit" parent="rightPanel/JoinContent" unique_id=1623641079]
+[node name="btnJoin" type="Button" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=90142285]
 layout_mode = 0
-offset_left = 342.0
-offset_top = 129.0
-offset_right = 629.0
-offset_bottom = 174.0
-
-[node name="inputName" type="LineEdit" parent="rightPanel/JoinContent" unique_id=1839596859]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 129.0
-offset_right = 313.0
-offset_bottom = 174.0
-
-[node name="btnJoin" type="Button" parent="rightPanel/JoinContent" unique_id=383354404]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 401.0
-offset_right = 629.0
-offset_bottom = 461.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 28
-text = "Join Room"
-
-[node name="playerRoom" type="LineEdit" parent="rightPanel/JoinContent" unique_id=1991161647]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 272.0
-offset_right = 629.0
-offset_bottom = 376.0
-theme_override_styles/read_only = SubResource("StyleBoxFlat_gn6xx")
-editable = false
-
-[node name="HostContent" type="Control" parent="rightPanel" unique_id=546867853]
-layout_mode = 2
-
-[node name="MainText" type="Label" parent="rightPanel/HostContent" unique_id=594121]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 30.0
+offset_left = 252.0
+offset_top = 393.0
 offset_right = 402.0
-offset_bottom = 80.0
-theme_override_fonts/font = ExtResource("2_5gu6x")
-theme_override_font_sizes/font_size = 28
-text = "Host Selected"
+offset_bottom = 448.0
+theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_colors/font_pressed_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = ExtResource("5_ncsg4")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
+text = "Join Room
+"
 
-[node name="labelCode" type="Label" parent="rightPanel/HostContent" unique_id=1490041143]
+[node name="playerRoom" type="LineEdit" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=1284631928]
 layout_mode = 0
-offset_left = 38.0
-offset_top = 237.0
-offset_right = 220.0
-offset_bottom = 262.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
-text = "Room Code"
-
-[node name="labelIP" type="Label" parent="rightPanel/HostContent" unique_id=1379847811]
-layout_mode = 0
-offset_left = 344.0
-offset_top = 92.0
-offset_right = 565.0
-offset_bottom = 117.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
-text = "Enter Room Name"
-
-[node name="labelPlayer" type="Label" parent="rightPanel/HostContent" unique_id=2139425293]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 92.0
-offset_right = 220.0
-offset_bottom = 117.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 24
-text = "Enter Player's Name"
-
-[node name="inputIP" type="LineEdit" parent="rightPanel/HostContent" unique_id=529734203]
-layout_mode = 0
-offset_left = 342.0
-offset_top = 129.0
-offset_right = 629.0
-offset_bottom = 174.0
-
-[node name="inputName" type="LineEdit" parent="rightPanel/HostContent" unique_id=199337493]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 129.0
-offset_right = 313.0
-offset_bottom = 174.0
-
-[node name="btnRoom" type="Button" parent="rightPanel/HostContent" unique_id=793589645]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 401.0
-offset_right = 629.0
-offset_bottom = 461.0
-theme_override_fonts/font = ExtResource("1_o1atq")
-theme_override_font_sizes/font_size = 28
-text = "Create room"
-
-[node name="txtGeneratedRoomCode" type="LineEdit" parent="rightPanel/HostContent" unique_id=728317852]
-layout_mode = 0
-offset_left = 38.0
-offset_top = 272.0
-offset_right = 629.0
-offset_bottom = 376.0
-theme_override_styles/read_only = SubResource("StyleBoxFlat_gn6xx")
+offset_left = 68.0
+offset_top = 319.0
+offset_right = 426.0
+offset_bottom = 374.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_ncsg4")
+theme_override_styles/read_only = SubResource("StyleBoxFlat_71c8c")
+alignment = 1
 editable = false
+
+[node name="InputCode" type="LineEdit" parent="JoinPopup/diskShape/DiskLabel/JoinContent" unique_id=1810006477]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 224.0
+offset_right = 426.0
+offset_bottom = 275.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("8_ncsg4")
+theme_override_styles/normal = ExtResource("8_oipnb")
+theme_override_styles/focus = ExtResource("9_yad6j")
+
+[node name="Line2D" type="Line2D" parent="JoinPopup" unique_id=1987270406]
+rotation = 0.0045900526
+scale = Vector2(0.99999994, 0.99999994)
+points = PackedVector2Array(3.0137389, 2.9861987, 411.0095, 1.1134636, 496, 66, 498, 496, 5.276627, 495.98105, 3.018329, 3.9861882)
+default_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+
+[node name="HostPopup" type="PopupPanel" parent="." unique_id=1688936455]
+oversampling_override = 1.0
+size = Vector2i(500, 500)
+theme_override_styles/panel = SubResource("StyleBoxFlat_oipnb")
+
+[node name="diskShape" type="Polygon2D" parent="HostPopup" unique_id=1433278963]
+color = Color(0.7228715, 0.25179353, 0.21727306, 1)
+polygon = PackedVector2Array(0, 0, 410, 0, 500, 70, 500, 500, 0, 500)
+uv = PackedVector2Array(0, -2, 410, -2, 497, 70, 499, 495, 5, 494)
+
+[node name="MetalShutter" type="Panel" parent="HostPopup/diskShape" unique_id=1215067178]
+offset_left = 72.0
+offset_right = 357.0
+offset_bottom = 84.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1f8g2")
+
+[node name="Panel" type="Panel" parent="HostPopup/diskShape/MetalShutter" unique_id=920665310]
+layout_mode = 0
+offset_left = 232.0
+offset_top = 10.0
+offset_right = 266.0
+offset_bottom = 66.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_07nfq")
+
+[node name="DiskLabel" type="Panel" parent="HostPopup/diskShape" unique_id=933243075]
+offset_left = 42.0
+offset_top = 120.0
+offset_right = 463.0
+offset_bottom = 469.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_yad6j")
+
+[node name="HostContent" type="Control" parent="HostPopup/diskShape/DiskLabel" unique_id=1488834937]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -38.0
+offset_top = -116.0
+offset_right = 9.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainText" type="Label" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=934935466]
+layout_mode = 0
+offset_left = 109.0
+offset_top = 127.0
+offset_right = 373.0
+offset_bottom = 186.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 48
+text = "Host Game"
+horizontal_alignment = 1
+
+[node name="labelCode" type="Label" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=1907521916]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 290.0
+offset_right = 250.0
+offset_bottom = 315.0
+theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_fonts/font = ExtResource("4_apkv3")
+theme_override_font_sizes/font_size = 18
+text = "Player Room"
+
+[node name="labelRoomName" type="Label" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=1183962049]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 195.0
+offset_right = 289.0
+offset_bottom = 220.0
+theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_fonts/font = ExtResource("4_apkv3")
+theme_override_font_sizes/font_size = 18
+text = "Enter Room Name
+"
+
+[node name="inputRoomName" type="LineEdit" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=30633972]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 224.0
+offset_right = 426.0
+offset_bottom = 275.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("8_ncsg4")
+theme_override_styles/normal = ExtResource("8_oipnb")
+theme_override_styles/focus = ExtResource("9_yad6j")
+
+[node name="inputName" type="LineEdit" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=1297442988]
+visible = false
+layout_mode = 0
+offset_left = 77.0
+offset_top = 210.0
+offset_right = 259.0
+offset_bottom = 261.0
+
+[node name="btnCancel" type="Button" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=183553769]
+layout_mode = 0
+offset_left = 77.0
+offset_top = 393.0
+offset_right = 225.0
+offset_bottom = 448.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_m1sns")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
+text = "Cancel
+"
+
+[node name="btnRoom" type="Button" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=1461157075]
+layout_mode = 0
+offset_left = 252.0
+offset_top = 393.0
+offset_right = 402.0
+offset_bottom = 448.0
+theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_colors/font_pressed_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = ExtResource("5_ncsg4")
+theme_override_styles/pressed = ExtResource("6_07nfq")
+theme_override_styles/hover = ExtResource("7_oipnb")
+text = "Host Room
+
+"
+
+[node name="txtGeneratedRoomCode" type="LineEdit" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=804127835]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 319.0
+offset_right = 426.0
+offset_bottom = 374.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_selected_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/caret_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_ncsg4")
+theme_override_styles/read_only = SubResource("StyleBoxFlat_71c8c")
+alignment = 1
+editable = false
+
+[node name="Line2D" type="Line2D" parent="HostPopup" unique_id=2094608271]
+rotation = 0.0045900526
+scale = Vector2(0.99999994, 0.99999994)
+points = PackedVector2Array(3.0137389, 2.9861987, 411.0095, 1.1134636, 496, 66, 498, 496, 5.276627, 495.98105, 3.018329, 3.9861882)
+default_color = Color(0.24087247, 0.0454394, 0.017448997, 1)
+
+[node name="namePanel" type="Panel" parent="." unique_id=748266619]
+layout_mode = 0
+offset_left = 358.0
+offset_top = 106.0
+offset_right = 754.0
+offset_bottom = 223.0
+theme_override_styles/panel = ExtResource("3_yad6j")
+
+[node name="Label" type="Label" parent="namePanel" unique_id=1996125083]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 20.0
+offset_right = 291.0
+offset_bottom = 45.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_pc087")
+theme_override_font_sizes/font_size = 20
+text = "What is your name?"
+
+[node name="playerNameInput" type="LineEdit" parent="namePanel" unique_id=524057906]
+layout_mode = 0
+offset_left = 54.0
+offset_top = 55.0
+offset_right = 354.0
+offset_bottom = 92.0
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_styles/normal = ExtResource("8_oipnb")
+theme_override_styles/focus = ExtResource("9_yad6j")

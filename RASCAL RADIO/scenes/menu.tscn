@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://ed77vo1usk0j" path="res://assets/MAINMENU_BG.png" id="2_con2f"]
 [ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="2_ouk20"]
 
+
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ljla7"]
@@ -12,16 +13,6 @@ border_width_left = 8
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 10
-border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
-corner_radius_top_left = 20
-corner_radius_bottom_right = 20
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ouk20"]
-bg_color = Color(1, 0.78431374, 0.25490198, 1)
-border_width_left = 6
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 8
 border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 corner_radius_top_left = 20
 corner_radius_bottom_right = 20
@@ -102,7 +93,7 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("2_ouk20")
 theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ouk20")
+
 theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
 text = "Start Game"
 
@@ -125,7 +116,7 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("2_ouk20")
 theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ouk20")
+
 theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
 text = "Quit"
 

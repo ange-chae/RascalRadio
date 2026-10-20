@@ -1,14 +1,14 @@
 [gd_scene format=3 uid="uid://bcxk16tqkiq24"]
 
-[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_wvqts"]
-[ext_resource type="Script" uid="uid://bukevg7beafaa" path="res://Scripts/RoleCard.cs" id="2_gmygq"]
+[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_x0y1v"]
+[ext_resource type="Script" uid="uid://bukevg7beafaa" path="res://Scripts/RoleCard.cs" id="2_7ytpg"]
 
 [node name="RoleCard" type="PanelContainer" unique_id=1955762217]
 custom_minimum_size = Vector2(260, 400)
 offset_right = 40.0
 offset_bottom = 40.0
-theme = ExtResource("1_wvqts")
-script = ExtResource("2_gmygq")
+theme = ExtResource("1_x0y1v")
+script = ExtResource("2_7ytpg")
 
 [node name="Margin" type="MarginContainer" parent="." unique_id=1898197398]
 layout_mode = 2
