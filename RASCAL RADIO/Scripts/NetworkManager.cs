@@ -1,4 +1,3 @@
-
 using Godot;
 using System;
 using System.Text;
@@ -74,14 +73,15 @@ public partial class NetworkManager : Node
             return Error.InvalidParameter;
         }
 
-        if (IsHosting)
-            DisconnectFromRoom();
+        // Always disconnect and close existing peers/sockets before creating a new server
+        DisconnectFromRoom();
 
         var peer = new ENetMultiplayerPeer();
         Error error = peer.CreateServer(Port, MaxPlayers - 1);
 
         if (error != Error.Ok)
         {
+            peer.Close();
             GD.PrintErr($"Could not create room: {error}");
             return error;
         }
@@ -91,6 +91,7 @@ public partial class NetworkManager : Node
 
         if (listenError != Error.Ok)
         {
+            discovery.Close();
             peer.Close();
             GD.PrintErr(
                 $"Could not start LAN discovery on port {DiscoveryPort}: {listenError}"
@@ -109,6 +110,25 @@ public partial class NetworkManager : Node
         GD.Print($"Room created: {RoomName} | Code: {RoomCode}");
         GD.Print($"LAN discovery listening on port {DiscoveryPort}.");
 
+        return Error.Ok;
+    }
+
+    public Error JoinRoom(string hostIP, int port)
+    {
+        DisconnectFromRoom();
+
+        var peer = new ENetMultiplayerPeer();
+        Error error = peer.CreateClient(hostIP, port);
+
+        if (error != Error.Ok)
+        {
+            peer.Close();
+            GD.PrintErr($"Could not connect to room at {hostIP}:{port} - Error: {error}");
+            return error;
+        }
+
+        Multiplayer.MultiplayerPeer = peer;
+        GD.Print($"Connecting to room at {hostIP}:{port}...");
         return Error.Ok;
     }
 
@@ -235,7 +255,14 @@ public partial class NetworkManager : Node
             _discoveryServer = null;
         }
 
-        Multiplayer.MultiplayerPeer = null;
+        if (Multiplayer.MultiplayerPeer != null)
+        {
+            if (Multiplayer.MultiplayerPeer is ENetMultiplayerPeer enetPeer)
+            {
+                enetPeer.Close();
+            }
+            Multiplayer.MultiplayerPeer = null;
+        }
 
         IsHosting = false;
         RoomCode = "";

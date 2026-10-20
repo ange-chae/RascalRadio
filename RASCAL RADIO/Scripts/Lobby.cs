@@ -32,6 +32,9 @@ public partial class Lobby : Control
     private string _playerName = "Player 1";
     private string _lastSearchedCode = "";
 
+    private string _foundHostIP = "";
+    private int _foundRoomPort = NetworkManager.Port;
+
     private const double SearchDelay = 0.6;
 
     private static readonly Color Cream = new Color("#F8EED8");
@@ -42,8 +45,7 @@ public partial class Lobby : Control
 
     public override void _Ready()
     {
-        _networkManager =
-            GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+        _networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
 
         _hostButton = GetNodeOrNull<Button>("HostPanel/btnHost");
         _joinButton = GetNodeOrNull<Button>("JoinPanel/btnJoin");
@@ -52,11 +54,8 @@ public partial class Lobby : Control
         _hostPopup = GetNodeOrNull<PopupPanel>("HostPopup");
         _joinPopup = GetNodeOrNull<PopupPanel>("JoinPopup");
 
-        _hostContent = GetNodeOrNull<Control>(
-            "HostPopup/diskShape/DiskLabel/HostContent");
-
-        _joinContent = GetNodeOrNull<Control>(
-            "JoinPopup/diskShape/DiskLabel/JoinContent");
+        _hostContent = GetNodeOrNull<Control>("HostPopup/diskShape/DiskLabel/HostContent");
+        _joinContent = GetNodeOrNull<Control>("JoinPopup/diskShape/DiskLabel/JoinContent");
 
         if (_networkManager == null ||
             _hostButton == null ||
@@ -67,24 +66,20 @@ public partial class Lobby : Control
             _hostContent == null ||
             _joinContent == null)
         {
-            GD.PrintErr(
-                "Lobby: A required node is missing. Check scene tree paths.");
+            GD.PrintErr("Lobby: A required node is missing. Check scene tree paths.");
             return;
         }
 
-        // Find the room search result node.
-        _roomResultControl =
-            _joinContent.FindChild("playerRoom", true, false) as Control;
-
+        // Room search result node
+        _roomResultControl = _joinContent.FindChild("playerRoom", true, false) as Control;
         if (_roomResultControl != null)
         {
             _roomResultControl.GuiInput += OnRoomResultGuiInput;
         }
 
-        _foundRoomStyle =
-            CreateInputStyle(Cream, Gold, 2, 6, 15, 10);
+        _foundRoomStyle = CreateInputStyle(Cream, Gold, 2, 6, 15, 10);
 
-        // Find and register all player name input fields across Host, Join, and main scene.
+        // Recursively find and register all player name inputs (e.g. playerNameInput)
         _nameInputs.Clear();
         FindAndRegisterNameInputs(_hostContent);
         FindAndRegisterNameInputs(_joinContent);
@@ -93,7 +88,7 @@ public partial class Lobby : Control
         string initialName = "Player 1";
         foreach (var input in _nameInputs)
         {
-            if (!string.IsNullOrWhiteSpace(input.Text))
+            if (!string.IsNullOrWhiteSpace(input.Text) && input.Text != "Player 1")
             {
                 initialName = input.Text.Trim();
                 break;
@@ -122,44 +117,48 @@ public partial class Lobby : Control
             GD.PrintErr("Lobby: No player name LineEdit found.");
         }
 
-        // Host room name input (defaults to "Room 1").
+        // Host room name input (defaults to "Room 1")
         _inputRoomName = FindLineEdit(_hostContent, "inputRoomName");
         if (_inputRoomName != null)
         {
             if (string.IsNullOrWhiteSpace(_inputRoomName.Text))
                 _inputRoomName.Text = "Room 1";
 
+            _inputRoomName.PlaceholderText = "";
             StyleLineEdit(_inputRoomName);
         }
 
-        // Join room code input.
+        // Join room code input
         _joinCodeInput = FindLineEdit(_joinContent, "InputCode");
         if (_joinCodeInput != null)
         {
+            _joinCodeInput.PlaceholderText = "";
             StyleLineEdit(_joinCodeInput);
             _joinCodeInput.FocusExited += OnRoomCodeFinished;
             _joinCodeInput.TextSubmitted += OnRoomCodeSubmitted;
             _joinCodeInput.TextChanged += OnRoomCodeChanged;
         }
 
-        // Generated room code display (read-only).
+        // Generated room code display (read-only)
         LineEdit generatedCode = FindLineEdit(_hostContent, "txtGeneratedRoomCode");
         if (generatedCode != null)
         {
             generatedCode.Editable = false;
+            generatedCode.PlaceholderText = "";
             StyleLineEdit(generatedCode);
             generatedCode.AddThemeColorOverride("font_uneditable_color", DarkPurple);
         }
 
-        // Style search result input if applicable.
+        // Style search result input if applicable
         if (_roomResultControl is LineEdit resultInput)
         {
             resultInput.Editable = false;
+            resultInput.PlaceholderText = "";
             StyleLineEdit(resultInput);
             resultInput.AddThemeColorOverride("font_uneditable_color", DarkPurple);
         }
 
-        // Search debounce timer.
+        // Search debounce timer
         _searchDebounceTimer = new Timer
         {
             WaitTime = SearchDelay,
@@ -168,11 +167,11 @@ public partial class Lobby : Control
         AddChild(_searchDebounceTimer);
         _searchDebounceTimer.Timeout += SearchRoomFromInput;
 
-        // Hide popups initially.
+        // Hide popups initially
         _hostPopup.Hide();
         _joinPopup.Hide();
 
-        // Connect main navigation buttons.
+        // Connect main navigation buttons
         _hostButton.Pressed += ShowHostPopup;
         _joinButton.Pressed += ShowJoinPopup;
         _backButton.Pressed += OnBackButtonPressed;
@@ -197,7 +196,7 @@ public partial class Lobby : Control
         if (_joinRoomButton != null)
             _joinRoomButton.Pressed += OnJoinRoomPressed;
 
-        // Network events.
+        // Network events
         _networkManager.RoomFound += OnRoomFound;
         _networkManager.RoomSearchFailed += OnRoomSearchFailed;
 
@@ -290,7 +289,7 @@ public partial class Lobby : Control
     {
         if (input == null) return;
 
-        // Auto-select all text whenever the field is clicked or focused
+        // Auto-select all text whenever the field is focused/clicked
         input.FocusEntered += () => input.CallDeferred(LineEdit.MethodName.SelectAll);
 
         StyleBoxFlat normal = CreateInputStyle(Cream, Gold, 2, 6, 16, 10);
@@ -374,7 +373,7 @@ public partial class Lobby : Control
     }
 
     // ---------------------------------------------------------
-    // CANCEL ACTION
+    // CANCEL ACTION (NO CONFIRMATION POPUP)
     // ---------------------------------------------------------
 
     private void OnCancelPopup()
@@ -382,32 +381,28 @@ public partial class Lobby : Control
         if (_searchDebounceTimer != null)
             _searchDebounceTimer.Stop();
 
-        // Reset host room name input back to default "Room 1".
+        // Reset host room name back to default "Room 1"
         if (_inputRoomName != null)
             _inputRoomName.Text = "Room 1";
 
         LineEdit generatedCode = FindLineEdit(_hostContent, "txtGeneratedRoomCode");
         if (generatedCode != null)
-        {
-            if (!string.IsNullOrWhiteSpace(generatedCode.Text))
-            {
-                var cancelMethod = _networkManager?.GetType().GetMethod("CloseRoom")
-                                ?? _networkManager?.GetType().GetMethod("LeaveRoom")
-                                ?? _networkManager?.GetType().GetMethod("CancelRoom");
-                cancelMethod?.Invoke(_networkManager, null);
-            }
             generatedCode.Clear();
-        }
 
-        // Reset join search state.
+        // Disconnect host session on network manager if active
+        _networkManager?.DisconnectFromRoom();
+
+        // Reset join search state
         if (_joinCodeInput != null)
             _joinCodeInput.Clear();
 
+        _foundHostIP = "";
+        _foundRoomPort = NetworkManager.Port;
         SetRoomDisplay("");
         _lastSearchedCode = "";
         SetRoomFoundOutline(false);
 
-        // Close popups immediately without confirmation dialog.
+        // Close popups immediately without confirmation dialog
         _hostPopup.Hide();
         _joinPopup.Hide();
 
@@ -510,6 +505,9 @@ public partial class Lobby : Control
 
     private void OnRoomFound(string roomName, string hostName, string hostIP, int roomPort)
     {
+        _foundHostIP = hostIP;
+        _foundRoomPort = roomPort;
+
         SetRoomDisplay($"{roomName} | Host: {hostName}");
         SetRoomFoundOutline(true);
 
@@ -518,6 +516,7 @@ public partial class Lobby : Control
 
     private void OnRoomSearchFailed(string message)
     {
+        _foundHostIP = "";
         SetRoomDisplay(message);
         SetRoomFoundOutline(false);
 
@@ -550,30 +549,16 @@ public partial class Lobby : Control
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(_foundHostIP))
+        {
+            SetRoomDisplay("No valid room found to join.");
+            return;
+        }
+
         _playerName = playerName;
 
-        var method = _networkManager.GetType().GetMethod("JoinRoom");
-        if (method != null)
-        {
-            var parameters = method.GetParameters();
-            if (parameters.Length == 2)
-            {
-                method.Invoke(_networkManager, new object[] { playerName, code });
-            }
-            else if (parameters.Length == 1)
-            {
-                method.Invoke(_networkManager, new object[] { code });
-            }
-            else
-            {
-                method.Invoke(_networkManager, null);
-            }
-            GD.Print($"Joining room {code} as {playerName}...");
-        }
-        else
-        {
-            GD.PrintErr("NetworkManager does not contain a JoinRoom method.");
-        }
+        GD.Print($"Joining room at {_foundHostIP}:{_foundRoomPort} as {playerName}...");
+        _networkManager.JoinRoom(_foundHostIP, _foundRoomPort);
     }
 
     // ---------------------------------------------------------
