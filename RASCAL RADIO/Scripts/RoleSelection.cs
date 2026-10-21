@@ -24,7 +24,7 @@ public partial class RoleSelection : Control
 		// Role4 is left out until the team defines it.
 	};
 
-	private const string CardScenePath = "res://RoleSelect/role_card.tscn";
+	private const string CardScenePath = "res://scenes/RoleSelect/role_card.tscn";
 
 	private RoleSelectionLogic _logic;
 	private readonly Dictionary<Role, RoleCard> _cards = new();
