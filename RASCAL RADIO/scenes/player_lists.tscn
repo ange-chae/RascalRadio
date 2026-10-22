@@ -3,12 +3,35 @@
 [ext_resource type="Script" uid="uid://bp8h10qbt0i8i" path="res://Scripts/PlayerList.cs" id="1_dbpi1"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_wl1yt"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="3_80ye2"]
-[ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/buttonPressed.tres" id="4_y8my7"]
-[ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/buttonHover.tres" id="5_lrnsx"]
+[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/outlinePressed.tres" id="4_wl1yt"]
+[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/outlineHover.tres" id="5_80ye2"]
+[ext_resource type="StyleBox" uid="uid://d4bp4d1glgw57" path="res://assets/readOnlyBox.tres" id="6_y8my7"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="7_j8faf"]
 [ext_resource type="Texture2D" uid="uid://ddym0wphifxfa" path="res://assets/3.png" id="8_gnd4y"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wl1yt"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gpa3m"]
+bg_color = Color(0.98039216, 0.2784314, 0.24705882, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.37254903, 0.023529412, 0.02745098, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r33vc"]
+bg_color = Color(0.9929356, 0.47805184, 0.4266163, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.37254903, 0.023529412, 0.02745098, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_80ye2"]
 bg_color = Color(0.06453203, 0.08514362, 0.10448489, 1)
@@ -18,47 +41,61 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dbpi1")
 
-[node name="btnStartGame" type="Button" parent="." unique_id=653620749]
+[node name="buttons" type="BoxContainer" parent="." unique_id=1425155699]
 layout_mode = 0
-offset_left = 918.0
-offset_top = 554.0
-offset_right = 1114.0
-offset_bottom = 623.0
+offset_left = 812.0
+offset_top = 566.0
+offset_right = 1109.0
+offset_bottom = 620.0
+theme_override_constants/separation = 20
+alignment = 2
+
+[node name="btnLeave" type="Button" parent="buttons" unique_id=2025470757]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_gpa3m")
+theme_override_styles/hover = SubResource("StyleBoxFlat_r33vc")
+text = "Leave"
+
+[node name="btnStartGame" type="Button" parent="buttons" unique_id=653620749]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = ExtResource("3_80ye2")
-theme_override_styles/pressed = ExtResource("4_y8my7")
-theme_override_styles/hover = ExtResource("5_lrnsx")
+theme_override_styles/pressed = ExtResource("4_wl1yt")
+theme_override_styles/hover = ExtResource("5_80ye2")
 text = "Start Game"
 
 [node name="txtRoomCode" type="LineEdit" parent="." unique_id=1500426469]
 layout_mode = 0
-offset_left = 419.0
-offset_top = 555.0
-offset_right = 774.0
-offset_bottom = 622.0
-theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+offset_left = 407.0
+offset_top = 557.0
+offset_right = 778.0
+offset_bottom = 624.0
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_wl1yt")
+theme_override_styles/read_only = ExtResource("6_y8my7")
 text = "test"
 alignment = 1
 
 [node name="Panel" type="Panel" parent="." unique_id=2048385021]
 layout_mode = 0
 offset_right = 1153.0
-offset_bottom = 68.0
+offset_bottom = 63.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_80ye2")
 
 [node name="lblRoomName" type="Label" parent="Panel" unique_id=836218544]
 layout_mode = 0
-offset_left = 474.0
-offset_top = 15.0
-offset_right = 729.0
-offset_bottom = 64.0
+offset_left = 478.0
+offset_top = 12.0
+offset_right = 733.0
+offset_bottom = 61.0
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 28
 text = "test"
@@ -80,19 +117,20 @@ stretch_mode = 5
 
 [node name="lblStatus" type="Label" parent="." unique_id=1581201290]
 layout_mode = 0
-offset_left = 37.0
-offset_top = 599.0
-offset_right = 144.0
-offset_bottom = 631.0
+offset_left = 493.0
+offset_top = 525.0
+offset_right = 698.0
+offset_bottom = 557.0
 theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
 
 [node name="playerSlotsContainer" type="HBoxContainer" parent="." unique_id=732919288]
 layout_mode = 0
-offset_left = 169.0
-offset_top = 225.0
-offset_right = 1031.0
-offset_bottom = 479.0
+offset_left = 172.0
+offset_top = 194.0
+offset_right = 1034.0
+offset_bottom = 448.0
 theme_override_constants/separation = 50
 alignment = 1
 

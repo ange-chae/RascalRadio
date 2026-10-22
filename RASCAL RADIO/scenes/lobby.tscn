@@ -4,10 +4,11 @@
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_pc087"]
 [ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/panel-style.tres" id="3_yad6j"]
 [ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="4_apkv3"]
+[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/outlinePressed.tres" id="4_q6qq2"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="5_ncsg4"]
-[ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/buttonPressed.tres" id="6_07nfq"]
-[ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/buttonHover.tres" id="7_oipnb"]
+[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/outlineHover.tres" id="5_rgcd7"]
 [ext_resource type="StyleBox" uid="uid://d4a2etkeackob" path="res://assets/readonly.tres" id="8_dyhay"]
+[ext_resource type="StyleBox" uid="uid://dlsb3tykebw0m" path="res://assets/outlineNormal.tres" id="8_lqo1b"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="8_ncsg4"]
 [ext_resource type="StyleBox" uid="uid://7rm2nvlyj4ir" path="res://assets/normal_input.tres" id="8_oipnb"]
 [ext_resource type="StyleBox" uid="uid://cbl51u0ito6nv" path="res://assets/focus_input.tres" id="9_yad6j"]
@@ -47,18 +48,6 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m1sns"]
-bg_color = Color(0.6, 0.6, 0.6, 0)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 8
-border_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ncsg4"]
 bg_color = Color(0.972549, 0.92156863, 0.8039216, 1)
@@ -105,8 +94,8 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Back"
 
 [node name="JoinPanel" type="Panel" parent="." unique_id=1214808467]
@@ -131,8 +120,8 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Join
 "
 
@@ -182,8 +171,8 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Host
 "
 
@@ -298,9 +287,9 @@ theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.254901
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("StyleBoxFlat_m1sns")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/normal = ExtResource("8_lqo1b")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Cancel
 "
 
@@ -317,8 +306,8 @@ theme_override_colors/font_hover_pressed_color = Color(0.1882353, 0.1254902, 0.2
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Join Room
 "
 
@@ -459,9 +448,9 @@ theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.254901
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("StyleBoxFlat_m1sns")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/normal = ExtResource("8_lqo1b")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Cancel
 "
 
@@ -477,8 +466,8 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("6_07nfq")
-theme_override_styles/hover = ExtResource("7_oipnb")
+theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Host Room
 
 "

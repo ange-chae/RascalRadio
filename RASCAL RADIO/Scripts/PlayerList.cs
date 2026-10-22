@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class PlayerList : Control
 {
@@ -10,11 +11,17 @@ public partial class PlayerList : Control
     private LineEdit _txtRoomCode;
     private Container _playerSlotsContainer;
     private Button _btnStartGame;
+    private Button _btnLeave;
     private Label _lblStatus;
 
-    // Tracks players (ID and Name) to detect joins and leaves
+    // Track players to detect joins and leaves
     private readonly Dictionary<long, string> _knownPlayers = new Dictionary<long, string>();
     private bool _isInitialLoad = true;
+
+    // --- NEW: Network Synced State ---
+    public Dictionary<long, string> PlayerRoles = new Dictionary<long, string>();
+    public Dictionary<long, bool> PlayerReady = new Dictionary<long, bool>();
+    // ---------------------------------
 
     [Export] public Texture2D DefaultAvatarTexture;
 
@@ -26,15 +33,11 @@ public partial class PlayerList : Control
         _txtRoomCode = FindChild("txtRoomCode", true, false) as LineEdit;
         _playerSlotsContainer = FindChild("playerSlotsContainer", true, false) as Container;
         _btnStartGame = FindChild("btnStartGame", true, false) as Button;
+        _btnLeave = FindChild("btnLeave", true, false) as Button;
         _lblStatus = FindChild("lblStatus", true, false) as Label;
 
-        if (_networkManager == null)
-        {
-            GD.PrintErr("PlayerList: NetworkManager autoload not found.");
-            return;
-        }
+        if (_networkManager == null) return;
 
-        // Room Code Input Box in the middle
         if (_txtRoomCode != null)
         {
             _txtRoomCode.Editable = false;
@@ -43,7 +46,6 @@ public partial class PlayerList : Control
             {
                 _txtRoomCode.CallDeferred(LineEdit.MethodName.SelectAll);
                 DisplayServer.ClipboardSet(_networkManager.RoomCode);
-                GD.Print("Room code copied to clipboard!");
             };
         }
 
@@ -52,62 +54,96 @@ public partial class PlayerList : Control
             _lblRoomName.Text = string.IsNullOrEmpty(_networkManager.RoomName) ? "Lobby" : _networkManager.RoomName;
         }
 
-        // Only Host sees the Start Game button
         if (_btnStartGame != null)
         {
             _btnStartGame.Visible = Multiplayer.IsServer();
             _btnStartGame.Pressed += OnStartGamePressed;
         }
 
+        if (_btnLeave != null) _btnLeave.Pressed += OnLeaveButtonPressed;
+
         _networkManager.PlayerListUpdated += RefreshPlayerList;
         _networkManager.RoomTerminated += OnRoomTerminated;
 
         RefreshPlayerList();
-        _isInitialLoad = false; // Mark initial setup complete
+        _isInitialLoad = false;
+
+        // --- FADE IN EFFECT ---
+        CanvasLayer fadeLayer = new CanvasLayer { Layer = 100 };
+        AddChild(fadeLayer);
+        ColorRect fadeRect = new ColorRect { Color = new Color(0, 0, 0, 1) };
+        fadeLayer.AddChild(fadeRect);
+        fadeRect.SetAnchorsPreset(LayoutPreset.FullRect);
+        fadeRect.Size = GetViewportRect().Size;
+
+        Tween tween = CreateTween();
+        tween.TweenProperty(fadeRect, "color", new Color(0, 0, 0, 0), 0.8f);
+        tween.TweenCallback(Callable.From(fadeLayer.QueueFree));
     }
+
+    // --- NEW: RPC to Sync State Across All Players ---
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    public void UpdatePlayerStateRpc(long peerId, string role, bool isReady)
+    {
+        PlayerRoles[peerId] = role;
+        PlayerReady[peerId] = isReady;
+
+        RefreshPlayerList();
+
+        // Update the role selection UI if it happens to be open
+        var roleSelection = GetNodeOrNull<RoleSelection>("RoleSelectionOverlay");
+        if (roleSelection != null)
+        {
+            roleSelection.RefreshFromPlayerList();
+        }
+    }
+
+    public int GetPlayerCount() => _networkManager?.Players.Count ?? 0;
 
     private void RefreshPlayerList()
     {
-        if (_lblRoomName != null)
+        // 1. Cleanup disconnected players from our state
+        var activeIds = _networkManager.Players.Keys.ToList();
+        var keysToRemove = PlayerRoles.Keys.Where(k => !activeIds.Contains(k)).ToList();
+        foreach (var k in keysToRemove)
         {
-            _lblRoomName.Text = string.IsNullOrEmpty(_networkManager.RoomName) ? "Lobby" : _networkManager.RoomName;
+            PlayerRoles.Remove(k);
+            PlayerReady.Remove(k);
         }
 
-        if (_txtRoomCode != null)
+        // 2. Count roles to detect duplicates (Conflicts)
+        var roleCounts = new Dictionary<string, int>();
+        foreach (var role in PlayerRoles.Values)
         {
-            _txtRoomCode.Text = _networkManager.RoomCode;
+            if (!string.IsNullOrEmpty(role))
+            {
+                if (roleCounts.ContainsKey(role)) roleCounts[role]++;
+                else roleCounts[role] = 1;
+            }
         }
 
-        // Detect LEAVES (Red Notification)
+        bool hasRoleConflict = roleCounts.Values.Any(count => count > 1);
+        bool everyoneReady = true;
+        int playerCount = activeIds.Count;
+
+        // Detect joins/leaves
         foreach (var knownPlayer in _knownPlayers)
         {
             if (!_networkManager.Players.ContainsKey(knownPlayer.Key) && !_isInitialLoad)
-            {
-                ShowStatusMessage($"{knownPlayer.Value} left!", new Color("#F44336")); // Red
-            }
+                ShowStatusMessage($"{knownPlayer.Value} left!", new Color("#F44336"));
         }
-
-        // Detect JOINS (Green Notification)
         foreach (var player in _networkManager.Players)
         {
             if (!_knownPlayers.ContainsKey(player.Key) && !_isInitialLoad)
-            {
-                ShowStatusMessage($"{player.Value} joined!", new Color("#4CAF50")); // Green
-            }
+                ShowStatusMessage($"{player.Value} joined!", new Color("#4CAF50"));
         }
 
-        // Update known players list
         _knownPlayers.Clear();
-        foreach (var player in _networkManager.Players)
-        {
-            _knownPlayers.Add(player.Key, player.Value);
-        }
+        foreach (var player in _networkManager.Players) _knownPlayers.Add(player.Key, player.Value);
 
         if (_playerSlotsContainer == null) return;
-
         var slots = _playerSlotsContainer.GetChildren();
         var playerList = new List<KeyValuePair<long, string>>(_networkManager.Players);
-
         long localPeerId = Multiplayer.GetUniqueId();
 
         for (int i = 0; i < slots.Count; i++)
@@ -123,71 +159,168 @@ public partial class PlayerList : Control
                 long peerId = playerList[i].Key;
                 string playerName = playerList[i].Value;
 
-                if (nameLabel != null) nameLabel.Text = playerName;
-                if (statusLabel != null) statusLabel.Text = "Connected";
+                PlayerRoles.TryGetValue(peerId, out string pRole);
+                PlayerReady.TryGetValue(peerId, out bool pReady);
 
-                // Enable avatar button ONLY for the local player so they can click it to choose a role
+                if (!pReady) everyoneReady = false;
+
+                bool isConflict = !string.IsNullOrEmpty(pRole) && roleCounts.ContainsKey(pRole) && roleCounts[pRole] > 1;
+
+                if (nameLabel != null) nameLabel.Text = playerName;
+
+                // Set dynamic status text and color
+                if (statusLabel != null)
+                {
+                    if (isConflict)
+                    {
+                        statusLabel.Text = $"Conflict: {pRole}!";
+                        statusLabel.AddThemeColorOverride("font_color", new Color("#F44336")); // Red
+                    }
+                    else if (pReady)
+                    {
+                        statusLabel.Text = $"Ready ({pRole})";
+                        statusLabel.AddThemeColorOverride("font_color", new Color("#4CAF50")); // Green
+                    }
+                    else if (!string.IsNullOrEmpty(pRole))
+                    {
+                        statusLabel.Text = $"Selected: {pRole}";
+                        statusLabel.RemoveThemeColorOverride("font_color"); // Default white
+                    }
+                    else
+                    {
+                        statusLabel.Text = "Selecting...";
+                        statusLabel.AddThemeColorOverride("font_color", new Color(1, 1, 1, 0.7f));
+                    }
+                }
+
                 if (avatarBtn != null)
                 {
-                    // Apply the default texture if none is set
                     if (avatarBtn.TextureNormal == null && DefaultAvatarTexture != null)
-                    {
                         avatarBtn.TextureNormal = DefaultAvatarTexture;
-                    }
 
                     bool isLocalPlayer = (peerId == localPeerId);
                     avatarBtn.Disabled = !isLocalPlayer;
 
-                    // Slightly dim non-local players
-                    avatarBtn.Modulate = isLocalPlayer ? new Color(1, 1, 1, 1) : new Color(1, 1, 1, 0.7f);
-
-                    // Disconnect old clicks before reconnecting
-                    avatarBtn.Pressed -= OnLocalAvatarClicked;
-                    if (isLocalPlayer)
+                    // APPLY RED OUTLINE/TINT IF CONFLICT
+                    if (isConflict)
                     {
-                        avatarBtn.Pressed += OnLocalAvatarClicked;
+                        avatarBtn.Modulate = new Color("#F44336"); // Red
                     }
+                    else
+                    {
+                        avatarBtn.Modulate = isLocalPlayer ? new Color(1, 1, 1, 1) : new Color(1, 1, 1, 0.7f);
+                    }
+
+                    var clickCallable = Callable.From(OnLocalAvatarClicked);
+                    if (avatarBtn.IsConnected(BaseButton.SignalName.Pressed, clickCallable))
+                        avatarBtn.Disconnect(BaseButton.SignalName.Pressed, clickCallable);
+
+                    if (isLocalPlayer) avatarBtn.Connect(BaseButton.SignalName.Pressed, clickCallable);
                 }
             }
             else
             {
-                // Vacant slot
                 if (nameLabel != null) nameLabel.Text = "Open Slot";
-                if (statusLabel != null) statusLabel.Text = "Waiting...";
+                if (statusLabel != null)
+                {
+                    statusLabel.Text = "Waiting...";
+                    statusLabel.RemoveThemeColorOverride("font_color");
+                }
                 if (avatarBtn != null)
                 {
                     avatarBtn.Disabled = true;
-                    avatarBtn.Pressed -= OnLocalAvatarClicked;
+                    avatarBtn.Modulate = new Color(1, 1, 1, 1);
+                    var clickCallable = Callable.From(OnLocalAvatarClicked);
+                    if (avatarBtn.IsConnected(BaseButton.SignalName.Pressed, clickCallable))
+                        avatarBtn.Disconnect(BaseButton.SignalName.Pressed, clickCallable);
                 }
             }
+        }
+
+        // --- START GAME BUTTON LOGIC ---
+        if (_btnStartGame != null)
+        {
+            bool enoughPlayers = playerCount > 2; // Needs at least 2 players to start
+
+            // Disable if not enough players, not everyone is ready, or there is a duplicate role
+            _btnStartGame.Disabled = !everyoneReady || hasRoleConflict || !enoughPlayers;
+
+            if (!enoughPlayers)
+                _btnStartGame.Text = "Waiting for players...";
+            else if (!everyoneReady)
+                _btnStartGame.Text = "Waiting for ready...";
+            else
+                _btnStartGame.Text = "Start Game";
         }
     }
 
     private async void ShowStatusMessage(string message, Color color)
     {
         if (_lblStatus == null) return;
-
         _lblStatus.Text = message;
         _lblStatus.AddThemeColorOverride("font_color", color);
         _lblStatus.Visible = true;
-
-        // Message stays visible for 3 seconds then disappears
         await ToSignal(GetTree().CreateTimer(3.0), SceneTreeTimer.SignalName.Timeout);
-        if (GodotObject.IsInstanceValid(_lblStatus) && _lblStatus.Text == message)
+        if (GodotObject.IsInstanceValid(_lblStatus) && _lblStatus.Text == message) _lblStatus.Text = "";
+    }
+
+    public void CheckStartConditionsAndNotify()
+    {
+        int playerCount = GetPlayerCount();
+
+        // Count the roles to check for duplicates
+        var roleCounts = new Dictionary<string, int>();
+        foreach (var role in PlayerRoles.Values)
         {
-            _lblStatus.Text = "";
+            if (!string.IsNullOrEmpty(role))
+            {
+                if (roleCounts.ContainsKey(role)) roleCounts[role]++;
+                else roleCounts[role] = 1;
+            }
+        }
+
+        bool hasRoleConflict = roleCounts.Values.Any(count => count > 1);
+
+        // Display the correct warning in lblStatus
+        if (playerCount < 2)
+        {
+            ShowStatusMessage("Waiting for more players to join...", new Color("#FF9800")); // Orange Warning
+        }
+        else if (hasRoleConflict)
+        {
+            ShowStatusMessage("Cannot start: Role conflict detected!", new Color("#F44336")); // Red Warning
+        }
+        else
+        {
+            ShowStatusMessage("You are ready!", new Color("#4CAF50")); // Green Success
         }
     }
 
-    private void OnLocalAvatarClicked()
+    private void OnLeaveButtonPressed()
     {
-        GD.Print("Local player clicked their avatar! Opening Role Selection...");
-        OpenRoleSelection();
+        var confirmDialog = new ConfirmationDialog
+        {
+            Title = "Leave Studio",
+            DialogText = "Are you sure you want to leave the studio?",
+            OkButtonText = "Leave",
+            CancelButtonText = "Stay"
+        };
+        AddChild(confirmDialog);
+        confirmDialog.PopupCentered();
+        confirmDialog.Confirmed += () => { ConfirmLeave(); confirmDialog.QueueFree(); };
+        confirmDialog.Canceled += () => confirmDialog.QueueFree();
     }
+
+    private void ConfirmLeave()
+    {
+        _networkManager?.DisconnectFromRoom();
+        GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
+    }
+
+    private void OnLocalAvatarClicked() => OpenRoleSelection();
 
     private void OpenRoleSelection()
     {
-        // Prevent opening multiple instances if it's already open
         if (HasNode("RoleSelectionOverlay")) return;
 
         var roleSelectScene = GD.Load<PackedScene>("res://scenes/RoleSelect/role_selection.tscn");
@@ -195,40 +328,23 @@ public partial class PlayerList : Control
         {
             var roleSelectOverlay = roleSelectScene.Instantiate<Control>();
             roleSelectOverlay.Name = "RoleSelectionOverlay";
-
-            // Stretch overlay to cover full screen
-            roleSelectOverlay.SetAnchorsPreset(LayoutPreset.FullRect);
-
             AddChild(roleSelectOverlay);
-            GD.Print("Opened Role Selection overlay.");
-        }
-        else
-        {
-            GD.PrintErr("Failed to load scene at res://scenes/RoleSelect/role_selection.tscn");
+            roleSelectOverlay.SetAnchorsPreset(LayoutPreset.FullRect);
+            roleSelectOverlay.Size = GetViewportRect().Size;
+            roleSelectOverlay.GlobalPosition = Vector2.Zero;
         }
     }
 
-    private void OnRoomTerminated(string reason)
-    {
-        GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
-    }
-
-    private void OnStartGamePressed()
-    {
-        Rpc(MethodName.StartGameRpc);
-    }
+    private void OnRoomTerminated(string reason) => GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
+    private void OnStartGamePressed() => Rpc(MethodName.StartGameRpc);
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void StartGameRpc()
-    {
-        GetTree().ChangeSceneToFile("res://scenes/main_game.tscn");
-    }
+    private void StartGameRpc() => GetTree().ChangeSceneToFile("res://scenes/main_game.tscn");
 
     public override void _ExitTree()
     {
-        if (_btnStartGame != null && GodotObject.IsInstanceValid(_btnStartGame))
-            _btnStartGame.Pressed -= OnStartGamePressed;
-
+        if (_btnStartGame != null && GodotObject.IsInstanceValid(_btnStartGame)) _btnStartGame.Pressed -= OnStartGamePressed;
+        if (_btnLeave != null && GodotObject.IsInstanceValid(_btnLeave)) _btnLeave.Pressed -= OnLeaveButtonPressed;
         if (_networkManager != null && GodotObject.IsInstanceValid(_networkManager))
         {
             _networkManager.PlayerListUpdated -= RefreshPlayerList;

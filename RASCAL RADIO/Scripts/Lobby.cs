@@ -206,6 +206,21 @@ public partial class Lobby : Control
         }
 
         GD.Print("Lobby loaded successfully.");
+
+        // --- FADE IN EFFECT ---
+        CanvasLayer fadeLayer = new CanvasLayer { Layer = 100 };
+        AddChild(fadeLayer);
+
+        ColorRect fadeRect = new ColorRect();
+        fadeRect.Color = new Color(0, 0, 0, 1);
+        fadeLayer.AddChild(fadeRect);
+
+        fadeRect.SetAnchorsPreset(LayoutPreset.FullRect);
+        fadeRect.Size = GetViewportRect().Size;
+
+        Tween tween = CreateTween();
+        tween.TweenProperty(fadeRect, "color", new Color(0, 0, 0, 0), 0.8f);
+        tween.TweenCallback(Callable.From(fadeLayer.QueueFree));
     }
 
     // ---------------------------------------------------------
@@ -350,6 +365,33 @@ public partial class Lobby : Control
     // POPUP NAVIGATION & PLAYER NAME
     // ---------------------------------------------------------
 
+    private void TransitionToScene(string scenePath)
+    {
+        // 1. Slide down any visible popup immediately during transition
+        if (_hostPopup != null && _hostPopup.Visible)
+            SlideDownPopup(_hostPopup);
+
+        if (_joinPopup != null && _joinPopup.Visible)
+            SlideDownPopup(_joinPopup);
+
+        // 2. Spawn black fade overlay
+        CanvasLayer fadeLayer = new CanvasLayer { Layer = 100 };
+        AddChild(fadeLayer);
+
+        ColorRect fadeRect = new ColorRect();
+        fadeRect.Color = new Color(0, 0, 0, 0);
+        fadeLayer.AddChild(fadeRect);
+
+        fadeRect.SetAnchorsPreset(LayoutPreset.FullRect);
+        fadeRect.Size = GetViewportRect().Size;
+
+        // 3. Extended fade duration (0.8s)
+        Tween tween = CreateTween();
+        tween.TweenProperty(fadeRect, "color", new Color(0, 0, 0, 1), 0.8f);
+        tween.TweenCallback(Callable.From(() => GetTree().ChangeSceneToFile(scenePath)));
+    }
+
+
     private void OnPlayerNameChanged(string newText)
     {
         _playerName = newText.Trim();
@@ -369,16 +411,44 @@ public partial class Lobby : Control
         }
     }
 
-    private void ShowHostPopup()
+   private void ShowHostPopup()
     {
         _joinPopup.Hide();
-        _hostPopup.PopupCentered();
+        SlideUpPopup(_hostPopup);
     }
 
     private void ShowJoinPopup()
     {
         _hostPopup.Hide();
-        _joinPopup.PopupCentered();
+        SlideUpPopup(_joinPopup);
+    }
+
+    private void SlideUpPopup(PopupPanel popup)
+    {
+        if (popup == null) return;
+
+        // 1. Trigger the popup so it calculates its internal layout and size
+        popup.PopupCentered();
+
+        // 2. Get viewport and popup dimensions
+        Vector2I viewportSize = (Vector2I)GetViewportRect().Size;
+        Vector2I popupSize = popup.Size;
+
+        // 3. Calculate target center position and starting bottom position
+        Vector2I targetPos = new Vector2I(
+            (viewportSize.X - popupSize.X) / 2,
+            (viewportSize.Y - popupSize.Y) / 2
+        );
+        Vector2I startPos = new Vector2I(targetPos.X, viewportSize.Y);
+
+        // 4. Instantly snap to the bottom off-screen
+        popup.Position = startPos;
+
+        // 5. Tween the popup up to the center smoothly
+        Tween tween = CreateTween();
+        tween.SetTrans(Tween.TransitionType.Quint); // Smooth deceleration
+        tween.SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(popup, "position", targetPos, 0.4f);
     }
 
     private void OnBackButtonPressed()
@@ -416,11 +486,30 @@ public partial class Lobby : Control
         _lastSearchedCode = "";
         SetRoomFoundOutline(false);
 
-        // Close popups immediately without confirmation dialog
-        _hostPopup.Hide();
-        _joinPopup.Hide();
+        // Slide down whichever popup is currently visible instead of hiding instantly
+        if (_hostPopup != null && _hostPopup.Visible) SlideDownPopup(_hostPopup);
+        if (_joinPopup != null && _joinPopup.Visible) SlideDownPopup(_joinPopup);
 
         GD.Print("Popup cancelled.");
+    }
+
+    private void SlideDownPopup(PopupPanel popup)
+    {
+        if (popup == null || !popup.Visible) return;
+
+        // Calculate the bottom of the screen
+        Vector2I viewportSize = (Vector2I)GetViewportRect().Size;
+        Vector2I targetPos = new Vector2I(popup.Position.X, viewportSize.Y);
+
+        Tween tween = CreateTween();
+        tween.SetTrans(Tween.TransitionType.Quint);
+        tween.SetEase(Tween.EaseType.In); // Ease in accelerates as it falls
+
+        // Slide the popup down
+        tween.TweenProperty(popup, "position", targetPos, 0.4f);
+
+        // Automatically call Hide() exactly when the animation finishes
+        tween.TweenCallback(Callable.From(popup.Hide));
     }
 
     // ---------------------------------------------------------
@@ -460,7 +549,7 @@ public partial class Lobby : Control
         GD.Print($"Room created: {_networkManager.RoomName}, code: {_networkManager.RoomCode}");
 
         // Transition directly to the player list scene
-        GetTree().ChangeSceneToFile("res://scenes/player_lists.tscn");
+        TransitionToScene("res://scenes/player_lists.tscn");
     }
 
     // ---------------------------------------------------------
@@ -590,7 +679,7 @@ public partial class Lobby : Control
         _networkManager.JoinSucceeded -= OnJoinSucceeded;
         _networkManager.JoinFailed -= OnJoinFailed;
 
-        GetTree().ChangeSceneToFile("res://scenes/player_lists.tscn");
+        TransitionToScene("res://scenes/player_lists.tscn");
     }
 
     private void OnJoinFailed(string reason)

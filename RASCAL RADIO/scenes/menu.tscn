@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://bh3ysj6s5od0p" path="res://Scripts/Menu.cs" id="1_con2f"]
 [ext_resource type="Texture2D" uid="uid://ed77vo1usk0j" path="res://assets/MAINMENU_BG.png" id="2_con2f"]
 [ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="2_ouk20"]
-
+[ext_resource type="StyleBox" uid="uid://cpkmick0xyjgm" path="res://assets/MainPressed.tres" id="4_mhnvy"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -23,6 +23,16 @@ border_width_left = 8
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 10
+border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+corner_radius_top_left = 20
+corner_radius_bottom_right = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_con2f"]
+bg_color = Color(0.99215686, 0.81960785, 0.4, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
 border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 corner_radius_top_left = 20
 corner_radius_bottom_right = 20
@@ -90,11 +100,13 @@ theme = SubResource("Theme_0mg3e")
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_ouk20")
 theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
-
+theme_override_styles/pressed = ExtResource("4_mhnvy")
 theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
+theme_override_styles/disabled = ExtResource("4_mhnvy")
 text = "Start Game"
 
 [node name="PlayHolder2" type="Control" parent="VBoxContainer" unique_id=730981681]
@@ -113,11 +125,13 @@ theme = SubResource("Theme_0mg3e")
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_ouk20")
 theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
-
+theme_override_styles/pressed = SubResource("StyleBoxFlat_con2f")
 theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
+theme_override_styles/disabled = ExtResource("4_mhnvy")
 text = "Quit"
 
 [node name="Fade" type="ColorRect" parent="." unique_id=1081321399]

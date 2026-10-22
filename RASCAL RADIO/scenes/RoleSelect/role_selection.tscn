@@ -2,6 +2,15 @@
 
 [ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://scenes/RoleSelect/role_theme.tres" id="1_oprw3"]
 [ext_resource type="Script" uid="uid://dmrg8m5tpb470" path="res://Scripts/RoleSelection.cs" id="2_hpu7o"]
+[ext_resource type="FontFile" uid="uid://cp0lxs3t3iv7i" path="res://assets/fonts/Fredoka/static/Fredoka-Bold.ttf" id="3_j84j2"]
+[ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="4_jxjpo"]
+[ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="5_jxjpo"]
+[ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/buttonPressed.tres" id="6_gpa3m"]
+[ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/buttonHover.tres" id="7_a784v"]
+[ext_resource type="StyleBox" uid="uid://dlsb3tykebw0m" path="res://assets/outlineNormal.tres" id="8_7e6jv"]
+[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/outlinePressed.tres" id="9_11vu1"]
+[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/outlineHover.tres" id="10_3clr0"]
+[ext_resource type="StyleBox" uid="uid://d37rv72t32v1q" path="res://assets/buttonNorma.tres" id="10_11vu1"]
 
 [node name="RoleSelection" type="Control" unique_id=1499459392]
 layout_mode = 3
@@ -27,6 +36,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -1.0
+offset_top = -5.0
+offset_right = -1.0
+offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 24
@@ -36,35 +49,34 @@ theme_override_constants/margin_bottom = 24
 
 [node name="Main" type="VBoxContainer" parent="Margin" unique_id=2015297952]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 40
 alignment = 1
 
 [node name="TopBar" type="HBoxContainer" parent="Margin/Main" unique_id=425510462]
 layout_mode = 2
 
 [node name="BackButton" type="Button" parent="Margin/Main/TopBar" unique_id=483643081]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("4_jxjpo")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = ExtResource("5_jxjpo")
+theme_override_styles/pressed = ExtResource("6_gpa3m")
+theme_override_styles/hover = ExtResource("7_a784v")
 text = "Back"
 
 [node name="Spacer" type="Control" parent="Margin/Main/TopBar" unique_id=139707155]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="RoomCodeLabel" type="Label" parent="Margin/Main/TopBar" unique_id=1504521159]
+visible = false
 layout_mode = 2
 text = "Room: ----"
-
-[node name="TitleLabel" type="Label" parent="Margin/Main" unique_id=1986878595]
-layout_mode = 2
-theme_type_variation = &"TitleLabel"
-text = "Choose Your Role"
-horizontal_alignment = 1
-
-[node name="SubtitleLabel" type="Label" parent="Margin/Main" unique_id=1247933241]
-layout_mode = 2
-theme_type_variation = &"SubtitleLabel"
-text = "One player per role. Pick fast, or roll."
-horizontal_alignment = 1
 
 [node name="CardsRow" type="HBoxContainer" parent="Margin/Main" unique_id=146505139]
 layout_mode = 2
@@ -74,17 +86,52 @@ alignment = 1
 
 [node name="BottomBar" type="HBoxContainer" parent="Margin/Main" unique_id=320483905]
 layout_mode = 2
+theme_override_constants/separation = 35
+alignment = 1
 
 [node name="RandomizeButton" type="Button" parent="Margin/Main/BottomBar" unique_id=718988887]
+custom_minimum_size = Vector2(140, 60)
 layout_mode = 2
-text = "Randomize Roles"
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("4_jxjpo")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = ExtResource("8_7e6jv")
+theme_override_styles/pressed = ExtResource("9_11vu1")
+theme_override_styles/hover = ExtResource("10_3clr0")
+text = "Randomize "
 
 [node name="StatusLabel" type="Label" parent="Margin/Main/BottomBar" unique_id=833625498]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Waiting for players..."
 horizontal_alignment = 1
 
 [node name="ReadyButton" type="Button" parent="Margin/Main/BottomBar" unique_id=1036450557]
+custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("4_jxjpo")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = ExtResource("5_jxjpo")
+theme_override_styles/pressed = ExtResource("9_11vu1")
+theme_override_styles/hover = ExtResource("10_3clr0")
+theme_override_styles/disabled = ExtResource("10_11vu1")
 text = "Ready"
+
+[node name="TitleLabel" type="Label" parent="." unique_id=1986878595]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 24.0
+offset_right = 1133.0
+offset_bottom = 90.0
+theme_type_variation = &"TitleLabel"
+theme_override_fonts/font = ExtResource("3_j84j2")
+theme_override_font_sizes/font_size = 54
+text = "Choose Your Role"
+horizontal_alignment = 1
