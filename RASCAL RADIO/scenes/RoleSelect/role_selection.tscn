@@ -14,10 +14,13 @@ theme = ExtResource("1_oprw3")
 script = ExtResource("2_hpu7o")
 
 [node name="Background" type="ColorRect" parent="." unique_id=294616286]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-color = Color(0.3019608, 0.3019608, 0.3019608, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.35141936, 0.2700238, 0.35723943, 1)
 
 [node name="Margin" type="MarginContainer" parent="." unique_id=2145801026]
 layout_mode = 1
@@ -34,6 +37,7 @@ theme_override_constants/margin_bottom = 24
 [node name="Main" type="VBoxContainer" parent="Margin" unique_id=2015297952]
 layout_mode = 2
 theme_override_constants/separation = 16
+alignment = 1
 
 [node name="TopBar" type="HBoxContainer" parent="Margin/Main" unique_id=425510462]
 layout_mode = 2

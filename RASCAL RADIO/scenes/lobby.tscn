@@ -531,10 +531,11 @@ stretch_mode = 5
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Control" unique_id=863117220]
 layout_mode = 0
-offset_left = 369.0
-offset_top = 9.0
-offset_right = 633.0
-offset_bottom = 273.0
+offset_left = 382.0
+offset_top = 24.0
+offset_right = 601.0
+offset_bottom = 243.0
+alignment = 1
 
 [node name="TextureRect2" type="TextureRect" parent="Control/HBoxContainer2" unique_id=763939668]
 layout_mode = 2
