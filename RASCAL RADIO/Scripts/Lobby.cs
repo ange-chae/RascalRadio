@@ -42,6 +42,9 @@ public partial class Lobby : Control
     private static readonly Color Gold = new Color("#E9C875");
     private static readonly Color MutedPurple = new Color("#76677B");
     private static readonly Color ReadOnlyCream = new Color("#F3E7CB");
+    private int _foundPlayerCount = 0;
+    private int _foundMaxPlayers = NetworkManager.MaxPlayers;
+    private bool _isConnecting = false;
 
     public override void _Ready()
     {
@@ -72,10 +75,6 @@ public partial class Lobby : Control
 
         // Room search result node
         _roomResultControl = _joinContent.FindChild("playerRoom", true, false) as Control;
-        if (_roomResultControl != null)
-        {
-            _roomResultControl.GuiInput += OnRoomResultGuiInput;
-        }
 
         _foundRoomStyle = CreateInputStyle(Cream, Gold, 2, 6, 15, 10);
 
@@ -117,12 +116,12 @@ public partial class Lobby : Control
             GD.PrintErr("Lobby: No player name LineEdit found.");
         }
 
-        // Host room name input (defaults to "Room 1")
+        
         _inputRoomName = FindLineEdit(_hostContent, "inputRoomName");
         if (_inputRoomName != null)
         {
             if (string.IsNullOrWhiteSpace(_inputRoomName.Text))
-                _inputRoomName.Text = "Room 1";
+                _inputRoomName.Text = "Studio 1";
 
             _inputRoomName.PlaceholderText = "";
             StyleLineEdit(_inputRoomName);
@@ -200,12 +199,27 @@ public partial class Lobby : Control
         _networkManager.RoomFound += OnRoomFound;
         _networkManager.RoomSearchFailed += OnRoomSearchFailed;
 
+        if (_networkManager != null && !string.IsNullOrEmpty(_networkManager.DisconnectReason))
+        {
+            ShowPopupMessage("Notice", _networkManager.DisconnectReason);
+            _networkManager.DisconnectReason = "";
+        }
+
         GD.Print("Lobby loaded successfully.");
     }
 
     // ---------------------------------------------------------
     // HELPER FUNCTIONS
     // ---------------------------------------------------------
+    private void ShowPopupMessage(string title, string message)
+    {
+        var dialog = new AcceptDialog();
+        dialog.Title = title;
+        dialog.DialogText = message;
+        AddChild(dialog);
+        dialog.PopupCentered();
+        dialog.Confirmed += () => dialog.QueueFree();
+    }
 
     private void FindAndRegisterNameInputs(Control root)
     {
@@ -381,9 +395,9 @@ public partial class Lobby : Control
         if (_searchDebounceTimer != null)
             _searchDebounceTimer.Stop();
 
-        // Reset host room name back to default "Room 1"
+        // Reset host room name back to default "Studio 1"
         if (_inputRoomName != null)
-            _inputRoomName.Text = "Room 1";
+            _inputRoomName.Text = "Studio 1";
 
         LineEdit generatedCode = FindLineEdit(_hostContent, "txtGeneratedRoomCode");
         if (generatedCode != null)
@@ -417,13 +431,12 @@ public partial class Lobby : Control
     {
         if (_networkManager == null || _hostContent == null) return;
 
-        LineEdit generatedCode = FindLineEdit(_hostContent, "txtGeneratedRoomCode");
         string playerName = GetPlayerName();
         string roomName = _inputRoomName?.Text.Trim() ?? "";
 
         if (string.IsNullOrWhiteSpace(roomName))
         {
-            roomName = "Room 1";
+            roomName = "Studio 1";
             if (_inputRoomName != null)
                 _inputRoomName.Text = roomName;
         }
@@ -438,18 +451,16 @@ public partial class Lobby : Control
         Error result = _networkManager.CreateRoom(playerName, roomName);
         if (result != Error.Ok)
         {
+            LineEdit generatedCode = FindLineEdit(_hostContent, "txtGeneratedRoomCode");
             if (generatedCode != null) generatedCode.Clear();
             GD.PrintErr($"Room creation failed: {result}");
             return;
         }
 
-        if (generatedCode != null)
-        {
-            generatedCode.Editable = false;
-            generatedCode.Text = _networkManager.RoomCode;
-        }
-
         GD.Print($"Room created: {_networkManager.RoomName}, code: {_networkManager.RoomCode}");
+
+        // Transition directly to the player list scene
+        GetTree().ChangeSceneToFile("res://scenes/player_lists.tscn");
     }
 
     // ---------------------------------------------------------
@@ -503,17 +514,19 @@ public partial class Lobby : Control
         _searchDebounceTimer.Start();
     }
 
-    private void OnRoomFound(string roomName, string hostName, string hostIP, int roomPort)
+    private void OnRoomFound(string roomName, string hostName, string hostIP, int roomPort, int playerCount, int maxPlayers)
     {
         _foundHostIP = hostIP;
         _foundRoomPort = roomPort;
+        _foundPlayerCount = playerCount;
+        _foundMaxPlayers = maxPlayers;
 
-        SetRoomDisplay($"{roomName} | Host: {hostName}");
+        string fullTag = playerCount >= maxPlayers ? " (FULL)" : "";
+        SetRoomDisplay($"{roomName} | Host: {hostName} | {playerCount}/{maxPlayers}{fullTag}");
         SetRoomFoundOutline(true);
 
-        GD.Print($"Room found! Name: {roomName}, Host: {hostName}, IP: {hostIP}, Port: {roomPort}");
+        GD.Print($"Room found! Name: {roomName}, Host: {hostName}, IP: {hostIP}, Port: {roomPort}, Capacity: {playerCount}/{maxPlayers}");
     }
-
     private void OnRoomSearchFailed(string message)
     {
         _foundHostIP = "";
@@ -528,17 +541,9 @@ public partial class Lobby : Control
         ExecuteJoinRoom();
     }
 
-    private void OnRoomResultGuiInput(InputEvent @event)
-    {
-        if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Left)
-        {
-            ExecuteJoinRoom();
-        }
-    }
-
     private void ExecuteJoinRoom()
     {
-        if (_networkManager == null) return;
+        if (_networkManager == null || _isConnecting) return;
 
         string playerName = GetPlayerName();
         string code = _joinCodeInput?.Text.Trim().ToUpperInvariant() ?? "";
@@ -555,10 +560,46 @@ public partial class Lobby : Control
             return;
         }
 
-        _playerName = playerName;
+        // Early check: stop joining if room is already full
+        if (_foundPlayerCount >= _foundMaxPlayers)
+        {
+            SetRoomDisplay("Can't connect: Room is full.");
+            return;
+        }
 
-        GD.Print($"Joining room at {_foundHostIP}:{_foundRoomPort} as {playerName}...");
-        _networkManager.JoinRoom(_foundHostIP, _foundRoomPort);
+        _isConnecting = true;
+        _playerName = playerName;
+        SetRoomDisplay("Connecting to host...");
+
+        _networkManager.JoinSucceeded += OnJoinSucceeded;
+        _networkManager.JoinFailed += OnJoinFailed;
+
+        Error result = _networkManager.JoinRoom(_foundHostIP, _foundRoomPort, playerName);
+        if (result != Error.Ok)
+        {
+            _isConnecting = false;
+            _networkManager.JoinSucceeded -= OnJoinSucceeded;
+            _networkManager.JoinFailed -= OnJoinFailed;
+            SetRoomDisplay("Failed to initiate connection.");
+        }
+    }
+
+    private void OnJoinSucceeded()
+    {
+        _isConnecting = false;
+        _networkManager.JoinSucceeded -= OnJoinSucceeded;
+        _networkManager.JoinFailed -= OnJoinFailed;
+
+        GetTree().ChangeSceneToFile("res://scenes/player_lists.tscn");
+    }
+
+    private void OnJoinFailed(string reason)
+    {
+        _isConnecting = false;
+        _networkManager.JoinSucceeded -= OnJoinSucceeded;
+        _networkManager.JoinFailed -= OnJoinFailed;
+
+        SetRoomDisplay(reason);
     }
 
     // ---------------------------------------------------------
@@ -640,11 +681,6 @@ public partial class Lobby : Control
             _joinCodeInput.FocusExited -= OnRoomCodeFinished;
             _joinCodeInput.TextSubmitted -= OnRoomCodeSubmitted;
             _joinCodeInput.TextChanged -= OnRoomCodeChanged;
-        }
-
-        if (_roomResultControl != null && GodotObject.IsInstanceValid(_roomResultControl))
-        {
-            _roomResultControl.GuiInput -= OnRoomResultGuiInput;
         }
 
         if (_searchDebounceTimer != null && GodotObject.IsInstanceValid(_searchDebounceTimer))

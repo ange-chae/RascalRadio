@@ -7,9 +7,12 @@
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="5_ncsg4"]
 [ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/buttonPressed.tres" id="6_07nfq"]
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/buttonHover.tres" id="7_oipnb"]
+[ext_resource type="StyleBox" uid="uid://d4a2etkeackob" path="res://assets/readonly.tres" id="8_dyhay"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="8_ncsg4"]
 [ext_resource type="StyleBox" uid="uid://7rm2nvlyj4ir" path="res://assets/normal_input.tres" id="8_oipnb"]
 [ext_resource type="StyleBox" uid="uid://cbl51u0ito6nv" path="res://assets/focus_input.tres" id="9_yad6j"]
+[ext_resource type="Texture2D" uid="uid://8vecrc78v8kg" path="res://assets/Join.png" id="11_m1sns"]
+[ext_resource type="Texture2D" uid="uid://c8gtt45cqvv7v" path="res://assets/Host.png" id="12_dyhay"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -65,18 +68,6 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.3137255, 0.60784316, 0.17254902, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_71c8c"]
-bg_color = Color(0.972549, 0.92156863, 0.8039216, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.9059873, 0.77757484, 0.4734046, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_07nfq"]
 bg_color = Color(0.7228715, 0.25179353, 0.21727306, 1)
 border_width_left = 3
@@ -123,7 +114,7 @@ layout_mode = 0
 offset_left = 218.0
 offset_top = 233.0
 offset_right = 521.0
-offset_bottom = 618.0
+offset_bottom = 607.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
 [node name="btnJoin" type="Button" parent="JoinPanel" unique_id=674449098]
@@ -147,9 +138,9 @@ text = "Join
 
 [node name="descJoin" type="RichTextLabel" parent="JoinPanel" unique_id=1941167816]
 layout_mode = 0
-offset_left = 20.0
+offset_left = 11.0
 offset_top = 223.0
-offset_right = 299.0
+offset_right = 290.0
 offset_bottom = 288.0
 theme_override_colors/default_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/normal_font = ExtResource("4_apkv3")
@@ -174,7 +165,7 @@ layout_mode = 0
 offset_left = 603.0
 offset_top = 233.0
 offset_right = 906.0
-offset_bottom = 618.0
+offset_bottom = 607.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
 [node name="btnHost" type="Button" parent="HostPanel" unique_id=669741061]
@@ -339,7 +330,7 @@ offset_right = 426.0
 offset_bottom = 374.0
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_ncsg4")
-theme_override_styles/read_only = SubResource("StyleBoxFlat_71c8c")
+theme_override_styles/read_only = ExtResource("8_dyhay")
 alignment = 1
 editable = false
 
@@ -502,7 +493,7 @@ theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_selected_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/caret_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_ncsg4")
-theme_override_styles/read_only = SubResource("StyleBoxFlat_71c8c")
+theme_override_styles/read_only = ExtResource("8_dyhay")
 alignment = 1
 editable = false
 
@@ -512,12 +503,51 @@ scale = Vector2(0.99999994, 0.99999994)
 points = PackedVector2Array(3.0137389, 2.9861987, 411.0095, 1.1134636, 496, 66, 498, 496, 5.276627, 495.98105, 3.018329, 3.9861882)
 default_color = Color(0.24087247, 0.0454394, 0.017448997, 1)
 
+[node name="Control" type="Control" parent="." unique_id=1891384510]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 1
+anchors_preset = 0
+offset_left = 280.0
+offset_top = 270.0
+offset_right = 886.0
+offset_bottom = 494.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control" unique_id=597335347]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_right = -340.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="Control/HBoxContainer" unique_id=1983092082]
+layout_mode = 2
+texture = ExtResource("11_m1sns")
+expand_mode = 3
+stretch_mode = 5
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Control" unique_id=863117220]
+layout_mode = 0
+offset_left = 369.0
+offset_top = 9.0
+offset_right = 633.0
+offset_bottom = 273.0
+
+[node name="TextureRect2" type="TextureRect" parent="Control/HBoxContainer2" unique_id=763939668]
+layout_mode = 2
+texture = ExtResource("12_dyhay")
+expand_mode = 3
+stretch_mode = 5
+
 [node name="namePanel" type="Panel" parent="." unique_id=748266619]
 layout_mode = 0
-offset_left = 358.0
-offset_top = 106.0
-offset_right = 754.0
-offset_bottom = 223.0
+offset_left = 357.0
+offset_top = 84.0
+offset_right = 753.0
+offset_bottom = 201.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
 [node name="Label" type="Label" parent="namePanel" unique_id=1996125083]

@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://2lm3glnms1gh"]
+
+[ext_resource type="Texture2D" uid="uid://ba5h8oavhgh5y" path="res://Texture Folders/white_FFFFFF.png" id="1_8ii1h"]
+[ext_resource type="Script" uid="uid://bkihyeu2b6s2f" path="res://Main.cs" id="2_wn417"]
+[ext_resource type="Texture2D" uid="uid://cs67cdqs8u4dc" path="res://Texture Folders/dark_green_006B3C.png" id="3_48kam"]
+[ext_resource type="Texture2D" uid="uid://cy7stf6spnpu" path="res://Texture Folders/dark_red_762B28.png" id="4_j3ux6"]
+[ext_resource type="Texture2D" uid="uid://deameijjv7255" path="res://Texture Folders/yellow.jpg" id="5_manual"]
+
+[node name="Main" type="Control" unique_id=9871357]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_wn417")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1973426971]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_8ii1h")
+stretch_mode = 3
+
+[node name="Room" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BreakerTexture" type="TextureRect" parent="Room" unique_id=948458336]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 100.0
+offset_bottom = 180.0
+texture = ExtResource("3_48kam")
+stretch_mode = 3
+
+[node name="GeneratorTexture" type="TextureRect" parent="Room" unique_id=951943956]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 120.0
+offset_bottom = 85.0
+texture = ExtResource("4_j3ux6")
+stretch_mode = 3
+
+[node name="TechManualTexture" type="TextureRect" parent="Room"]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 166.0
+offset_bottom = 34.0
+texture = ExtResource("5_manual")
+stretch_mode = 3
+
+[node name="Interface" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1

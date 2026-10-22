@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dmoxg6nt3ng2g"]
 
-[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_oprw3"]
+[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://scenes/RoleSelect/role_theme.tres" id="1_oprw3"]
 [ext_resource type="Script" uid="uid://dmrg8m5tpb470" path="res://Scripts/RoleSelection.cs" id="2_hpu7o"]
 
 [node name="RoleSelection" type="Control" unique_id=1499459392]

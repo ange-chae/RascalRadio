@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bcxk16tqkiq24"]
 
-[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://RoleSelect/role_theme.tres" id="1_x0y1v"]
+[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://scenes/RoleSelect/role_theme.tres" id="1_x0y1v"]
 [ext_resource type="Script" uid="uid://bukevg7beafaa" path="res://Scripts/RoleCard.cs" id="2_7ytpg"]
 
 [node name="RoleCard" type="PanelContainer" unique_id=1955762217]
