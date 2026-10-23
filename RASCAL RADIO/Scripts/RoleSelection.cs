@@ -9,11 +9,12 @@ public partial class RoleSelection : Control
     private PlayerList _playerList;
     private int LocalPlayerId => (int)Multiplayer.GetUniqueId();
 
-    private static readonly Dictionary<Role, (string Name, string Blurb)> RoleInfo = new()
+    // Add the image paths to the tuple
+    private static readonly Dictionary<Role, (string Name, string Blurb, string ImagePath)> RoleInfo = new()
     {
-        { Role.Broadcaster,     ("Broadcaster", "Runs the show. Picks the callers.") },
-        { Role.RadioTechnician, ("Technician",  "Keeps the gear alive. Fixes what the raccoon breaks.") },
-        { Role.RadioOperator,   ("Operator",    "Sets the quota and keeps the schedule.") },
+        { Role.Broadcaster,     ("Broadcaster", "Runs the show. Picks the callers.", "res://assets/images/broadcaster.png") },
+        { Role.RadioTechnician, ("Technician",  "Keeps the gear alive. Fixes what the raccoon breaks.", "res://assets/images/tech.png") },
+        { Role.RadioOperator,   ("Operator",    "Sets the quota and keeps the schedule.", "res://assets/images/operator.png") },
     };
 
     private const string CardScenePath = "res://scenes/RoleSelect/role_card.tscn";
@@ -82,11 +83,13 @@ public partial class RoleSelection : Control
             _cardsRow.AddChild(card);
 
             var info = RoleInfo[role];
-            card.Setup(info.Name, info.Blurb);
+
+            // --- NEW: Load the image and pass it to the card ---
+            Texture2D roleArt = GD.Load<Texture2D>(info.ImagePath);
+            card.Setup(info.Name, info.Blurb, roleArt);
 
             string capturedRoleStr = role.ToString();
 
-            // Send RPC when a card is clicked
             card.SelectPressed += () =>
             {
                 _selectedRole = capturedRoleStr;
@@ -96,7 +99,6 @@ public partial class RoleSelection : Control
             _cards[role] = card;
         }
     }
-
     private void OnRandomizePressed()
     {
         var roles = RoleInfo.Keys.ToList();

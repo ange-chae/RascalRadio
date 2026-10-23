@@ -2,18 +2,18 @@
 
 [ext_resource type="Script" uid="uid://cxas0736hb8gq" path="res://Scripts/Lobby.cs" id="1_q60fs"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_pc087"]
-[ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/panel-style.tres" id="3_yad6j"]
+[ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/textures/panel-style.tres" id="3_yad6j"]
 [ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="4_apkv3"]
-[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/outlinePressed.tres" id="4_q6qq2"]
-[ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="5_ncsg4"]
-[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/outlineHover.tres" id="5_rgcd7"]
-[ext_resource type="StyleBox" uid="uid://d4a2etkeackob" path="res://assets/readonly.tres" id="8_dyhay"]
-[ext_resource type="StyleBox" uid="uid://dlsb3tykebw0m" path="res://assets/outlineNormal.tres" id="8_lqo1b"]
+[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/textures/outlinePressed.tres" id="4_q6qq2"]
+[ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="5_ncsg4"]
+[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/textures/outlineHover.tres" id="5_rgcd7"]
+[ext_resource type="StyleBox" uid="uid://d4a2etkeackob" path="res://assets/textures/readonly.tres" id="8_dyhay"]
+[ext_resource type="StyleBox" uid="uid://dlsb3tykebw0m" path="res://assets/textures/outlineNormal.tres" id="8_lqo1b"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="8_ncsg4"]
-[ext_resource type="StyleBox" uid="uid://7rm2nvlyj4ir" path="res://assets/normal_input.tres" id="8_oipnb"]
-[ext_resource type="StyleBox" uid="uid://cbl51u0ito6nv" path="res://assets/focus_input.tres" id="9_yad6j"]
-[ext_resource type="Texture2D" uid="uid://8vecrc78v8kg" path="res://assets/Join.png" id="11_m1sns"]
-[ext_resource type="Texture2D" uid="uid://c8gtt45cqvv7v" path="res://assets/Host.png" id="12_dyhay"]
+[ext_resource type="StyleBox" uid="uid://7rm2nvlyj4ir" path="res://assets/textures/normal_input.tres" id="8_oipnb"]
+[ext_resource type="StyleBox" uid="uid://cbl51u0ito6nv" path="res://assets/textures/focus_input.tres" id="9_yad6j"]
+[ext_resource type="Texture2D" uid="uid://8vecrc78v8kg" path="res://assets/images/Join.png" id="11_m1sns"]
+[ext_resource type="Texture2D" uid="uid://c8gtt45cqvv7v" path="res://assets/images/Host.png" id="12_dyhay"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -100,9 +100,9 @@ text = "Back"
 
 [node name="JoinPanel" type="Panel" parent="." unique_id=1214808467]
 layout_mode = 0
-offset_left = 218.0
+offset_left = 254.0
 offset_top = 233.0
-offset_right = 521.0
+offset_right = 557.0
 offset_bottom = 607.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
@@ -151,9 +151,9 @@ text = "Join Game"
 
 [node name="HostPanel" type="Panel" parent="." unique_id=1316113836]
 layout_mode = 0
-offset_left = 603.0
+offset_left = 639.0
 offset_top = 233.0
-offset_right = 906.0
+offset_right = 942.0
 offset_bottom = 607.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
@@ -496,9 +496,9 @@ default_color = Color(0.24087247, 0.0454394, 0.017448997, 1)
 custom_minimum_size = Vector2(50, 50)
 layout_mode = 1
 anchors_preset = 0
-offset_left = 280.0
+offset_left = 316.0
 offset_top = 270.0
-offset_right = 886.0
+offset_right = 922.0
 offset_bottom = 494.0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Control" unique_id=597335347]
@@ -534,9 +534,9 @@ stretch_mode = 5
 
 [node name="namePanel" type="Panel" parent="." unique_id=748266619]
 layout_mode = 0
-offset_left = 357.0
+offset_left = 393.0
 offset_top = 84.0
-offset_right = 753.0
+offset_right = 789.0
 offset_bottom = 201.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 

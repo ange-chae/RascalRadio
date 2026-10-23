@@ -2,12 +2,13 @@
 
 [ext_resource type="Script" uid="uid://bp8h10qbt0i8i" path="res://Scripts/PlayerList.cs" id="1_dbpi1"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_wl1yt"]
-[ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/buttonNormal.tres" id="3_80ye2"]
-[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/outlinePressed.tres" id="4_wl1yt"]
-[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/outlineHover.tres" id="5_80ye2"]
-[ext_resource type="StyleBox" uid="uid://d4bp4d1glgw57" path="res://assets/readOnlyBox.tres" id="6_y8my7"]
+[ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="3_80ye2"]
+[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/textures/outlinePressed.tres" id="4_wl1yt"]
+[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/textures/outlineHover.tres" id="5_80ye2"]
+[ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="6_80ye2"]
+[ext_resource type="StyleBox" uid="uid://d4bp4d1glgw57" path="res://assets/textures/readOnlyBox.tres" id="6_y8my7"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="7_j8faf"]
-[ext_resource type="Texture2D" uid="uid://ddym0wphifxfa" path="res://assets/3.png" id="8_gnd4y"]
+[ext_resource type="Texture2D" uid="uid://ddym0wphifxfa" path="res://assets/images/3.png" id="8_gnd4y"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gpa3m"]
 bg_color = Color(0.98039216, 0.2784314, 0.24705882, 1)
@@ -43,9 +44,9 @@ script = ExtResource("1_dbpi1")
 
 [node name="buttons" type="BoxContainer" parent="." unique_id=1425155699]
 layout_mode = 0
-offset_left = 812.0
+offset_left = 784.0
 offset_top = 566.0
-offset_right = 1109.0
+offset_right = 1132.0
 offset_bottom = 620.0
 theme_override_constants/separation = 20
 alignment = 2
@@ -60,16 +61,19 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_r33vc")
 text = "Leave"
 
 [node name="btnStartGame" type="Button" parent="buttons" unique_id=653620749]
-custom_minimum_size = Vector2(140, 0)
+custom_minimum_size = Vector2(130, 0)
+custom_maximum_size = Vector2(300, -1)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = ExtResource("3_80ye2")
 theme_override_styles/pressed = ExtResource("4_wl1yt")
 theme_override_styles/hover = ExtResource("5_80ye2")
+theme_override_styles/disabled = ExtResource("6_80ye2")
 text = "Start Game"
 
 [node name="txtRoomCode" type="LineEdit" parent="." unique_id=1500426469]
@@ -117,10 +121,10 @@ stretch_mode = 5
 
 [node name="lblStatus" type="Label" parent="." unique_id=1581201290]
 layout_mode = 0
-offset_left = 493.0
-offset_top = 525.0
-offset_right = 698.0
-offset_bottom = 557.0
+offset_left = 467.0
+offset_top = 526.0
+offset_right = 721.0
+offset_bottom = 558.0
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1

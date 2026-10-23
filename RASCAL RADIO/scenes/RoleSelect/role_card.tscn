@@ -1,7 +1,33 @@
 [gd_scene format=3 uid="uid://bcxk16tqkiq24"]
 
-[ext_resource type="Theme" uid="uid://bau6rscgcsitw" path="res://scenes/RoleSelect/role_theme.tres" id="1_x0y1v"]
 [ext_resource type="Script" uid="uid://bukevg7beafaa" path="res://Scripts/RoleCard.cs" id="2_7ytpg"]
+[ext_resource type="Texture2D" uid="uid://bxmeqfqm6u3ln" path="res://assets/images/broadcaster .png" id="2_o1lqe"]
+[ext_resource type="FontFile" uid="uid://2267i054h1mg" path="res://assets/fonts/Fredoka/static/Fredoka_SemiCondensed-SemiBold.ttf" id="3_co1uu"]
+[ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="4_5n1t4"]
+[ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="5_qm1ck"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_q6qq2"]
+texture = ExtResource("2_o1lqe")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn6xx"]
+bg_color = Color(0.22745098, 0.1764706, 0.10980392, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.16470589, 0.12941177, 0.08235294, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qarm5"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.34410623, 0.6860826, 0.43706152, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [node name="RoleCard" type="PanelContainer" unique_id=1955762217]
 custom_minimum_size = Vector2(260, 400)
@@ -16,50 +42,73 @@ offset_right = 130.0
 offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_x0y1v")
+theme_override_styles/panel = SubResource("StyleBoxTexture_q6qq2")
 script = ExtResource("2_7ytpg")
 
-[node name="Margin" type="MarginContainer" parent="." unique_id=1898197398]
+[node name="CardArea" type="Control" parent="." unique_id=183757754]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
 
-[node name="VBox" type="VBoxContainer" parent="Margin" unique_id=1148809856]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="IconFrame" type="PanelContainer" parent="Margin/VBox" unique_id=1306646214]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-theme_type_variation = &"DarkPanel"
-
-[node name="RoleIcon" type="TextureRect" parent="Margin/VBox/IconFrame" unique_id=715244479]
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="RoleNameLabel" type="Label" parent="Margin/VBox" unique_id=1774981755]
-layout_mode = 2
-theme_type_variation = &"CardTitle"
-text = "Broadcaster"
-horizontal_alignment = 1
-
-[node name="RoleBlurbLabel" type="Label" parent="Margin/VBox" unique_id=1622731511]
+[node name="RoleBlurbLabel" type="Label" parent="CardArea" unique_id=1622731511]
 custom_minimum_size = Vector2(180, 0)
-layout_mode = 2
+layout_mode = 0
+offset_left = 43.0
+offset_top = 240.0
+offset_right = 223.0
+offset_bottom = 283.0
 size_flags_vertical = 3
 theme_type_variation = &"SubtitleLabel"
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("3_co1uu")
+theme_override_font_sizes/font_size = 12
 text = "Runs the show. Picks the callers."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="TakenByLabel" type="Label" parent="Margin/VBox" unique_id=299887529]
-layout_mode = 2
+[node name="Panel" type="Panel" parent="CardArea" unique_id=1976451823]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 330.0
+offset_right = 136.0
+offset_bottom = 364.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_gn6xx")
+
+[node name="TakenByLabel" type="Label" parent="CardArea" unique_id=299887529]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 336.0
+offset_right = 132.0
+offset_bottom = 361.0
+theme_override_colors/font_color = Color(1, 0.9843137, 0.8117647, 1)
+theme_override_fonts/font = ExtResource("4_5n1t4")
 text = "Available"
 horizontal_alignment = 1
 
-[node name="SelectButton" type="Button" parent="Margin/VBox" unique_id=886188183]
+[node name="RoleNameLabel" type="Label" parent="CardArea" unique_id=1774981755]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 216.0
+offset_right = 245.0
+offset_bottom = 239.0
+theme_type_variation = &"CardTitle"
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("5_qm1ck")
+theme_override_font_sizes/font_size = 20
+text = "Broadcaster"
+horizontal_alignment = 1
+
+[node name="SelectionOutline" type="Panel" parent="CardArea" unique_id=406868283]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
+metadata/_edit_use_anchors_ = true
+
+[node name="SelectButton" type="Button" parent="." unique_id=886188183]
 layout_mode = 2
-text = "Select"
+flat = true
+metadata/_edit_use_anchors_ = true
