@@ -1,0 +1,481 @@
+[gd_scene format=3 uid="uid://cnkbwr25ylla3"]
+
+[ext_resource type="Shader" uid="uid://bssu45r4uxjor" path="res://scenes/UV.gdshader" id="1_d54sb"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v8auc"]
+bg_color = Color(0.9529412, 0.7921569, 0.4627451, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mmbn6"]
+bg_color = Color(0.89357907, 0.897762, 0.70669365, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15686275, 0.07450981, 0.49019608, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d54sb"]
+content_margin_left = 5.0
+content_margin_right = 5.0
+bg_color = Color(0.7, 0.11900001, 0.12868318, 1)
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wtwq5"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.89411765, 0.8980392, 0.7058824, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15686275, 0.07450981, 0.49019608, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hsa6u"]
+content_margin_left = 10.0
+content_margin_top = 3.0
+content_margin_right = 10.0
+content_margin_bottom = 3.0
+bg_color = Color(0.54901963, 0, 0.007843138, 0.7019608)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_da0sh"]
+content_margin_top = 4.0
+bg_color = Color(0.6509804, 0.26666668, 0.21568628, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_0aagu"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+
+[sub_resource type="SystemFont" id="SystemFont_bmnkt"]
+font_names = PackedStringArray("Monospace")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skki2"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.89411765, 0.8980392, 0.7058824, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15686275, 0.07450981, 0.49019608, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uqu8e"]
+bg_color = Color(0.89411765, 0.8980392, 0.7058824, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5411765, 0.1882353, 0.26666668, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="SystemFont" id="SystemFont_afp2u"]
+font_names = PackedStringArray("Monospace")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0gnke"]
+shader = ExtResource("1_d54sb")
+shader_parameter/scanline_strength = 0.2
+shader_parameter/vignette_strength = 0.45
+
+[node name="OperatorInterface" type="Control" unique_id=727384516]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="." unique_id=811572056]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.23529412)
+
+[node name="Popup" type="PanelContainer" parent="Dim" unique_id=407417997]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1000, 580)
+clip_contents = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -290.0
+offset_right = 500.0
+offset_bottom = 290.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"type PanelMain"
+theme_override_styles/panel = SubResource("StyleBoxFlat_v8auc")
+
+[node name="Margin" type="MarginContainer" parent="Dim/Popup" unique_id=1088963749]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Dim/Popup/Margin" unique_id=2060568698]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Hud" type="PanelContainer" parent="Dim/Popup/Margin/VBox" unique_id=1024031551]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"Hudbar"
+
+[node name="Hud" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Hud" unique_id=40447906]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"Hudbar"
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmbn6")
+
+[node name="Row" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Hud/Hud" unique_id=1252787277]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TimeLabel" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=874915224]
+layout_mode = 2
+theme_type_variation = &"LabelHeader"
+theme_override_colors/font_color = Color(0.08909803, 8.663535e-07, 0.47121048, 1)
+text = "    8:00-9:00 AM"
+
+[node name="Spacer" type="Control" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=1354329822]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="QuotaLabel" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=1506163954]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
+theme_override_constants/line_spacing = 7
+theme_override_constants/paragraph_spacing = 2
+text = "QUOTA"
+
+[node name="QuotaCount" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=1407093989]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
+text = "0/3"
+
+[node name="StrikesLabel" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=2095942746]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
+text = "STRIKES"
+
+[node name="StrikeCount" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=286327561]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
+text = "0/3"
+
+[node name="CloseBtn" type="Button" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=211457003]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_d54sb")
+text = "X"
+
+[node name="Column" type="HBoxContainer" parent="Dim/Popup/Margin/VBox" unique_id=1508615869]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Left" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column" unique_id=1947741860]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_wtwq5")
+
+[node name="LeftVBox" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left" unique_id=1052975594]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TopicsHeader" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1960014132]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4509804, 0, 0.15294118, 1)
+theme_override_font_sizes/font_size = 25
+text = "  ✎ TOPICS"
+
+[node name="TopicList" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1864603918]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopicRow1" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=419605020]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hsa6u")
+
+[node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow1" unique_id=510546504]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow1/RowBox1" unique_id=901049989]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title1" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow1/RowBox1/VBoxContainer" unique_id=1462487149]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Drama and life stories"
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow1/RowBox1/VBoxContainer" unique_id=815109141]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "8:00-9:00 AM | 3 valid callers"
+
+[node name="TopicRow4" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=375628145]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hsa6u")
+
+[node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow4" unique_id=189462377]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow4/RowBox1" unique_id=617998941]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title1" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow4/RowBox1/VBoxContainer" unique_id=756914453]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Drama and life stories"
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow4/RowBox1/VBoxContainer" unique_id=1563822751]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "8:00-9:00 AM | 3 valid callers"
+
+[node name="TopicRow5" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=553031588]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hsa6u")
+
+[node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow5" unique_id=2087361700]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow5/RowBox1" unique_id=1909103319]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title1" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow5/RowBox1/VBoxContainer" unique_id=1633323249]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Drama and life stories"
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow5/RowBox1/VBoxContainer" unique_id=2071943548]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "8:00-9:00 AM | 3 valid callers"
+
+[node name="TopicRow2" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=1063444004]
+layout_mode = 2
+
+[node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow2" unique_id=1090646684]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopicRow3" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=947293782]
+layout_mode = 2
+
+[node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow3" unique_id=639149581]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CallerHeader" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1922628349]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0, 0.009166527, 1)
+text = "  ၊၊|| CALLER ON THE LINE"
+
+[node name="CallerCard" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1436393206]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_da0sh")
+
+[node name="CallerBox" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard" unique_id=1967691727]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CallerRow" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox" unique_id=413455199]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Avatar" type="TextureRect" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow" unique_id=109441222]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="NameLabel" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow" unique_id=74757651]
+layout_mode = 2
+theme_override_constants/separation = -6
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow/NameLabel" unique_id=1066114383]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = " Monique "
+
+[node name="Label2" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow/NameLabel" unique_id=1854698295]
+layout_mode = 2
+theme_override_constants/line_spacing = 7
+theme_override_constants/paragraph_spacing = 2
+text = "  Caller 1 of 4"
+
+[node name="QuoteBox" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox" unique_id=1215841014]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/QuoteBox" unique_id=914679919]
+layout_mode = 2
+theme_override_constants/line_spacing = -6
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxTexture_0aagu")
+text = "My sister and I haven't talked in years. I want to say sorry to her on the radio."
+autowrap_mode = 3
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1435674858]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = SubResource("SystemFont_bmnkt")
+theme_override_font_sizes/font_size = 14
+text = "🖂  Tell the Broadcaster what to press"
+autowrap_mode = 3
+
+[node name="VerdictLabel" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=872059678]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.030000016, 0.041999817, 1)
+text = "ACCEPT "
+
+[node name="Right" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column" unique_id=140086021]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 6.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_skki2")
+
+[node name="RightVBox" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right" unique_id=1413241277]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StudioHeader" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=585173762]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=1022337911]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4509804, 0, 0.15294118, 1)
+theme_override_font_sizes/font_size = 26
+text = "  STUDIO DESK"
+
+[node name="Grid" type="GridContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=296712562]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 16
+columns = 2
+
+[node name="slot1" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid" unique_id=2048812120]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_uqu8e")
+
+[node name="slotbox1" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot1" unique_id=448017174]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot1/slotbox1" unique_id=3076172]
+layout_mode = 2
+text = "Empty Slot"
+horizontal_alignment = 1
+
+[node name="slot2" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid" unique_id=2055999531]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_uqu8e")
+
+[node name="slotbox1" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot2" unique_id=1681925344]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot2/slotbox1" unique_id=1974541830]
+layout_mode = 2
+text = "Empty Slot"
+horizontal_alignment = 1
+
+[node name="slot3" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid" unique_id=436048259]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_uqu8e")
+
+[node name="slotbox1" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot3" unique_id=1878935816]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot3/slotbox1" unique_id=1219692835]
+layout_mode = 2
+text = "Empty Slot"
+horizontal_alignment = 1
+
+[node name="slot4" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid" unique_id=977035766]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_uqu8e")
+
+[node name="slotbox1" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot4" unique_id=1774315073]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot4/slotbox1" unique_id=217146433]
+layout_mode = 2
+text = "Empty Slot"
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=381075686]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = SubResource("SystemFont_afp2u")
+text = "Modules show up here when a level turns them on."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=2060657108]
+material = SubResource("ShaderMaterial_0gnke")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -291.0
+offset_right = 500.0
+offset_bottom = 290.0
+grow_horizontal = 2
+grow_vertical = 2

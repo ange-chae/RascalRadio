@@ -1,141 +1,93 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
+using RascalRadio.Core.Models;
+using RascalRadio.Core.Systems;
 
-public partial class BroadcasterInterface : Control
+public partial class BroadcasterInterface : PopupFrame
 {
-	private Label _strikesLabel;
-	private Label _timerLabel;
-	private ProgressBar _qualityBar;
-	private Label _quotaLabel;
-	private Label _nameLabel;
-	private Label _blurbLabel;
-	private Label _feedbackLabel;
-	private ProgressBar _patienceBar;
-	private Button _acceptButton;
-	private Button _rejectButton;
+	private static readonly string[] Sentence =
+		{ "Welcome", "back", "listeners", "your", "stories", "are", "on", "air" };
+	private static readonly string[] Decoys = { "tonight", "music" };
+	[Export] public double SegmentTime = 20.0;
 
-	private string _quota = "Drama";
-	private int _strikes = 0;
-	private int _index = 0;
-	private bool _over = false;
-
-	// Percent per second. 12 is about 8 seconds per caller.
-	private const float PatienceDrainPerSecond = 12f;
-	private float _patience = 100f;
-
-	private float _testTime = 300f; // TEMP: fake clock, delete later
-
-	// Fake callers for testing. The genre is hidden from the player.
-	private readonly string[] _names = { "Maria", "Jun", "Lola", "Ben" };
-	private readonly string[] _blurbs =
-	{
-		"Wants to share a story about her family.",
-		"Has a funny joke about his neighbor's rooster.",
-		"Her love story ended in a dramatic breakup.",
-        "Wants to request a song for his friend."
-	};
-	private readonly string[] _genres = { "Drama", "Comedy", "Drama", "Music" };
+	private int _idx;
+	private double _timeLeft;
+	private bool _running;
+	private RichTextLabel _target;
+	private Label _timer, _status, _meterLabel;
+	private HFlowContainer _bank;
+	private Button _tryAgain;
+	private HBoxContainer _meter;
 
 	public override void _Ready()
 	{
-		_strikesLabel = GetNode<Label>("Center/Layout/TopBar/StrikesLabel");
-		_timerLabel = GetNode<Label>("Center/Layout/TopBar/TimerLabel");
-		_qualityBar = GetNode<ProgressBar>("Center/Layout/TopBar/QualityBar");
-		_quotaLabel = GetNode<Label>("Center/Layout/CallerCard/CardLayout/QuotaLabel");
-		_nameLabel = GetNode<Label>("Center/Layout/CallerCard/CardLayout/CallerNameLabel");
-		_blurbLabel = GetNode<Label>("Center/Layout/CallerCard/CardLayout/CallerBlurbLabel");
-		_patienceBar = GetNode<ProgressBar>("Center/Layout/CallerCard/CardLayout/PatienceBar");
-		_feedbackLabel = GetNode<Label>("Center/Layout/CallerCard/CardLayout/FeedbackLabel");
-		_acceptButton = GetNode<Button>("Center/Layout/CallerCard/CardLayout/ButtonRow/AcceptButton");
-		_rejectButton = GetNode<Button>("Center/Layout/CallerCard/CardLayout/ButtonRow/RejectButton");
+		base._Ready();
+		_target = GetNode<RichTextLabel>("%TargetLabel");
+		_timer = GetNode<Label>("%TimerLabel");
+		_status = GetNode<Label>("%StatusLabel");
+		_meterLabel = GetNode<Label>("%MeterLabel");
+		_bank = GetNode<HFlowContainer>("%WordBank");
+		_tryAgain = GetNode<Button>("%TryAgainBtn");
+		_meter = GetNode<HBoxContainer>("%Meter");
 
-		_qualityBar.MinValue = 0;
-		_qualityBar.MaxValue = 100;
-		_patienceBar.MinValue = 0;
-		_patienceBar.MaxValue = 100;
-		_patienceBar.ShowPercentage = false;
+		GetNode<Button>("%RetryBtn").Pressed += StartSegment;
+		_tryAgain.Pressed += StartSegment;
+		GetNode<Button>("%AcceptBtn").Pressed += () => GD.Print("ACCEPT pressed");
+		GetNode<Button>("%RejectBtn").Pressed += () => GD.Print("REJECT pressed");
+		StartSegment();
+	}
 
-		_acceptButton.Pressed += OnAccept;
-		_rejectButton.Pressed += OnReject;
+	private void StartSegment()
+	{
+		_idx = 0; _timeLeft = SegmentTime; _running = true;
+		_tryAgain.Disabled = true;
+		_status.Text = "Click the words in order.";
+		foreach (Node c in _bank.GetChildren())
+			if (c != _tryAgain) c.QueueFree();
 
-		_quotaLabel.Text = "Quota: " + _quota;
-		_feedbackLabel.Text = "Read the blurb, then decide!";
-		ShowCaller();
+		foreach (var w in Sentence.Concat(Decoys).OrderBy(_ => GD.Randi()).ToList())
+		{
+			var word = w;
+			var b = new Button { Text = word, ThemeTypeVariation = "ButtonWord" };
+			b.Pressed += () => OnWord(b, word);
+			_bank.AddChild(b);
+		}
+		_bank.MoveChild(_tryAgain, -1);
+		Refresh();
+	}
+
+	private void OnWord(Button b, string w)
+	{
+		if (!_running) return;
+		if (w == Sentence[_idx])
+		{
+			_idx++; b.Disabled = true; Refresh();
+			if (_idx == Sentence.Length) { _running = false; _status.Text = "ON AIR! Segment complete."; }
+		}
+		else _timeLeft = Mathf.Max(0, _timeLeft - 2);
 	}
 
 	public override void _Process(double delta)
 	{
-		// TEMP: pretend the game session is ticking. Delete these 3 lines later.
-		_testTime -= (float)delta;
-		SetTimeRemaining(_testTime);
-		SetQuality(_testTime / 3f);
-
-		if (_over) return;
-
-		_patience -= PatienceDrainPerSecond * (float)delta;
-		_patienceBar.Value = _patience;
-
-		if (_patience <= 0)
-		{
-			_feedbackLabel.Text = "Caller hung up!";
-			NextCaller();
-		}
+		if (!_running) return;
+		_timeLeft -= delta;
+		_timer.Text = $"{Mathf.Max(0, Mathf.CeilToInt(_timeLeft))} s";
+		if (_timeLeft > 0) return;
+		_running = false;
+		_status.Text = "Time is up. Press Try again.";
+		_tryAgain.Disabled = false;
+		foreach (Node c in _bank.GetChildren())
+			if (c is Button bb && bb != _tryAgain) bb.Disabled = true;
 	}
 
-	private void OnAccept()
+	private void Refresh()
 	{
-		if (_genres[_index] != _quota)
-		{
-			_strikes++;
-			_strikesLabel.Text = "Strikes: " + _strikes + "/3";
-			_feedbackLabel.Text = "Wrong genre! Strike.";
-		}
-		else
-		{
-			_feedbackLabel.Text = "Good pick!";
-		}
-
-		if (_strikes >= 3)
-		{
-			_over = true;
-			_nameLabel.Text = "Struck out!";
-			_blurbLabel.Text = "";
-			_acceptButton.Disabled = true;
-			_rejectButton.Disabled = true;
-			return;
-		}
-
-		NextCaller();
-	}
-
-	private void OnReject()
-	{
-		_feedbackLabel.Text = "Caller rejected.";
-		NextCaller();
-	}
-
-	private void NextCaller()
-	{
-		_index = (_index + 1) % _names.Length;
-		ShowCaller();
-	}
-
-	private void ShowCaller()
-	{
-		_nameLabel.Text = "Caller: " + _names[_index];
-		_blurbLabel.Text = _blurbs[_index];
-		_patience = 100f;
-		_patienceBar.Value = 100;
-	}
-
-	// Your teammates call these. The screen only displays what it's given.
-	public void SetTimeRemaining(float seconds)
-	{
-		int total = Mathf.Max(0, Mathf.CeilToInt(seconds));
-		_timerLabel.Text = $"{total / 60:00}:{total % 60:00}";
-	}
-
-	public void SetQuality(float percent)
-	{
-		_qualityBar.Value = percent;
+		var parts = Sentence.Select((w, i) => i < _idx ? $"[color=#0b5a2a]{w}[/color]" : w);
+		_target.Text = "[center]" + string.Join(" ", parts) + "[/center]";
+		_meterLabel.Text = $"ON AIR meter: {_idx} of {Sentence.Length} words";
+		for (int i = 0; i < _meter.GetChildCount(); i++)
+			((Control)_meter.GetChild(i)).ThemeTypeVariation = i < _idx ? "SegOn" : "SegOff";
 	}
 }
