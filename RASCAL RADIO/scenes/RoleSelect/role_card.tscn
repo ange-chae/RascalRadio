@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bcxk16tqkiq24"]
 
 [ext_resource type="Script" uid="uid://bukevg7beafaa" path="res://Scripts/RoleCard.cs" id="2_7ytpg"]
-[ext_resource type="Texture2D" uid="uid://bxmeqfqm6u3ln" path="res://assets/images/broadcaster .png" id="2_o1lqe"]
+[ext_resource type="Texture2D" uid="uid://bxmeqfqm6u3ln" path="res://assets/images/broadcaster.png" id="2_o1lqe"]
 [ext_resource type="FontFile" uid="uid://2267i054h1mg" path="res://assets/fonts/Fredoka/static/Fredoka_SemiCondensed-SemiBold.ttf" id="3_co1uu"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="4_5n1t4"]
 [ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="5_qm1ck"]

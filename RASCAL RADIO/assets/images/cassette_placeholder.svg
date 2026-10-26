@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="400" height="250">
+  <!-- Outer Shell -->
+  <rect x="10" y="10" width="380" height="230" rx="16" ry="16" fill="#3A322C" stroke="#231F1C" stroke-width="5" />
+  
+  <!-- Bottom Trapezoid Notch -->
+  <polygon points="65,240 85,205 315,205 335,240" fill="#28231F" />
+  <circle cx="100" cy="222" r="6" fill="#1A1715" />
+  <circle cx="300" cy="222" r="6" fill="#1A1715" />
+  
+  <!-- Sticker Label -->
+  <rect x="35" y="30" width="330" height="125" rx="8" ry="8" fill="#F4EADA" />
+  
+  <!-- Colored Stripe on Label -->
+  <path d="M 35 38 Q 35 30 43 30 L 357 30 Q 365 30 365 38 L 365 60 L 35 60 Z" fill="#D9534F" />
+  
+  <!-- Center Tape Window -->
+  <rect x="85" y="75" width="230" height="60" rx="12" ry="12" fill="#1C1B1A" />
+  
+  <!-- Magnetic Tape Band -->
+  <rect x="130" y="96" width="140" height="18" fill="#5C4033" />
+  
+  <!-- Left Wheel -->
+  <circle cx="135" cy="105" r="20" fill="#EAEAEA" stroke="#A0A0A0" stroke-width="4" />
+  <circle cx="135" cy="105" r="8" fill="#1C1B1A" />
+  
+  <!-- Right Wheel -->
+  <circle cx="265" cy="105" r="20" fill="#EAEAEA" stroke="#A0A0A0" stroke-width="4" />
+  <circle cx="265" cy="105" r="8" fill="#1C1B1A" />
+  
+  <!-- Corner Screws -->
+  <circle cx="25" cy="25" r="5" fill="#8C827A" />
+  <circle cx="375" cy="25" r="5" fill="#8C827A" />
+  <circle cx="25" cy="225" r="5" fill="#8C827A" />
+  <circle cx="375" cy="225" r="5" fill="#8C827A" />
+</svg>

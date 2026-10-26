@@ -47,7 +47,7 @@ theme_override_constants/margin_bottom = 24
 
 [node name="Main" type="VBoxContainer" parent="Margin" unique_id=2015297952]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="TopBar" type="HBoxContainer" parent="Margin/Main" unique_id=425510462]

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bxmeqfqm6u3ln"
-path="res://.godot/imported/broadcaster .png-70470e28f3c78ce531f44ce33ecd3d80.ctex"
+path="res://.godot/imported/broadcaster.png-ff6f2133b2d29bab2c165368d39c88bd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/broadcaster .png"
-dest_files=["res://.godot/imported/broadcaster .png-70470e28f3c78ce531f44ce33ecd3d80.ctex"]
+source_file="res://assets/images/broadcaster.png"
+dest_files=["res://.godot/imported/broadcaster.png-ff6f2133b2d29bab2c165368d39c88bd.ctex"]
 
 [params]
 

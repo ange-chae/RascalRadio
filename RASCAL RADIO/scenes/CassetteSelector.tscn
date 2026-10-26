@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://bycf8vty60lla"]
+
+[ext_resource type="Script" uid="uid://c4iq22jg76hpk" path="res://Scripts/CassetteSelector.cs" id="1_lmpi3"]
+[ext_resource type="Texture2D" uid="uid://btb6x3rgcifww" path="res://assets/images/cassette_placeholder.svg" id="2_oxbgq"]
+
+[node name="CassetteSelector" type="VBoxContainer" unique_id=836177544]
+custom_minimum_size = Vector2(300, 180)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_lmpi3")
+
+[node name="LblLevelName" type="Label" parent="." unique_id=1679138338]
+layout_mode = 2
+text = "Tutorial"
+horizontal_alignment = 1
+
+[node name="TexCassette" type="TextureRect" parent="." unique_id=69938080]
+visible = false
+layout_mode = 2
+texture = ExtResource("2_oxbgq")
+expand_mode = 5
+stretch_mode = 5

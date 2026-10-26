@@ -4,7 +4,9 @@
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_pc087"]
 [ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/textures/panel-style.tres" id="3_yad6j"]
 [ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="4_apkv3"]
+[ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/textures/buttonPressed.tres" id="4_lqo1b"]
 [ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/textures/outlinePressed.tres" id="4_q6qq2"]
+[ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="5_0gjkf"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="5_ncsg4"]
 [ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/textures/outlineHover.tres" id="5_rgcd7"]
 [ext_resource type="StyleBox" uid="uid://d4a2etkeackob" path="res://assets/textures/readonly.tres" id="8_dyhay"]
@@ -94,8 +96,8 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("4_q6qq2")
-theme_override_styles/hover = ExtResource("5_rgcd7")
+theme_override_styles/pressed = ExtResource("4_lqo1b")
+theme_override_styles/hover = ExtResource("5_0gjkf")
 text = "Back"
 
 [node name="JoinPanel" type="Panel" parent="." unique_id=1214808467]
@@ -120,7 +122,7 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/pressed = ExtResource("4_lqo1b")
 theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Join
 "
@@ -171,7 +173,7 @@ theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = ExtResource("5_ncsg4")
-theme_override_styles/pressed = ExtResource("4_q6qq2")
+theme_override_styles/pressed = ExtResource("4_lqo1b")
 theme_override_styles/hover = ExtResource("5_rgcd7")
 text = "Host
 "

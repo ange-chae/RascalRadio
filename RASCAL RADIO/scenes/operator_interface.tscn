@@ -466,6 +466,7 @@ horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=2060657108]
+visible = false
 material = SubResource("ShaderMaterial_0gnke")
 layout_mode = 1
 anchors_preset = 8

@@ -3,12 +3,25 @@
 [ext_resource type="Script" uid="uid://bp8h10qbt0i8i" path="res://Scripts/PlayerList.cs" id="1_dbpi1"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_wl1yt"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="3_80ye2"]
-[ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/textures/outlinePressed.tres" id="4_wl1yt"]
-[ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/textures/outlineHover.tres" id="5_80ye2"]
+[ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/textures/buttonPressed.tres" id="5_y8my7"]
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="6_80ye2"]
 [ext_resource type="StyleBox" uid="uid://d4bp4d1glgw57" path="res://assets/textures/readOnlyBox.tres" id="6_y8my7"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="7_j8faf"]
 [ext_resource type="Texture2D" uid="uid://ddym0wphifxfa" path="res://assets/images/3.png" id="8_gnd4y"]
+[ext_resource type="PackedScene" uid="uid://bycf8vty60lla" path="res://scenes/CassetteSelector.tscn" id="8_lrnsx"]
+[ext_resource type="FontFile" uid="uid://2267i054h1mg" path="res://assets/fonts/Fredoka/static/Fredoka_SemiCondensed-SemiBold.ttf" id="9_y8my7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qarm5"]
+bg_color = Color(0.36078432, 0.4862745, 0.43529412, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 20
+border_color = Color(0.18039216, 0.24313726, 0.23921569, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gpa3m"]
 bg_color = Color(0.98039216, 0.2784314, 0.24705882, 1)
@@ -16,6 +29,18 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 8
+border_color = Color(0.37254903, 0.023529412, 0.02745098, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y8my7"]
+bg_color = Color(0.96024984, 0.15498966, 0.15773508, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
 border_color = Color(0.37254903, 0.023529412, 0.02745098, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
@@ -34,34 +59,74 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_80ye2"]
-bg_color = Color(0.06453203, 0.08514362, 0.10448489, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn6xx"]
+bg_color = Color(0.8903103, 0.86145365, 0.8140586, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_color = Color(0.4606502, 0.31835365, 0.16094074, 1)
+shadow_color = Color(0, 0, 0, 0.19215687)
+shadow_size = 4
+shadow_offset = Vector2(-5, 0)
 
 [node name="PlayerLists" type="Control" unique_id=1978939424]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dbpi1")
 
-[node name="buttons" type="BoxContainer" parent="." unique_id=1425155699]
+[node name="lblStatus" type="Label" parent="." unique_id=1581201290]
 layout_mode = 0
-offset_left = 784.0
-offset_top = 566.0
-offset_right = 1132.0
-offset_bottom = 620.0
-theme_override_constants/separation = 20
+offset_left = 213.0
+offset_top = 71.0
+offset_right = 467.0
+offset_bottom = 103.0
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="casettePanel" type="Panel" parent="." unique_id=88166639]
+layout_mode = 0
+offset_left = 699.0
+offset_top = 118.0
+offset_right = 1044.0
+offset_bottom = 581.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
+
+[node name="txtRoomCode" type="LineEdit" parent="casettePanel" unique_id=1500426469]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 321.0
+offset_right = 323.0
+offset_bottom = 372.0
+theme_override_colors/selection_color = Color(0.9324795, 0.98669416, 0.9943195, 1)
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("6_y8my7")
+theme_override_styles/read_only = ExtResource("6_y8my7")
+text = "test"
+alignment = 1
+
+[node name="buttons" type="BoxContainer" parent="casettePanel" unique_id=1425155699]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 385.0
+offset_right = 315.0
+offset_bottom = 454.0
+theme_override_constants/separation = 0
 alignment = 2
 
-[node name="btnLeave" type="Button" parent="buttons" unique_id=2025470757]
-custom_minimum_size = Vector2(110, 0)
+[node name="btnLeave" type="Button" parent="casettePanel/buttons" unique_id=2025470757]
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_gpa3m")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_y8my7")
 theme_override_styles/hover = SubResource("StyleBoxFlat_r33vc")
 text = "Leave"
 
-[node name="btnStartGame" type="Button" parent="buttons" unique_id=653620749]
-custom_minimum_size = Vector2(130, 0)
+[node name="btnStartGame" type="Button" parent="casettePanel/buttons" unique_id=653620749]
+custom_minimum_size = Vector2(140, 0)
 custom_maximum_size = Vector2(300, -1)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
@@ -71,144 +136,191 @@ theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = ExtResource("3_80ye2")
-theme_override_styles/pressed = ExtResource("4_wl1yt")
-theme_override_styles/hover = ExtResource("5_80ye2")
+theme_override_styles/pressed = ExtResource("5_y8my7")
+theme_override_styles/hover = ExtResource("6_80ye2")
 theme_override_styles/disabled = ExtResource("6_80ye2")
 text = "Start Game"
 
-[node name="txtRoomCode" type="LineEdit" parent="." unique_id=1500426469]
+[node name="levelBtn" type="BoxContainer" parent="casettePanel" unique_id=1240605746]
 layout_mode = 0
-offset_left = 407.0
-offset_top = 557.0
-offset_right = 778.0
-offset_bottom = 624.0
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/read_only = ExtResource("6_y8my7")
-text = "test"
-alignment = 1
+offset_left = 50.0
+offset_top = 228.0
+offset_right = 300.0
+offset_bottom = 270.0
+theme_override_constants/separation = 10
+alignment = 2
 
-[node name="Panel" type="Panel" parent="." unique_id=2048385021]
-layout_mode = 0
-offset_right = 1153.0
-offset_bottom = 63.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_80ye2")
-
-[node name="lblRoomName" type="Label" parent="Panel" unique_id=836218544]
-layout_mode = 0
-offset_left = 478.0
-offset_top = 12.0
-offset_right = 733.0
-offset_bottom = 61.0
+[node name="btnPrev" type="Button" parent="casettePanel/levelBtn" unique_id=1903295969]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
 theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_gpa3m")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_y8my7")
+theme_override_styles/hover = SubResource("StyleBoxFlat_r33vc")
+text = "Prev"
+
+[node name="btnNext" type="Button" parent="casettePanel/levelBtn" unique_id=549216995]
+custom_minimum_size = Vector2(120, 0)
+custom_maximum_size = Vector2(300, -1)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = ExtResource("3_80ye2")
+theme_override_styles/pressed = ExtResource("5_y8my7")
+theme_override_styles/hover = ExtResource("6_80ye2")
+theme_override_styles/disabled = ExtResource("6_80ye2")
+text = "Next"
+
+[node name="Node2D" parent="casettePanel" unique_id=1540828951 instance=ExtResource("8_lrnsx")]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 38.0
+offset_right = 324.0
+offset_bottom = 226.0
+
+[node name="FolderShape" type="Polygon2D" parent="." unique_id=346384612]
+position = Vector2(-1.1399612, 0)
+scale = Vector2(1.0018417, 1)
+color = Color(0.7044349, 0.5422884, 0.33147475, 1)
+polygon = PackedVector2Array(82.98712, 67, 570.0901, 67, 613.01105, 104, 614, 392, 583, 410, 582, 648, 79, 647)
+
+[node name="folderPanel" type="Panel" parent="FolderShape" unique_id=882471142]
+offset_left = 104.946686
+offset_top = 93.0
+offset_right = 567.94666
+offset_bottom = 649.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_gn6xx")
+
+[node name="playerSlotsContainer" type="VBoxContainer" parent="FolderShape/folderPanel" unique_id=249810388]
+layout_mode = 0
+offset_left = 31.0
+offset_top = 25.0
+offset_right = 441.0
+offset_bottom = 543.0
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer" unique_id=691257938]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28506592, 0.1684469, 0.15360379, 1)
+theme_override_fonts/font = ExtResource("9_y8my7")
+theme_override_font_sizes/font_size = 32
+text = "ON DUTIES"
+horizontal_alignment = 1
+
+[node name="lblRoomName" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer" unique_id=836218544]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28506592, 0.1684469, 0.15360379, 1)
+theme_override_fonts/font = ExtResource("7_j8faf")
+theme_override_font_sizes/font_size = 20
 text = "test"
 horizontal_alignment = 1
 
+[node name="PlayerSlot1" type="HBoxContainer" parent="FolderShape/folderPanel/playerSlotsContainer" unique_id=1581859459]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="btnAvatar" type="TextureButton" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot1" unique_id=1845484515]
+custom_minimum_size = Vector2(160, 128)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("8_gnd4y")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot1" unique_id=1253035029]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="lblPlayerName" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot1/VBoxContainer" unique_id=1816849451]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28506592, 0.1684469, 0.15360379, 1)
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 20
+text = "Player name"
+
+[node name="lblRoleStatus" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot1/VBoxContainer" unique_id=2142740215]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32082906, 0.21509367, 0.16273049, 1)
+theme_override_fonts/font = ExtResource("7_j8faf")
+text = "Ready"
+
+[node name="PlayerSlot2" type="HBoxContainer" parent="FolderShape/folderPanel/playerSlotsContainer" unique_id=5553652]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="btnAvatar" type="TextureButton" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot2" unique_id=1639982202]
+custom_minimum_size = Vector2(160, 128)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("8_gnd4y")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot2" unique_id=1621109355]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="lblPlayerName" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot2/VBoxContainer" unique_id=452210089]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28506592, 0.1684469, 0.15360379, 1)
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 20
+text = "Player name"
+
+[node name="lblRoleStatus" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot2/VBoxContainer" unique_id=223431032]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32082906, 0.21509367, 0.16273049, 1)
+theme_override_fonts/font = ExtResource("7_j8faf")
+text = "Ready"
+
+[node name="PlayerSlot3" type="HBoxContainer" parent="FolderShape/folderPanel/playerSlotsContainer" unique_id=1134070285]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="btnAvatar" type="TextureButton" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot3" unique_id=1585850362]
+custom_minimum_size = Vector2(160, 128)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("8_gnd4y")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot3" unique_id=345973232]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="lblPlayerName" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot3/VBoxContainer" unique_id=603733342]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28506592, 0.1684469, 0.15360379, 1)
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 20
+text = "Player name"
+
+[node name="lblRoleStatus" type="Label" parent="FolderShape/folderPanel/playerSlotsContainer/PlayerSlot3/VBoxContainer" unique_id=1049060324]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32082906, 0.21509367, 0.16273049, 1)
+theme_override_fonts/font = ExtResource("7_j8faf")
+text = "Ready"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1669368916]
+visible = false
 layout_mode = 0
-offset_left = -20.0
-offset_top = 15.0
-offset_right = 300.0
-offset_bottom = 208.0
-rotation = -0.12915437
+offset_left = 939.99994
+offset_top = -3.9999933
+offset_right = 1160.0
+offset_bottom = 130.07112
+rotation = 0.06981317
 
 [node name="TextureRect" type="TextureRect" parent="HBoxContainer" unique_id=1922019758]
 layout_mode = 2
 texture = ExtResource("8_gnd4y")
 expand_mode = 3
 stretch_mode = 5
-
-[node name="lblStatus" type="Label" parent="." unique_id=1581201290]
-layout_mode = 0
-offset_left = 467.0
-offset_top = 526.0
-offset_right = 721.0
-offset_bottom = 558.0
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
-
-[node name="playerSlotsContainer" type="HBoxContainer" parent="." unique_id=732919288]
-layout_mode = 0
-offset_left = 172.0
-offset_top = 194.0
-offset_right = 1034.0
-offset_bottom = 448.0
-theme_override_constants/separation = 50
-alignment = 1
-
-[node name="PlayerSlot1" type="VBoxContainer" parent="playerSlotsContainer" unique_id=1427981381]
-layout_mode = 2
-alignment = 1
-
-[node name="btnAvatar" type="TextureButton" parent="playerSlotsContainer/PlayerSlot1" unique_id=1845484515]
-custom_minimum_size = Vector2(160, 128)
-layout_mode = 2
-size_flags_vertical = 4
-texture_normal = ExtResource("8_gnd4y")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="lblPlayerName" type="Label" parent="playerSlotsContainer/PlayerSlot1" unique_id=1816849451]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 20
-text = "Player name"
-horizontal_alignment = 1
-
-[node name="lblRoleStatus" type="Label" parent="playerSlotsContainer/PlayerSlot1" unique_id=2142740215]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("7_j8faf")
-text = "Ready"
-horizontal_alignment = 1
-
-[node name="PlayerSlot2" type="VBoxContainer" parent="playerSlotsContainer" unique_id=2079123798]
-layout_mode = 2
-alignment = 1
-
-[node name="btnAvatar" type="TextureButton" parent="playerSlotsContainer/PlayerSlot2" unique_id=889293907]
-custom_minimum_size = Vector2(160, 128)
-layout_mode = 2
-size_flags_vertical = 4
-texture_normal = ExtResource("8_gnd4y")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="lblPlayerName" type="Label" parent="playerSlotsContainer/PlayerSlot2" unique_id=1980414650]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 20
-text = "Player name"
-horizontal_alignment = 1
-
-[node name="lblRoleStatus" type="Label" parent="playerSlotsContainer/PlayerSlot2" unique_id=458177880]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("7_j8faf")
-text = "Ready"
-horizontal_alignment = 1
-
-[node name="PlayerSlot3" type="VBoxContainer" parent="playerSlotsContainer" unique_id=2107459151]
-layout_mode = 2
-alignment = 1
-
-[node name="btnAvatar" type="TextureButton" parent="playerSlotsContainer/PlayerSlot3" unique_id=168484054]
-custom_minimum_size = Vector2(160, 128)
-layout_mode = 2
-size_flags_vertical = 4
-texture_normal = ExtResource("8_gnd4y")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="lblPlayerName" type="Label" parent="playerSlotsContainer/PlayerSlot3" unique_id=2142780327]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 20
-text = "Player name"
-horizontal_alignment = 1
-
-[node name="lblRoleStatus" type="Label" parent="playerSlotsContainer/PlayerSlot3" unique_id=528295276]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("7_j8faf")
-text = "Ready"
-horizontal_alignment = 1
