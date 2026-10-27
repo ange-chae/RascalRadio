@@ -3,91 +3,149 @@ using Godot;
 using RascalRadio.Core.Systems;
 
 // Operator-side Line Override keypad. Built in code and dropped into Studio Desk slot 1.
-// The Operator only sees the incoming LINE number. The rule and the studio level are in the
-// Technician's manual, so the Operator has to ask the Technician for the code.
 public partial class KeypadModule : VBoxContainer
 {
-	public int Line { get; set; }
-	public bool StaticFault { get; set; }
+    private int _lineValue;
+    public int Line
+    {
+        get => _lineValue;
+        set
+        {
+            _lineValue = value;
+            if (_line != null)
+                _line.Text = _lineValue > 0 ? $"INCOMING LINE: {_lineValue}" : "No incoming line";
+        }
+    }
 
-	private readonly KeypadLogic _logic = new();
-	private readonly List<Button> _keys = new();
-	private Label _line, _entry, _status;
-	private bool _solved;
+    private bool _staticFaultValue;
+    public bool StaticFault
+    {
+        get => _staticFaultValue;
+        set
+        {
+            _staticFaultValue = value;
+            UpdateStatusText();
+        }
+    }
 
-	public override void _Ready()
-	{
-		AddThemeConstantOverride("separation", 6);
-		AddChild(new Label { Text = "🔢 LINE OVERRIDE", HorizontalAlignment = HorizontalAlignment.Center });
-		_line = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		AddChild(_line);
-		_entry = new Label { Text = "Entry: _", HorizontalAlignment = HorizontalAlignment.Center };
-		AddChild(_entry);
+    private string _currentEntry = "";
+    private readonly List<Button> _keys = new();
+    private Label _line, _entry, _status;
+    private bool _solved;
 
-		var grid = new GridContainer { Columns = 3 };
-		AddChild(grid);
-		foreach (string key in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "CLEAR", "0", "ROUTE" })
-		{
-			string k = key;
-			var b = new Button { Text = k, CustomMinimumSize = new Vector2(64, 36) };
-			b.Pressed += () => OnKey(k);
-			grid.AddChild(b);
-			_keys.Add(b);
-		}
+    public override void _Ready()
+    {
+        AddThemeConstantOverride("separation", 8);
 
-		_status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-		AddChild(_status);
+        var title = new Label { Text = "LINE OVERRIDE", HorizontalAlignment = HorizontalAlignment.Center };
+        title.AddThemeFontSizeOverride("font_size", 16);
+        title.AddThemeColorOverride("font_color", UiStyle.Ink);
+        AddChild(title);
 
-		Refresh(Line, StaticFault);
+        var display = new PanelContainer();
+        display.AddThemeStyleboxOverride("panel", UiStyle.Screen());
+        AddChild(display);
+        var displayBox = new VBoxContainer();
+        display.AddChild(displayBox);
 
-		if (GameSession.Instance != null) GameSession.Instance.Feedback += OnFeedback;
-	}
+        _line = new Label { HorizontalAlignment = HorizontalAlignment.Center };
+        _line.AddThemeFontSizeOverride("font_size", 14);
+        _line.AddThemeColorOverride("font_color", UiStyle.Ink);
+        displayBox.AddChild(_line);
 
-	public override void _ExitTree()
-	{
-		if (GameSession.Instance != null) GameSession.Instance.Feedback -= OnFeedback;
-	}
+        _entry = new Label { Text = "_", HorizontalAlignment = HorizontalAlignment.Center };
+        _entry.AddThemeFontSizeOverride("font_size", 30);
+        _entry.AddThemeColorOverride("font_color", UiStyle.Ink);
+        displayBox.AddChild(_entry);
 
-	/// <summary>A new problem arrived (or the static fault changed).</summary>
-	public void Refresh(int line, bool staticFault)
-	{
-		Line = line; StaticFault = staticFault;
-		if (_line == null) return;   // _Ready has not run yet; it will call Refresh itself
+        var grid = new GridContainer { Columns = 3 };
+        grid.AddThemeConstantOverride("h_separation", 6);
+        grid.AddThemeConstantOverride("v_separation", 6);
+        AddChild(grid);
+        foreach (string key in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "CLEAR", "0", "ROUTE" })
+        {
+            string k = key;
+            var b = new Button { Text = k, CustomMinimumSize = new Vector2(64, 44), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            b.AddThemeFontSizeOverride("font_size", k.Length > 1 ? 13 : 20);
+            UiStyle.StyleButton(b, k == "ROUTE" ? UiStyle.Yellow : UiStyle.Cream);
+            b.Pressed += () => OnKey(k);
+            grid.AddChild(b);
+            _keys.Add(b);
+        }
 
-		_line.Text = line > 0 ? $"INCOMING LINE: {line}" : "No incoming line";
-		_status.Text = staticFault
-			? "⚡ STATIC FAULT. Ask the Technician how to clear it."
-			: "You don't have the rules. Read the line number to the Technician and ask for the override code.";
-		_logic.Clear();
-		_entry.Text = "Entry: _";
-	}
+        _status = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            CustomMinimumSize = new Vector2(0, 48),
+        };
+        _status.AddThemeFontSizeOverride("font_size", 13);
+        _status.AddThemeColorOverride("font_color", UiStyle.Ink);
+        AddChild(_status);
 
-	private void OnKey(string key)
-	{
-		if (_solved) return;
+        // Apply initial values now that UI nodes exist
+        _line.Text = Line > 0 ? $"INCOMING LINE: {Line}" : "No incoming line";
+        UpdateStatusText();
 
-		if (key == "CLEAR") _logic.Clear();
-		else if (key == "ROUTE")
-		{
-			if (_logic.HasEntry) GameSession.Instance.SubmitKeypad(_logic.Entry);
-			else _status.Text = "↻ Type a code first.";
-			_logic.Clear();
-		}
-		else _logic.Press(int.Parse(key));
+        if (GameSession.Instance != null) GameSession.Instance.Feedback += OnFeedback;
+    }
 
-		_entry.Text = "Entry: " + (_logic.Entry == "" ? "_" : _logic.Entry);
-	}
+    public override void _ExitTree()
+    {
+        if (GameSession.Instance != null) GameSession.Instance.Feedback -= OnFeedback;
+    }
 
-	private void OnFeedback(string text, bool success)
-	{
-		if (_solved || !text.StartsWith(GameSession.KeypadTag)) return;
-		_status.Text = text.Substring(GameSession.KeypadTag.Length);
-	}
+    public void Refresh(int line, bool staticFault)
+    {
+        Line = line;
+        StaticFault = staticFault;
+        _currentEntry = "";
+        _entry.Text = "_";
+    }
 
-	public void SetSolved()
-	{
-		_solved = true;
-		foreach (var b in _keys) b.Disabled = true;
-		_status.Text = "✔ SOLVED";
-	}
+    private void UpdateStatusText()
+    {
+        if (_status == null) return;
+        _status.Text = StaticFault
+            ? "⚡ STATIC FAULT. Ask the Technician how to clear it."
+            : "You don't have the rules. Read the line number to the Technician and ask for the override code.";
+    }
+
+    private void OnKey(string key)
+    {
+        if (_solved) return;
+
+        if (key == "CLEAR")
+        {
+            _currentEntry = "";
+        }
+        else if (key == "ROUTE")
+        {
+            if (_currentEntry.Length > 0) GameSession.Instance.SubmitKeypad(_currentEntry);
+            else _status.Text = "↻ Type a code first.";
+            _currentEntry = "";
+        }
+        else
+        {
+            if (_currentEntry.Length < 6)
+            {
+                _currentEntry += key;
+            }
+        }
+
+        _entry.Text = _currentEntry == "" ? "_" : _currentEntry;
+    }
+
+    private void OnFeedback(string text, bool success)
+    {
+        if (_solved || !text.StartsWith(GameSession.KeypadTag)) return;
+        _status.Text = text.Substring(GameSession.KeypadTag.Length);
+    }
+
+    public void SetSolved()
+    {
+        _solved = true;
+        foreach (var b in _keys) b.Disabled = true;
+        _status.Text = "✔ SOLVED";
+    }
 }

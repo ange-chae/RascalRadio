@@ -58,6 +58,7 @@ public partial class RoleSelection : Control
 		_statusLabel = GetNode<Label>("Margin/Main/BottomBar/StatusLabel");
 		_backButton = GetNode<Button>("Margin/Main/TopBar/BackButton");
 
+
 		foreach (Node child in _cardsRow.GetChildren()) child.QueueFree();
 
 		// Get the parent lobby to handle networking
@@ -99,14 +100,13 @@ public partial class RoleSelection : Control
 			_cards[role] = card;
 		}
 	}
-	private void OnRandomizePressed()
-	{
-		var roles = RoleInfo.Keys.ToList();
-		_selectedRole = roles[new Random().Next(roles.Count)].ToString();
-		_playerList.Rpc(PlayerList.MethodName.UpdatePlayerStateRpc, LocalPlayerId, _selectedRole, _isReady);
-	}
+    private void OnRandomizePressed()
+    {
+        if (!Multiplayer.IsServer()) return;
+        _playerList.RandomizeAllRoles();
+    }
 
-	private void OnReadyPressed()
+    private void OnReadyPressed()
 	{
 		_isReady = !_isReady;
 		_playerList.Rpc(PlayerList.MethodName.UpdatePlayerStateRpc, LocalPlayerId, _selectedRole, _isReady);

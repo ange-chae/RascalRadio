@@ -160,6 +160,32 @@ public partial class PlayerList : Control
             roleSelection.RefreshFromPlayerList();
         }
     }
+    public void RandomizeAllRoles()
+    {
+        if (!Multiplayer.IsServer()) return;
+
+        var rng = new Random();
+        var roles = new List<string> { "Broadcaster", "RadioTechnician", "RadioOperator" }
+            .OrderBy(_ => rng.Next()).ToList();
+
+        var ids = _networkManager.Players.Keys.ToArray();
+        var assigned = new string[ids.Length];
+        for (int i = 0; i < ids.Length; i++) assigned[i] = roles[i % roles.Count];
+
+        Rpc(MethodName.ApplyRandomRolesRpc, ids, assigned);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ApplyRandomRolesRpc(long[] peerIds, string[] roles)
+    {
+        for (int i = 0; i < peerIds.Length; i++)
+        {
+            PlayerRoles[peerIds[i]] = roles[i];
+            PlayerReady[peerIds[i]] = false;   // roles changed, so everyone re-confirms
+        }
+        RefreshPlayerList();
+        GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
+    }
 
     public int GetPlayerCount() => _networkManager?.Players.Count ?? 0;
 
@@ -325,14 +351,36 @@ public partial class PlayerList : Control
         }
     }
 
-    private async void ShowStatusMessage(string message, Color color)
+    private CanvasLayer _toastLayer;
+
+    private void ShowStatusMessage(string message, Color color)
     {
-        if (_lblStatus == null) return;
-        _lblStatus.Text = message;
-        _lblStatus.AddThemeColorOverride("font_color", color);
-        _lblStatus.Visible = true;
-        await ToSignal(GetTree().CreateTimer(3.0), SceneTreeTimer.SignalName.Timeout);
-        if (GodotObject.IsInstanceValid(_lblStatus) && _lblStatus.Text == message) _lblStatus.Text = "";
+        if (IsInstanceValid(_toastLayer)) _toastLayer.QueueFree();
+
+        _toastLayer = new CanvasLayer { Layer = 50 };
+        AddChild(_toastLayer);
+
+        var toast = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color(1, 1, 1, 0) };
+        toast.AddThemeStyleboxOverride("panel", UiStyle.Card());
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 10);
+        toast.AddChild(row);
+        row.AddChild(new ColorRect { Color = color, CustomMinimumSize = new Vector2(8, 0) });
+
+        var label = new Label { Text = message };
+        label.AddThemeColorOverride("font_color", UiStyle.Ink);
+        row.AddChild(label);
+
+        _toastLayer.AddChild(toast);
+        toast.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterTop, Control.LayoutPresetMode.Minsize, 24);
+        toast.GrowHorizontal = Control.GrowDirection.Both;
+
+        var tween = toast.CreateTween();
+        tween.TweenProperty(toast, "modulate:a", 1.0f, 0.2f);
+        tween.TweenInterval(2.5);
+        tween.TweenProperty(toast, "modulate:a", 0.0f, 0.4f);
+        tween.TweenCallback(Callable.From(_toastLayer.QueueFree));
     }
 
     public void CheckStartConditionsAndNotify()
@@ -367,17 +415,10 @@ public partial class PlayerList : Control
 
     private void OnLeaveButtonPressed()
     {
-        var confirmDialog = new ConfirmationDialog
-        {
-            Title = "Leave Studio",
-            DialogText = "Are you sure you want to leave the studio?",
-            OkButtonText = "Leave",
-            CancelButtonText = "Stay"
-        };
-        AddChild(confirmDialog);
-        confirmDialog.PopupCentered();
-        confirmDialog.Confirmed += () => { ConfirmLeave(); confirmDialog.QueueFree(); };
-        confirmDialog.Canceled += () => confirmDialog.QueueFree();
+        ConfirmPopup.Show(this, "Leave Studio",
+            Multiplayer.IsServer() ? "You're the host. Leaving ends the studio for everyone."
+                                   : "Are you sure you want to leave the studio?",
+            "Leave", "Stay", ConfirmLeave);
     }
 
     private void ConfirmLeave()
