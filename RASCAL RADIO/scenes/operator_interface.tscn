@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://cnkbwr25ylla3"]
 
+[ext_resource type="Script" uid="uid://r6chythj27hx" path="res://Scripts/OperatorInterface.cs" id="1_0gnke"]
 [ext_resource type="Shader" uid="uid://bssu45r4uxjor" path="res://scenes/UV.gdshader" id="1_d54sb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v8auc"]
@@ -109,6 +110,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_0gnke")
 
 [node name="Dim" type="ColorRect" parent="." unique_id=811572056]
 layout_mode = 1
@@ -182,6 +184,7 @@ theme_override_constants/paragraph_spacing = 2
 text = "QUOTA"
 
 [node name="QuotaCount" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=1407093989]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "0/3"
@@ -192,11 +195,13 @@ theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "STRIKES"
 
 [node name="StrikeCount" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=286327561]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "0/3"
 
 [node name="CloseBtn" type="Button" parent="Dim/Popup/Margin/VBox/Hud/Hud/Row" unique_id=211457003]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_d54sb")
 text = "X"
@@ -328,16 +333,18 @@ custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 stretch_mode = 5
 
-[node name="NameLabel" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow" unique_id=74757651]
+[node name="NameBox" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow" unique_id=74757651]
 layout_mode = 2
 theme_override_constants/separation = -6
 
-[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow/NameLabel" unique_id=1066114383]
+[node name="NameLabel" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow/NameBox" unique_id=1066114383]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = " Monique "
 
-[node name="Label2" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow/NameLabel" unique_id=1854698295]
+[node name="CallerNumLabel" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/CallerRow/NameBox" unique_id=1854698295]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/line_spacing = 7
 theme_override_constants/paragraph_spacing = 2
@@ -346,7 +353,8 @@ text = "  Caller 1 of 4"
 [node name="QuoteBox" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox" unique_id=1215841014]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/QuoteBox" unique_id=914679919]
+[node name="QuoteLabel" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/CallerCard/CallerBox/QuoteBox" unique_id=914679919]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/line_spacing = -6
 theme_override_font_sizes/font_size = 14
@@ -363,6 +371,7 @@ text = "🖂  Tell the Broadcaster what to press"
 autowrap_mode = 3
 
 [node name="VerdictLabel" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=872059678]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.030000016, 0.041999817, 1)
 text = "ACCEPT "
@@ -400,11 +409,12 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_uqu8e")
 
-[node name="slotbox1" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot1" unique_id=448017174]
+[node name="Slot1Box" type="VBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot1" unique_id=448017174]
+unique_name_in_owner = true
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot1/slotbox1" unique_id=3076172]
+[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/Grid/slot1/Slot1Box" unique_id=3076172]
 layout_mode = 2
 text = "Empty Slot"
 horizontal_alignment = 1
@@ -468,14 +478,9 @@ autowrap_mode = 3
 [node name="ColorRect" type="ColorRect" parent="." unique_id=2060657108]
 material = SubResource("ShaderMaterial_0gnke")
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -500.0
-offset_top = -291.0
-offset_right = 500.0
-offset_bottom = 290.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2

@@ -416,6 +416,9 @@ public partial class PlayerList : Control
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void StartGameRpc(int selectedLevelIndex)
     {
+        if (selectedLevelIndex >= 0 && selectedLevelIndex < _availableLevels.Count)
+            GameSession.Instance.BeginLevel(_availableLevels[selectedLevelIndex].LevelId);
+
         long myPeerId = Multiplayer.GetUniqueId();
 
         if (PlayerRoles.TryGetValue(myPeerId, out string myRole))
@@ -434,7 +437,6 @@ public partial class PlayerList : Control
                 case "radio operator":
                     sceneToLoad = "res://scenes/operator_interface.tscn";
                     break;
-                case "operator":
                 case "broadcaster":
                     sceneToLoad = "res://scenes/broadcaster_interface.tscn";
                     break;
@@ -461,8 +463,8 @@ public partial class PlayerList : Control
     {
         if (_btnStartGame != null && GodotObject.IsInstanceValid(_btnStartGame)) _btnStartGame.Pressed -= OnStartGamePressed;
         if (_btnLeave != null && GodotObject.IsInstanceValid(_btnLeave)) _btnLeave.Pressed -= OnLeaveButtonPressed;
-        if (_btnPrev != null && GodotObject.IsInstanceValid(_btnPrev)) _btnPrev.Pressed -= OnPrevPressed;
-        if (_btnNext != null && GodotObject.IsInstanceValid(_btnNext)) _btnNext.Pressed -= OnNextPressed;
+        if (_btnPrev != null && GodotObject.IsInstanceValid(_btnPrev) && _btnPrev.IsConnected(BaseButton.SignalName.Pressed, Callable.From(OnPrevPressed))) _btnPrev.Pressed -= OnPrevPressed;
+        if (_btnNext != null && GodotObject.IsInstanceValid(_btnNext) && _btnNext.IsConnected(BaseButton.SignalName.Pressed, Callable.From(OnNextPressed))) _btnNext.Pressed -= OnNextPressed;
 
         if (_networkManager != null && GodotObject.IsInstanceValid(_networkManager))
         {
