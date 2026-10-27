@@ -399,5 +399,4 @@ offset_right = 464.0
 offset_bottom = 632.0
 theme_override_fonts/font = ExtResource("2_wl1yt")
 theme_override_font_sizes/font_size = 18
-text = "test"
 horizontal_alignment = 1
