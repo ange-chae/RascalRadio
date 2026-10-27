@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://kfeyviypcu2f"]
 
 [ext_resource type="Shader" uid="uid://bssu45r4uxjor" path="res://scenes/UV.gdshader" id="1_bnacn"]
+[ext_resource type="Script" uid="uid://c7n0xldsu4vqn" path="res://Scripts/TechnicianInterface.cs" id="1_t02kc"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tyn63"]
 bg_color = Color(0.9529412, 0.7921569, 0.4627451, 1)
@@ -126,6 +127,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_t02kc")
 
 [node name="Dim" type="ColorRect" parent="." unique_id=860590239]
 layout_mode = 1
@@ -194,6 +196,7 @@ theme_override_constants/paragraph_spacing = 2
 text = "QUOTA"
 
 [node name="QuotaCount" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Row" unique_id=1902486609]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "0/3"
@@ -204,11 +207,13 @@ theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "STRIKES"
 
 [node name="StrikeCount" type="Label" parent="Dim/Popup/Margin/VBox/Hud/Row" unique_id=872429031]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "0/3"
 
 [node name="CloseBtn" type="Button" parent="Dim/Popup/Margin/VBox/Hud/Row" unique_id=1407501461]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_bnacn")
 text = "X"
@@ -236,6 +241,7 @@ theme_override_font_sizes/font_size = 25
 text = "  MANUAL"
 
 [node name="TabBasics" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1742778780]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
@@ -248,6 +254,7 @@ text = "  Station basics"
 alignment = 0
 
 [node name="TabStatus" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=2075588481]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
@@ -260,6 +267,7 @@ text = "   Status words"
 alignment = 0
 
 [node name="TabStrikes" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1267259097]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
@@ -272,6 +280,7 @@ text = "  Strikes and quota"
 alignment = 0
 
 [node name="TabRaccoon" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1474617884]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
@@ -283,14 +292,17 @@ button_group = SubResource("ButtonGroup_v0ep5")
 text = "  Raccoon watch"
 alignment = 0
 
-[node name="TabModules" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1250164439]
+[node name="TabModules" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1938108888]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-disabled = true
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = SubResource("SystemFont_bj2yc")
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = "   Module Pages
-"
+text = "  Module Pages"
 alignment = 0
 
 [node name="Right" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column" unique_id=1932407167]
@@ -306,14 +318,15 @@ theme_override_constants/separation = 10
 [node name="PageHeaderRow" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=1262394878]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageHeaderRow" unique_id=1706867239]
+[node name="PageTitle" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageHeaderRow" unique_id=1706867239]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7019608, 0.1254902, 0.13333334, 1)
 theme_override_fonts/font = SubResource("SystemFont_a8lpy")
 theme_override_font_sizes/font_size = 23
 text = "  STATION BASICS"
 
-[node name="PageTitle" type="Control" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageHeaderRow" unique_id=1574076704]
+[node name="HeaderSpacer" type="Control" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageHeaderRow" unique_id=1574076704]
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -321,7 +334,8 @@ size_flags_horizontal = 3
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_qhofu")
 
-[node name="Label" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageHeaderRow/PanelContainer" unique_id=2134960684]
+[node name="PageTag" type="Label" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageHeaderRow/PanelContainer" unique_id=2134960684]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_b0x7g")
@@ -331,6 +345,7 @@ text = "PAGE 1 OF 4"
 layout_mode = 2
 
 [node name="PageText" type="RichTextLabel" parent="Dim/Popup/Margin/VBox/Column/Right/RightVBox/PageCard" unique_id=124936494]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_fonts/normal_font = SubResource("SystemFont_ckgnr")
 theme_override_styles/normal = SubResource("StyleBoxFlat_1vsyy")
@@ -407,6 +422,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=429931438]
+visible = false
 material = SubResource("ShaderMaterial_t02kc")
 layout_mode = 1
 anchors_preset = 8
@@ -420,3 +436,4 @@ offset_right = 500.0
 offset_bottom = 290.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2

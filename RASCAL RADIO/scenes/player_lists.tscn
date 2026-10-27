@@ -59,6 +59,78 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lqo1b"]
+bg_color = Color(0.31680867, 0.43290144, 0.3858804, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0gjkf"]
+bg_color = Color(0.28313664, 0.38853365, 0.34500206, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o2i1r"]
+bg_color = Color(0.37399918, 0.49917233, 0.4471761, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sggwb"]
+bg_color = Color(0.31764707, 0.43137255, 0.38431373, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m36wf"]
+bg_color = Color(0.37254903, 0.49803922, 0.44705883, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1f8g2"]
+bg_color = Color(0.37254903, 0.49803922, 0.44705883, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 8
+border_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn6xx"]
 bg_color = Color(0.8903103, 0.86145365, 0.8140586, 1)
 border_width_left = 3
@@ -74,22 +146,12 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dbpi1")
 
-[node name="lblStatus" type="Label" parent="." unique_id=1581201290]
-layout_mode = 0
-offset_left = 213.0
-offset_top = 71.0
-offset_right = 467.0
-offset_bottom = 103.0
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
-
 [node name="casettePanel" type="Panel" parent="." unique_id=88166639]
-layout_mode = 0
-offset_left = 699.0
-offset_top = 118.0
-offset_right = 1044.0
-offset_bottom = 581.0
+layout_mode = 1
+offset_left = 695.0
+offset_top = 137.0
+offset_right = 1040.0
+offset_bottom = 600.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
 
 [node name="txtRoomCode" type="LineEdit" parent="casettePanel" unique_id=1500426469]
@@ -144,9 +206,9 @@ text = "Start Game"
 [node name="levelBtn" type="BoxContainer" parent="casettePanel" unique_id=1240605746]
 layout_mode = 0
 offset_left = 50.0
-offset_top = 228.0
+offset_top = 234.0
 offset_right = 300.0
-offset_bottom = 270.0
+offset_bottom = 268.0
 theme_override_constants/separation = 10
 alignment = 2
 
@@ -154,34 +216,38 @@ alignment = 2
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBoxFlat_gpa3m")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_y8my7")
-theme_override_styles/hover = SubResource("StyleBoxFlat_r33vc")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_lqo1b")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_0gjkf")
+theme_override_styles/hover = SubResource("StyleBoxFlat_o2i1r")
 text = "Prev"
 
 [node name="btnNext" type="Button" parent="casettePanel/levelBtn" unique_id=549216995]
 custom_minimum_size = Vector2(120, 0)
 custom_maximum_size = Vector2(300, -1)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
-theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
-theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
-theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = ExtResource("3_80ye2")
-theme_override_styles/pressed = ExtResource("5_y8my7")
-theme_override_styles/hover = ExtResource("6_80ye2")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_sggwb")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1f8g2")
 theme_override_styles/disabled = ExtResource("6_80ye2")
 text = "Next"
+
+[node name="Line2D" type="Line2D" parent="casettePanel" unique_id=1489136782]
+position = Vector2(11.939535, 9.323168)
+scale = Vector2(0.9394811, 0.92239696)
+points = PackedVector2Array(19.03949, 16.823792, 20, 219, 141, 219, 173, 229, 202, 220, 326, 220, 326, 27, 19, 27)
+width = 20.0
+default_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+round_precision = 20
 
 [node name="Node2D" parent="casettePanel" unique_id=1540828951 instance=ExtResource("8_lrnsx")]
 layout_mode = 0
 offset_left = 24.0
-offset_top = 38.0
+offset_top = 30.0
 offset_right = 324.0
-offset_bottom = 226.0
+offset_bottom = 218.0
 
 [node name="FolderShape" type="Polygon2D" parent="." unique_id=346384612]
 position = Vector2(-1.1399612, 0)
@@ -324,3 +390,14 @@ layout_mode = 2
 texture = ExtResource("8_gnd4y")
 expand_mode = 3
 stretch_mode = 5
+
+[node name="lblStatus" type="Label" parent="." unique_id=1581201290]
+layout_mode = 0
+offset_left = 210.0
+offset_top = 600.0
+offset_right = 464.0
+offset_bottom = 632.0
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 18
+text = "test"
+horizontal_alignment = 1

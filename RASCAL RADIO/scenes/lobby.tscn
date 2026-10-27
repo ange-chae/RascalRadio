@@ -102,9 +102,9 @@ text = "Back"
 
 [node name="JoinPanel" type="Panel" parent="." unique_id=1214808467]
 layout_mode = 0
-offset_left = 254.0
+offset_left = 229.0
 offset_top = 233.0
-offset_right = 557.0
+offset_right = 532.0
 offset_bottom = 607.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
@@ -153,9 +153,9 @@ text = "Join Game"
 
 [node name="HostPanel" type="Panel" parent="." unique_id=1316113836]
 layout_mode = 0
-offset_left = 639.0
+offset_left = 614.0
 offset_top = 233.0
-offset_right = 942.0
+offset_right = 917.0
 offset_bottom = 607.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 
@@ -388,9 +388,9 @@ grow_vertical = 2
 [node name="MainText" type="Label" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=934935466]
 layout_mode = 0
 offset_left = 109.0
-offset_top = 127.0
+offset_top = 130.0
 offset_right = 373.0
-offset_bottom = 186.0
+offset_bottom = 189.0
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("3_pc087")
 theme_override_font_sizes/font_size = 48
@@ -398,6 +398,7 @@ text = "Host Game"
 horizontal_alignment = 1
 
 [node name="labelCode" type="Label" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=1907521916]
+visible = false
 layout_mode = 0
 offset_left = 68.0
 offset_top = 290.0
@@ -411,9 +412,9 @@ text = "Player Room"
 [node name="labelRoomName" type="Label" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=1183962049]
 layout_mode = 0
 offset_left = 68.0
-offset_top = 195.0
+offset_top = 238.0
 offset_right = 289.0
-offset_bottom = 220.0
+offset_bottom = 287.0
 theme_override_colors/font_color = Color(0.1882353, 0.1254902, 0.22352941, 1)
 theme_override_fonts/font = ExtResource("4_apkv3")
 theme_override_font_sizes/font_size = 18
@@ -423,9 +424,9 @@ text = "Enter Room Name
 [node name="inputRoomName" type="LineEdit" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=30633972]
 layout_mode = 0
 offset_left = 68.0
-offset_top = 224.0
+offset_top = 267.0
 offset_right = 426.0
-offset_bottom = 275.0
+offset_bottom = 318.0
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("8_ncsg4")
 theme_override_styles/normal = ExtResource("8_oipnb")
@@ -475,6 +476,7 @@ text = "Host Room
 "
 
 [node name="txtGeneratedRoomCode" type="LineEdit" parent="HostPopup/diskShape/DiskLabel/HostContent" unique_id=804127835]
+visible = false
 layout_mode = 0
 offset_left = 68.0
 offset_top = 319.0
@@ -498,9 +500,9 @@ default_color = Color(0.24087247, 0.0454394, 0.017448997, 1)
 custom_minimum_size = Vector2(50, 50)
 layout_mode = 1
 anchors_preset = 0
-offset_left = 316.0
+offset_left = 291.0
 offset_top = 270.0
-offset_right = 922.0
+offset_right = 897.0
 offset_bottom = 494.0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Control" unique_id=597335347]
@@ -536,9 +538,9 @@ stretch_mode = 5
 
 [node name="namePanel" type="Panel" parent="." unique_id=748266619]
 layout_mode = 0
-offset_left = 393.0
+offset_left = 368.0
 offset_top = 84.0
-offset_right = 789.0
+offset_right = 764.0
 offset_bottom = 201.0
 theme_override_styles/panel = ExtResource("3_yad6j")
 

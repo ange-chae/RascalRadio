@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://duic8x1pcjdmp"]
 
 [ext_resource type="Shader" uid="uid://bssu45r4uxjor" path="res://scenes/UV.gdshader" id="1_hv5po"]
+[ext_resource type="Script" uid="uid://cav1xjiwpc24o" path="res://Scripts/BroadcasterInterface.cs" id="1_img7a"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v0ep5"]
 bg_color = Color(0.95422953, 0.791425, 0.46363103, 1)
@@ -182,6 +183,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_img7a")
 
 [node name="Dim" type="ColorRect" parent="." unique_id=2026796190]
 layout_mode = 1
@@ -250,6 +252,7 @@ theme_override_constants/paragraph_spacing = 2
 text = "QUOTA"
 
 [node name="QuotaCount" type="Label" parent="Center/Popup/Margin/VBox/Hud/Row" unique_id=513514827]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "0/3"
@@ -260,11 +263,13 @@ theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "STRIKES"
 
 [node name="StrikeCount" type="Label" parent="Center/Popup/Margin/VBox/Hud/Row" unique_id=1302224219]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.13333334, 0.050980393, 0.48235294, 1)
 text = "0/3"
 
 [node name="CloseBtn" type="Button" parent="Center/Popup/Margin/VBox/Hud/Row" unique_id=938396765]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_wtwq5")
 text = "X"
@@ -347,17 +352,21 @@ layout_mode = 2
 theme_override_constants/separation = -17
 
 [node name="NameLabel" type="Label" parent="Center/Popup/Margin/VBox/Column/Left/LeftVBox/CallerRow/Caller Info" unique_id=1985488151]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = SubResource("SystemFont_img7a")
 theme_override_font_sizes/font_size = 36
 text = "Monique"
+horizontal_alignment = 1
 
 [node name="CallerNumLabel" type="Label" parent="Center/Popup/Margin/VBox/Column/Left/LeftVBox/CallerRow/Caller Info" unique_id=954877407]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = SubResource("SystemFont_img7a")
 text = "Caller 1 out of 3."
+horizontal_alignment = 1
 
 [node name="HintLabel" type="Label" parent="Center/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1408814541]
 layout_mode = 2
@@ -376,6 +385,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="AcceptBtn" type="Button" parent="Center/Popup/Margin/VBox/Column/Left/LeftVBox/Buttons" unique_id=1118455074]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -383,6 +393,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_gio3q")
 text = "ACCEPT"
 
 [node name="RejectBtn" type="Button" parent="Center/Popup/Margin/VBox/Column/Left/LeftVBox/Buttons" unique_id=1960258121]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -419,6 +430,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="RetryBtn" type="Button" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/MicCard/Micbox/TopRow" unique_id=1298936280]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_j1dfj")
@@ -434,6 +446,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="TimerLabel" type="Label" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/MicCard/Micbox/TopRow" unique_id=1182112341]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "0 s"
@@ -444,6 +457,7 @@ layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_d0xj7")
 
 [node name="TargetLabel" type="RichTextLabel" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/MicCard/Micbox/TargetPanel" unique_id=506338250]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/default_color = Color(0.078431375, 0.050980393, 0.007843138, 1)
 theme_override_fonts/normal_font = SubResource("SystemFont_v0ep5")
@@ -454,6 +468,7 @@ text = "Welcome back listeners your stories are on air"
 horizontal_alignment = 1
 
 [node name="Meter" type="HBoxContainer" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/MicCard/Micbox" unique_id=1253019104]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 6
 
@@ -506,37 +521,37 @@ size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_at03s")
 
 [node name="MeterLabel" type="Label" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/MicCard/Micbox" unique_id=519892172]
+unique_name_in_owner = true
 layout_mode = 2
 text = "ON AIR meter: 0 of 8 words"
 
 [node name="WordBank" type="HFlowContainer" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=2143106066]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
 
-[node name="TryAgain" type="Button" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/WordBank" unique_id=1922865687]
+[node name="TryAgainBtn" type="Button" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox/WordBank" unique_id=1922865687]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_2ddcl")
 text = "  Try Again."
 
 [node name="StatusLabel" type="Label" parent="Center/Popup/Margin/VBox/Column/Right/RightVBox" unique_id=199886438]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = SubResource("SystemFont_n1df5")
 text = "Time is up. Press Try again. "
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=8027122]
+visible = false
 material = SubResource("ShaderMaterial_jvhgk")
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -500.0
-offset_top = -291.0
-offset_right = 500.0
-offset_bottom = 290.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2

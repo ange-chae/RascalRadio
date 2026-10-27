@@ -18,11 +18,11 @@ config/icon="res://icon.svg"
 [autoload]
 
 NetworkManager="*uid://bpbnl2x5r4uie"
+GameSession="*uid://bnbls78oak5u1"
 
 [display]
 
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
 
 [dotnet]
 
