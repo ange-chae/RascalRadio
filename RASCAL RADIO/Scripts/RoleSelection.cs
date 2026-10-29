@@ -58,8 +58,9 @@ public partial class RoleSelection : Control
 		_statusLabel = GetNode<Label>("Margin/Main/BottomBar/StatusLabel");
 		_backButton = GetNode<Button>("Margin/Main/TopBar/BackButton");
 
+        _randomizeButton.Visible = Multiplayer.IsServer();
 
-		foreach (Node child in _cardsRow.GetChildren()) child.QueueFree();
+        foreach (Node child in _cardsRow.GetChildren()) child.QueueFree();
 
 		// Get the parent lobby to handle networking
 		_playerList = GetParent<PlayerList>();

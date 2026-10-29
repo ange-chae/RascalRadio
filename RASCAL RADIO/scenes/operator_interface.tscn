@@ -152,6 +152,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Hud" type="PanelContainer" parent="Dim/Popup/Margin/VBox" unique_id=1024031551]
+visible = false
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_type_variation = &"Hudbar"
@@ -254,6 +255,7 @@ theme_override_font_sizes/font_size = 13
 text = "8:00-9:00 AM | 3 valid callers"
 
 [node name="TopicRow4" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=375628145]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hsa6u")
 
@@ -276,6 +278,7 @@ theme_override_font_sizes/font_size = 13
 text = "8:00-9:00 AM | 3 valid callers"
 
 [node name="TopicRow5" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=553031588]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hsa6u")
 
@@ -298,6 +301,7 @@ theme_override_font_sizes/font_size = 13
 text = "8:00-9:00 AM | 3 valid callers"
 
 [node name="TopicRow2" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=1063444004]
+visible = false
 layout_mode = 2
 
 [node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow2" unique_id=1090646684]
@@ -305,6 +309,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="TopicRow3" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList" unique_id=947293782]
+visible = false
 layout_mode = 2
 
 [node name="RowBox1" type="HBoxContainer" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox/TopicList/TopicRow3" unique_id=639149581]
@@ -372,6 +377,7 @@ autowrap_mode = 3
 
 [node name="VerdictLabel" type="Label" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=872059678]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.030000016, 0.041999817, 1)
 text = "ACCEPT "

@@ -225,6 +225,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Hud" type="PanelContainer" parent="Center/Popup/Margin/VBox" unique_id=1134159282]
+visible = false
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_type_variation = &"Hudbar"

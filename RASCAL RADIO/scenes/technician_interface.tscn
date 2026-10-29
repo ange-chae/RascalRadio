@@ -169,6 +169,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Hud" type="PanelContainer" parent="Dim/Popup/Margin/VBox" unique_id=592558945]
+visible = false
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_type_variation = &"Hudbar"
@@ -263,7 +264,7 @@ theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = "   Status words"
+text = "  Status words"
 alignment = 0
 
 [node name="TabStrikes" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1267259097]

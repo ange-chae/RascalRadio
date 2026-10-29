@@ -201,7 +201,7 @@ public partial class Lobby : Control
 
 		if (_networkManager != null && !string.IsNullOrEmpty(_networkManager.DisconnectReason))
 		{
-			ShowPopupMessage("Notice", _networkManager.DisconnectReason);
+            ShowPopupMessage("Studio Closed", _networkManager.DisconnectReason);
 			_networkManager.DisconnectReason = "";
 		}
 
@@ -223,20 +223,15 @@ public partial class Lobby : Control
 		tween.TweenCallback(Callable.From(fadeLayer.QueueFree));
 	}
 
-	// ---------------------------------------------------------
-	// HELPER FUNCTIONS
-	// ---------------------------------------------------------
-	private void ShowPopupMessage(string title, string message)
-	{
-		var dialog = new AcceptDialog();
-		dialog.Title = title;
-		dialog.DialogText = message;
-		AddChild(dialog);
-		dialog.PopupCentered();
-		dialog.Confirmed += () => dialog.QueueFree();
-	}
+    // ---------------------------------------------------------
+    // HELPER FUNCTIONS
+    // ---------------------------------------------------------
+    private void ShowPopupMessage(string title, string message)
+    {
+        ConfirmPopup.Notice(this, title, message);
+    }
 
-	private void FindAndRegisterNameInputs(Control root)
+    private void FindAndRegisterNameInputs(Control root)
 	{
 		if (root == null) return;
 

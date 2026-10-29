@@ -43,6 +43,27 @@ public partial class PlayerList : Control
 
     [Export] public Texture2D DefaultAvatarTexture;
 
+    // --- ROLE AVATAR IMAGES ---
+    // Change the image paths here if you rename or move the pictures.
+    // Keys must match the role names used in PlayerRoles.
+    private static readonly Dictionary<string, string> RoleAvatarPaths = new()
+        {
+            { "Broadcaster",     "res://assets/images/broadcaster-pfp.png" },
+            { "RadioTechnician", "res://assets/images/technician-pfp.png" },
+            { "RadioOperator",   "res://assets/images/operator-pfp.png" },
+        };
+
+    private Texture2D GetAvatarForRole(string role)
+    {
+        if (!string.IsNullOrEmpty(role) && RoleAvatarPaths.TryGetValue(role, out string path))
+        {
+            var tex = GD.Load<Texture2D>(path);
+            if (tex != null) return tex;
+        }
+        var defaultTex = GD.Load<Texture2D>("res://assets/images/PLAYERS ID.png");
+        return defaultTex ?? DefaultAvatarTexture;
+    }
+
     public override void _Ready()
     {
         _networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
@@ -99,7 +120,8 @@ public partial class PlayerList : Control
         _networkManager.RoomTerminated += OnRoomTerminated;
 
         RefreshPlayerList();
-
+        if (!Multiplayer.IsServer())
+            RpcId(1, MethodName.RequestStateRpc);
         UpdateLevelVisualLocal(_currentLevelIndex);
         _isInitialLoad = false;
 
@@ -187,6 +209,35 @@ public partial class PlayerList : Control
         GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
     }
 
+    // --- LATE JOIN SYNC ---
+    // A newly joined player asks the host for everyone's current roles/ready states.
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void RequestStateRpc()
+    {
+        if (!Multiplayer.IsServer()) return;
+
+        long requester = Multiplayer.GetRemoteSenderId();
+
+        var ids = PlayerRoles.Keys.Union(PlayerReady.Keys).ToArray();
+        var roles = ids.Select(id => PlayerRoles.TryGetValue(id, out var r) ? r : "").ToArray();
+        var ready = ids.Select(id => (PlayerReady.TryGetValue(id, out var b) && b) ? 1 : 0).ToArray();
+
+        RpcId(requester, MethodName.SyncAllStateRpc, ids, roles, ready);
+    }
+
+    // Host -> the new player only. Fills in everything they missed.
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncAllStateRpc(long[] peerIds, string[] roles, int[] ready)
+    {
+        for (int i = 0; i < peerIds.Length; i++)
+        {
+            PlayerRoles[peerIds[i]] = roles[i];
+            PlayerReady[peerIds[i]] = ready[i] == 1;
+        }
+        RefreshPlayerList();
+        GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
+    }
+
     public int GetPlayerCount() => _networkManager?.Players.Count ?? 0;
 
     private void RefreshPlayerList()
@@ -227,7 +278,8 @@ public partial class PlayerList : Control
         }
         foreach (var player in _networkManager.Players)
         {
-            if (!_networkManager.Players.ContainsKey(player.Key) && !_isInitialLoad)
+           
+            if (!_knownPlayers.ContainsKey(player.Key) && !_isInitialLoad)
                 ShowStatusMessage($"{player.Value} joined!", new Color("#2E7D32"));
         }
 
@@ -292,8 +344,8 @@ public partial class PlayerList : Control
 
                     if (avatarBtn != null)
                     {
-                        if (avatarBtn.TextureNormal == null && DefaultAvatarTexture != null)
-                            avatarBtn.TextureNormal = DefaultAvatarTexture;
+                  
+                        avatarBtn.TextureNormal = GetAvatarForRole(pRole);
 
                         bool isLocalPlayer = (peerId == localPeerId);
                         avatarBtn.Disabled = !isLocalPlayer;
