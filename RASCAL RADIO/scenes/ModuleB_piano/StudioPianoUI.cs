@@ -24,7 +24,11 @@ public partial class StudioPianoUI : PanelContainer
 	private Label _octaveLabel;
 	private HBoxContainer _keysRow;
 	private Tween _faultTween;
+	private StudioPianoSound _sound;
 	private readonly Dictionary<string, Button> _keyButtons = new();
+
+	/// <summary>Use Sound.Muted to switch the piano notes on or off.</summary>
+	public StudioPianoSound Sound => _sound;
 
 	public override void _Ready()
 	{
@@ -54,6 +58,9 @@ public partial class StudioPianoUI : PanelContainer
 			return;
 		}
 		_built = true;
+
+		_sound = new StudioPianoSound();
+		AddChild(_sound);
 
 		var margin = new MarginContainer();
 		foreach (var side in new[] { "left", "right", "top", "bottom" })
@@ -266,6 +273,11 @@ public partial class StudioPianoUI : PanelContainer
 		}
 		button.Modulate = correct ? new Color(0.5f, 1.0f, 0.5f) : new Color(1.0f, 0.75f, 0.3f);
 		CreateTween().TweenProperty(button, "modulate", Colors.White, 0.4);
+
+		// Every accepted press plays its note (right or wrong, like a real piano).
+		// Recalibration has no octave in the manual, so it always plays at NORMAL.
+		int octave = (_module.UseOctave && !_module.InFault) ? _module.Octave : 0;
+		_sound.PlayNote(letter, octave);
 	}
 
 	private void OnFaultChanged(bool inFault)

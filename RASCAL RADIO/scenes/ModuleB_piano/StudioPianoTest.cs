@@ -39,7 +39,7 @@ public partial class StudioPianoTest : Control
 		column.AddChild(_ui);
 
 		// Test controls
-		var tests = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+		var tests = new HFlowContainer { Alignment = FlowContainer.AlignmentMode.Center };
 		column.AddChild(tests);
 
 		foreach (var sequenceName in new[]
@@ -71,6 +71,14 @@ public partial class StudioPianoTest : Control
 			GD.Print($"[Piano] active = {_module.Active}");
 		};
 		tests.AddChild(toggle);
+
+		var soundButton = new Button { Text = "Sound: ON" };
+		soundButton.Pressed += () =>
+		{
+			_ui.Sound.Muted = !_ui.Sound.Muted;
+			soundButton.Text = _ui.Sound.Muted ? "Sound: OFF" : "Sound: ON";
+		};
+		tests.AddChild(soundButton);
 
 		LoadSequence(_currentSequence);
 	}
