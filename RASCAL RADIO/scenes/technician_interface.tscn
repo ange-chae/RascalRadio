@@ -241,7 +241,7 @@ theme_override_fonts/font = SubResource("SystemFont_te4k6")
 theme_override_font_sizes/font_size = 25
 text = "  MANUAL"
 
-[node name="TabBasics" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1742778780]
+[node name="TabModules" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1938108888]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
@@ -251,7 +251,7 @@ theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = "  Station basics"
+text = " Module A: Math Keypad"
 alignment = 0
 
 [node name="TabStatus" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=2075588481]
@@ -264,7 +264,7 @@ theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = "  Status words"
+text = " Module B: Piano "
 alignment = 0
 
 [node name="TabStrikes" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1267259097]
@@ -277,7 +277,20 @@ theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = "  Strikes and quota"
+text = " Module C: Soundboard 	"
+alignment = 0
+
+[node name="TabBasics" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1742778780]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = SubResource("SystemFont_bj2yc")
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_v0ep5")
+text = " Module D: "
 alignment = 0
 
 [node name="TabRaccoon" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1474617884]
@@ -290,20 +303,7 @@ theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = "  Raccoon watch"
-alignment = 0
-
-[node name="TabModules" type="Button" parent="Dim/Popup/Margin/VBox/Column/Left/LeftVBox" unique_id=1938108888]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = SubResource("SystemFont_bj2yc")
-theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
-toggle_mode = true
-button_group = SubResource("ButtonGroup_v0ep5")
-text = "  Module Pages"
+text = "  Module E:"
 alignment = 0
 
 [node name="Right" type="PanelContainer" parent="Dim/Popup/Margin/VBox/Column" unique_id=1932407167]

@@ -14,6 +14,6 @@ public partial class CassetteSelector : VBoxContainer
     public void UpdateTapeVisual(string levelName, Texture2D tapeTexture)
     {
         if (_lblLevelName != null) _lblLevelName.Text = levelName;
-        if (_texCassette != null) _texCassette.Texture = tapeTexture;
+        if (_texCassette != null && tapeTexture != null) _texCassette.Texture = tapeTexture;
     }
 }

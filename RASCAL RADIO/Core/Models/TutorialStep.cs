@@ -8,49 +8,85 @@ public enum TutorialAction { Acknowledged, CallerDecided, PhraseMatched, KeypadS
 // Every step answers: What is happening? Who acts? What confirms success?
 public static class TutorialText
 {
-    public static string Happening(TutorialStep s) => s switch
+    public static string[] HappeningLines(TutorialStep s) => s switch
     {
-        TutorialStep.MeetStudio => "Welcome to Rascal Radio, rookies. I'm your Boss, and I'll talk you through your first shift. Today is practice, so nothing you do will cost us.",
-        TutorialStep.PracticeCaller => "Line one is lit up. We've got a practice caller waiting, so let's see how you handle them.",
-        TutorialStep.GoLive => "Good. Now we go live. A short phrase is up on the prompter, so keep that mic busy.",
-        TutorialStep.KeypadModule => "Trouble on the desk. A Line Override module just popped up, and it needs more than one pair of hands.",
-        TutorialStep.SuspiciousCaller => "Another call is coming in, and something sounds off to me. The mic is paused, so take your time.",
-        _ => "That's a wrap. Nice first shift, team. I'll be in my office if you need me.",
+        TutorialStep.MeetStudio => new[]
+        {
+        "Welcome to Rascal Radio. I'm the station manager.",
+        "Let's get this orientation over with."
+    },
+        TutorialStep.PracticeCaller => new[]
+        {
+        "We've got two callers waiting.",
+        "They're just for practice, so don't overthink it.",
+        "Listen to what they have to say and follow the usual procedure."
+    },
+        TutorialStep.GoLive => new[]
+        {
+        "Alright, practice is over. We're going on air now.",
+        "The prompter should be running.",
+        "Just keep reading and try not to leave any dead air."
+    },
+        TutorialStep.KeypadModule => new[]
+        {
+        "We've got a problem with one of the incoming lines.",
+        "The Line Override module is active.",
+        "Get the technician to figure it out while the rest of you keep the broadcast running."
+    },
+        TutorialStep.SuspiciousCaller => new[]
+        {
+        "Another caller. Something about this one doesn't look right.",
+        "Check the caller's story before you make a deci— *KRRRK*",
+        "*bzzzt... zzzt... fzzzzt*",
+        "...Hello? Can you hear me?",
+        "...Hello?"
+    },
+        _ => new[]
+        {
+        "Well, that was something.",
+        "Anyway, orientation's over. You've got the basics down, more or less.",
+        "I'll leave the rest to you. Try to keep the sta— *KRRRK*",
+        "*bzzzt... zzzt... click.*",
+        "...."
+    }
     };
+
+    public static string Happening(TutorialStep s) => string.Join(" ", HappeningLines(s));
 
     public static string Job(TutorialStep s, string role) => (s, role) switch
     {
-        (TutorialStep.MeetStudio, "Broadcaster") => "Broadcaster, look over the Topic card, the Caller line and the Live Mic. Hit GOT IT when you're ready.",
-        (TutorialStep.MeetStudio, "Operator") => "Operator, check the Topics list and the Studio Desk, then hit GOT IT.",
-        (TutorialStep.MeetStudio, "Technician") => "Technician, get to know the Manual and Station Health, then hit GOT IT.",
+        (TutorialStep.MeetStudio, "Broadcaster") => "Broadcaster, take a look at your Task list, Caller card, and Prompter. Familiarize yourself with them, then press GOT IT.",
+        (TutorialStep.MeetStudio, "Operator") => "Operator, check the Topics list and the Studio Desk. You'll be handling the callers, so make sure you know where everything is. Press GOT IT when you're done.",
+        (TutorialStep.MeetStudio, "Technician") => "Technician, look through the Manual and Station Health. You'll be responsible for keeping the equipment running. Press GOT IT when you're ready.",
 
-        (TutorialStep.PracticeCaller, "Operator") => "Operator, read the caller's story out loud. Does it fit the topic? Tell the Broadcaster to ACCEPT or REJECT.",
-        (TutorialStep.PracticeCaller, "Broadcaster") => "Broadcaster, listen to the Operator, then press ACCEPT or REJECT.",
-        (TutorialStep.PracticeCaller, _) => "Technician, keep an eye on the quota and help the others decide.",
+        (TutorialStep.PracticeCaller, "Operator") => "Operator, read each caller's story aloud. Check whether it matches the assigned topic, then tell the Broadcaster whether to ACCEPT or REJECT.",
+        (TutorialStep.PracticeCaller, "Broadcaster") => "Broadcaster, listen to the Operator's assessment, then press ACCEPT or REJECT for each caller.",
+        (TutorialStep.PracticeCaller, _) => "Technician, keep track of the quota and assist the others when needed.",
 
-        (TutorialStep.GoLive, "Broadcaster") => "Broadcaster, tap the words in order and follow the arrow. Keep talking, because a new phrase shows up after each one.",
-        (TutorialStep.GoLive, _) => "Cheer the Broadcaster on. Nothing bad happens if they miss.",
+        (TutorialStep.GoLive, "Broadcaster") => "Broadcaster, follow the arrow keys on the Prompter using the arrow keys or WASD. Press them in the correct order to keep the words moving.",
+        (TutorialStep.GoLive, _) => "Keep an eye on the broadcast and help the Broadcaster if needed. This part is fairly straightforward.",
 
-        (TutorialStep.KeypadModule, "Operator") => "Operator, read the INCOMING LINE number to the Technician. You don't have the rules, so type the code they give you and press ROUTE.",
-        (TutorialStep.KeypadModule, "Technician") => "Technician, ask the Operator for the line number. Open the Manual, then Module Pages, and work out the override code with the level shown there. Tell that code to the Operator.",
-        (TutorialStep.KeypadModule, "Broadcaster") => "Broadcaster, keep speaking! Match phrase after phrase while the others work the module.",
-        (TutorialStep.KeypadModule, _) => "Work together, and keep the Broadcaster talking on air.",
+        (TutorialStep.KeypadModule, "Operator") => "Operator, read the INCOMING LINE number to the Technician. Once they give you the override code, enter it and press ROUTE.",
+        (TutorialStep.KeypadModule, "Technician") => "Technician, ask the Operator for the incoming line number. Open the Manual, go to Module Pages, and use the level information to calculate the override code. Give the code to the Operator.",
+        (TutorialStep.KeypadModule, "Broadcaster") => "Broadcaster, keep the broadcast going. Continue following the Prompter while the others handle the module.",
+        (TutorialStep.KeypadModule, _) => "Coordinate with your team. The module needs to be solved without interrupting the broadcast.",
 
-        (TutorialStep.SuspiciousCaller, "Operator") => "Operator, read the story out loud. Can you spot the odd clue? Tell the Broadcaster what to press.",
-        (TutorialStep.SuspiciousCaller, "Broadcaster") => "Broadcaster, listen to the Operator. If the caller sounds fake, press REJECT.",
-        (TutorialStep.SuspiciousCaller, _) => "Technician, listen for the odd clue and speak up.",
+        (TutorialStep.SuspiciousCaller, "Operator") => "Operator, read the caller's story aloud and check for anything unusual. If you find something suspicious, tell the Broadcaster what to do.",
+        (TutorialStep.SuspiciousCaller, "Broadcaster") => "Broadcaster, listen to the Operator's findings. If the caller doesn't seem legitimate, press REJECT.",
+        (TutorialStep.SuspiciousCaller, _) => "Technician, listen to the caller's story as well. See if you can identify anything that doesn't add up.",
 
-        (TutorialStep.Done, _) => "Relax. All your steps are finished.",
-        _ => "Talk with your team.",
+        (TutorialStep.Done, _) => "That's it for orientation. Level one is ready. Good luck.",
+
+        _ => "Coordinate with your team and follow your assigned responsibilities."
     };
 
     public static string DoneWhen(TutorialStep s) => s switch
     {
         TutorialStep.MeetStudio => "Everyone presses GOT IT.",
-        TutorialStep.PracticeCaller => "The quota shows 1/3.",
-        TutorialStep.GoLive => "The ON AIR meter is full.",
+        TutorialStep.PracticeCaller => "Both practice callers are accepted (the quota shows 2/3).",
+        TutorialStep.GoLive => "The Broadcaster finishes a Prompter line.",
         TutorialStep.KeypadModule => "The keypad shows SOLVED.",
         TutorialStep.SuspiciousCaller => "The suspicious caller is rejected.",
-        _ => "Nothing left to do.",
+        _ => "Nothing left to do."
     };
 }

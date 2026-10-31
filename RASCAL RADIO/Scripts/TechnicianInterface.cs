@@ -33,7 +33,7 @@ public partial class TechnicianInterface : PopupFrame
             "3. Tell the Operator the code. They type it and press ROUTE.\n\n" +
             "CLEARING STATIC FAULTS\n" +
             "Press CLEAR, enter 0000, then press ROUTE.\n\n" +
-            "In practice mode a wrong code costs nothing.";
+            (gs != null && gs.IsTutorial ? "In practice mode a wrong code costs nothing." : ""); ;
     }
 
     public override void _Ready()
@@ -47,23 +47,26 @@ public partial class TechnicianInterface : PopupFrame
 		}
 		ShowPage(0);
 
-		var gs = GameSession.Instance;
-		if (gs == null || !gs.IsTutorial) return;
+        var gs = GameSession.Instance;
+        if (gs == null) return;
 
-		AddChild(new TutorialOverlay { RoleName = "Technician" });
-		gs.StepChanged += OnStep;
-		gs.QuotaChanged += OnQuota;
-		gs.KeypadChanged += OnKeypadChanged;
-		SetText("%StrikeCount", "none");
-		OnQuota();
-		OnStep(gs.CurrentStep);
-	}
+        if (gs.IsTutorial) AddChild(new TutorialOverlay { RoleName = "Technician" });
 
-	public override void _ExitTree()
+        gs.StepChanged += OnStep;
+        gs.QuotaChanged += OnQuota;
+        gs.KeypadChanged += OnKeypadChanged;
+        gs.AirtimeChanged += OnAirtime;
+        SetText("%StrikeCount", "none");
+        OnQuota();
+        if (gs.IsTutorial) OnStep(gs.CurrentStep);
+    }
+    private void OnAirtime() => SetHealth(100, GameSession.Instance.AirtimeQuality);   // Signal is fixed at 100 until a level changes it
+    public override void _ExitTree()
 	{
 		var gs = GameSession.Instance;
 		if (gs == null) return;
-		gs.StepChanged -= OnStep;
+        gs.AirtimeChanged -= OnAirtime;
+        gs.StepChanged -= OnStep;
 		gs.QuotaChanged -= OnQuota;
 		gs.KeypadChanged -= OnKeypadChanged;
 	}

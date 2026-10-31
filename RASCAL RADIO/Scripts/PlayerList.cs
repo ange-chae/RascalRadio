@@ -10,15 +10,17 @@ public partial class PlayerList : Control
     {
         public string Name;
         public string LevelId;
+        public string TapePath;   // cassette picture for this level
     }
 
     private List<LevelData> _availableLevels = new List<LevelData>()
-    {
-        new LevelData { Name = "Tutorial", LevelId = "tutorial" },
-        new LevelData { Name = "01: Morning Broadcast", LevelId = "morning_broadcast" },
-        new LevelData { Name = "02: Afternoon Broadcast", LevelId = "afternoon_broadcast" },
-        new LevelData { Name = "03: EMERGENCY BROADCAST!", LevelId = "emergency_broadcast" }
-    };
+{
+    // Tutorial has no tape picture yet, so it borrows tape1 for now. Make a tape0 later and change this path.
+    new LevelData { Name = "Tutorial",                LevelId = "tutorial",            TapePath = "res://assets/images/tape1.png" },
+    new LevelData { Name = "01: Morning Broadcast",   LevelId = "morning_broadcast",   TapePath = "res://assets/images/tape2.png" },
+    new LevelData { Name = "02: Afternoon Broadcast", LevelId = "afternoon_broadcast", TapePath = "res://assets/images/tape3.png" },
+    new LevelData { Name = "03: EMERGENCY BROADCAST!",LevelId = "emergency_broadcast",TapePath = "res://assets/images/tape4.png" }
+};
     private int _currentLevelIndex = 0;
     // -------------------------
 
@@ -34,6 +36,8 @@ public partial class PlayerList : Control
     private BaseButton _btnPrev;
     private BaseButton _btnNext;
     private Label _lblLevelName;
+
+    private CassetteSelector _cassette;
 
     private readonly Dictionary<long, string> _knownPlayers = new Dictionary<long, string>();
     private bool _isInitialLoad = true;
@@ -78,6 +82,7 @@ public partial class PlayerList : Control
         _btnPrev = FindChild("btnPrev", true, false) as BaseButton;
         _btnNext = FindChild("btnNext", true, false) as BaseButton;
         _lblLevelName = FindChild("LblLevelName", true, false) as Label;
+        _cassette = FindChildren("*", "VBoxContainer", true, false).OfType<CassetteSelector>().FirstOrDefault();
 
         if (_networkManager == null) return;
 
@@ -159,10 +164,12 @@ public partial class PlayerList : Control
     private void UpdateLevelVisualLocal(int newIndex)
     {
         _currentLevelIndex = newIndex;
-        if (_lblLevelName != null)
-        {
-            _lblLevelName.Text = _availableLevels[_currentLevelIndex].Name;
-        }
+        var level = _availableLevels[_currentLevelIndex];
+
+        if (_lblLevelName != null) _lblLevelName.Text = level.Name;
+
+        var tape = ResourceLoader.Exists(level.TapePath) ? GD.Load<Texture2D>(level.TapePath) : null;
+        _cassette?.UpdateTapeVisual(level.Name, tape);
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]

@@ -5,6 +5,7 @@ using RascalRadio.Core.Systems;
 // Operator-side Line Override keypad. Built in code and dropped into Studio Desk slot 1.
 public partial class KeypadModule : VBoxContainer
 {
+    [Signal] public delegate void SolvedEventHandler();
     private int _lineValue;
     public int Line
     {
@@ -144,8 +145,10 @@ public partial class KeypadModule : VBoxContainer
 
     public void SetSolved()
     {
+        if (_solved) return;
         _solved = true;
         foreach (var b in _keys) b.Disabled = true;
         _status.Text = "✔ SOLVED";
+        EmitSignal(SignalName.Solved);
     }
 }

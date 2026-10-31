@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dyvgbhnn2mgxc"]
 
 [ext_resource type="Script" uid="uid://bp8h10qbt0i8i" path="res://Scripts/PlayerList.cs" id="1_dbpi1"]
+[ext_resource type="Texture2D" uid="uid://oldxf226hrjh" path="res://assets/images/lobbyBG.png" id="2_gnd4y"]
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="2_jone8"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_wl1yt"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="3_80ye2"]
@@ -25,6 +26,9 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.40784314)
+shadow_size = 2
+shadow_offset = Vector2(-20, 15)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gpa3m"]
 bg_color = Color(0.98039216, 0.2784314, 0.24705882, 1)
@@ -150,10 +154,11 @@ anchors_preset = 0
 script = ExtResource("1_dbpi1")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1138372938]
-visible = false
 layout_mode = 0
 offset_right = 1150.0
 offset_bottom = 649.0
+mouse_filter = 2
+texture = ExtResource("2_gnd4y")
 expand_mode = 1
 
 [node name="casettePanel" type="Panel" parent="." unique_id=88166639]
@@ -163,6 +168,17 @@ offset_top = 137.0
 offset_right = 1040.0
 offset_bottom = 600.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
+
+[node name="Label" type="Label" parent="casettePanel" unique_id=859040504]
+layout_mode = 0
+offset_left = 127.0
+offset_top = 287.0
+offset_right = 229.0
+offset_bottom = 312.0
+theme_override_colors/font_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 20
+text = "Room Code"
 
 [node name="txtRoomCode" type="LineEdit" parent="casettePanel" unique_id=1500426469]
 layout_mode = 0

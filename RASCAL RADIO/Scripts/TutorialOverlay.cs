@@ -1,16 +1,19 @@
 using Godot;
 using RascalRadio.Core.Models;
-using System.Data.Common;
+using RascalRadio.Core.Systems;
+using System.Linq;
 
 // Built entirely in code: no .tscn needed.
 // Each role screen does: AddChild(new TutorialOverlay { RoleName = "Operator" });
 // A small box at the bottom-center. It never blocks clicks outside the box itself.
 public partial class TutorialOverlay : CanvasLayer
 {
+    [Signal] public delegate void TutorialEndedEventHandler();
     public string RoleName { get; set; } = "";
+    public bool ShowDoneWhen { get; set; } = true;
 
     private const int FontSize = 18;
-    private Label _speech, _done, _feedback;
+    private Label _speech, _done, _feedback, _hint;
     private Tween _typeTween;
 
     private static readonly Color Cream = new("FBEFD9");
@@ -25,6 +28,10 @@ public partial class TutorialOverlay : CanvasLayer
 
     private const int PortraitSize = 96;
     private static readonly Color Muted = new("7A5C6E");
+
+    private readonly DialogueSequencer _dialogue = new();
+    private PanelContainer _bubble;
+    private TutorialStep _step;
 
     public override void _Ready()
     {
@@ -175,7 +182,7 @@ public partial class TutorialOverlay : CanvasLayer
         body.AddChild(tail);
 
         // The speech bubble itself
-        var bubble = new PanelContainer { CustomMinimumSize = new Vector2(640, 0) };
+        var bubble = _bubble = new PanelContainer { CustomMinimumSize = new Vector2(640, 0) };
         var bubbleStyle = Box(Cream, Ink, 22, 3, 3, 14);
         bubbleStyle.CornerRadiusTopLeft = 0;   // the name tab attaches here
         bubbleStyle.ShadowColor = new Color(0, 0, 0, 0.28f);
@@ -194,6 +201,11 @@ public partial class TutorialOverlay : CanvasLayer
         _done.AddThemeColorOverride("font_color", Muted);
         _feedback = MakeLine(bubbleBox);
 
+        _hint = MakeLine(bubbleBox);
+        _hint.Text = "Click anywhere to hide the tutoial";
+        _hint.AddThemeFontSizeOverride("font_size", FontSize - 4);
+        _hint.AddThemeColorOverride("font_color", Muted);
+
         _gotIt = new Button { Text = "GOT IT", SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd };
         _gotIt.AddThemeFontSizeOverride("font_size", FontSize);
         StyleButton(_gotIt);
@@ -204,6 +216,11 @@ public partial class TutorialOverlay : CanvasLayer
             _gotIt.Text = "Waiting for the others...";
         };
         bubbleBox.AddChild(_gotIt);
+
+        _dialogue.LineShown += ShowLine;
+        gs.StepChanged += OnStep;
+        gs.Feedback += OnFeedback;
+        OnStep(gs.CurrentStep);
 
         // IMPORTANT: these three lines must stay at the very end of _Ready.
         gs.StepChanged += OnStep;
@@ -262,24 +279,35 @@ public partial class TutorialOverlay : CanvasLayer
         parent.AddChild(l);
         return l;
     }
-    public override void _Input(InputEvent e)
+  public override void _Input(InputEvent e)
+{
+    if (_body == null) return;
+
+    if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } mb)
     {
-        if (_body == null) return;
-        if (e is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+        var p = mb.Position;
+        if (_tab.GetGlobalRect().HasPoint(p)) { SetExpanded(!_body.Visible); return; }   // BOSS tab hides/shows
+        if (_gotIt.Visible && _gotIt.GetGlobalRect().HasPoint(p)) return;                 // GOT IT still works
+        if (_body.Visible && _bubble.GetGlobalRect().HasPoint(p)) Advance();              // click the bubble to continue
+        else if (_body.Visible) SetExpanded(false);                                       // NEW: click elsewhere hides it
+    }
+    else if (e.IsActionPressed("ui_accept") && _body.Visible && !_dialogue.IsLastLine)
+    {
+        Advance();
+        GetViewport().SetInputAsHandled();
+    }
+}
+
+    private void Advance()
+    {
+        // first click finishes the typing, second click goes to the next sentence
+        if (_speech.VisibleRatio < 1f)
         {
-            var p = mb.Position;
-
-            // Click on the BOSS tab: toggle the dialogue
-            if (_tab.GetGlobalRect().HasPoint(p))
-            {
-                SetExpanded(!_body.Visible);
-                return;
-            }
-
-            // Click anywhere else outside the dialogue: hide it
-            if (_body.Visible && !_body.GetGlobalRect().HasPoint(p))
-                SetExpanded(false);
+            _typeTween?.Kill();
+            _speech.VisibleRatio = 1f;
+            return;
         }
+        _dialogue.Advance();
     }
 
     private void SetExpanded(bool open)
@@ -289,18 +317,48 @@ public partial class TutorialOverlay : CanvasLayer
 
     private void OnStep(TutorialStep step)
     {
-        _speech.Text = TutorialText.Happening(step) + " " + TutorialText.Job(step, RoleName);
+        _step = step;
         _done.Text = "Done when: " + TutorialText.DoneWhen(step);
         _feedback.Text = "";
-        _gotIt.Visible = step == TutorialStep.MeetStudio;
-
         if (step == TutorialStep.MeetStudio) { _gotIt.Disabled = false; _gotIt.Text = "GOT IT"; }
         SetExpanded(true);
+
+        var lines = TutorialText.HappeningLines(step);
+        if (step != TutorialStep.Done)
+            lines = lines.Append(TutorialText.Job(step, RoleName)).ToArray();
+        _dialogue.Start(lines);
+    }
+
+    private void ShowLine(string line)
+    {
+        bool last = _dialogue.IsLastLine;
+        bool ending = last && _step == TutorialStep.Done;
+
+        _speech.Text = line;
+        _hint.Text = ending ? "" : last
+            ? "Click anywhere to hide this"
+            : "Click here or press SPACE to continue ▼   (click elsewhere to hide)";
+        _done.Visible = last && ShowDoneWhen && _step != TutorialStep.Done;
+        _gotIt.Visible = last && _step == TutorialStep.MeetStudio;
 
         _typeTween?.Kill();
         _speech.VisibleRatio = 0;
         _typeTween = CreateTween();
-        _typeTween.TweenProperty(_speech, "visible_ratio", 1.0, _speech.Text.Length * 0.02);
+        _typeTween.TweenProperty(_speech, "visible_ratio", 1.0, line.Length * 0.02);
+
+        if (last && RoleName == "Broadcaster" && _step == TutorialStep.GoLive)   // optional, from before
+            GetTree().CreateTimer(4.0).Timeout += () => SetExpanded(false);
+        if (ending)
+        {
+            GetTree().CreateTimer(line.Length * 0.02 + 2.5).Timeout += () =>
+            {
+                if (!IsInstanceValid(this)) return;
+                SetExpanded(false);
+                EmitSignal(SignalName.TutorialEnded);
+                var title = LevelRegistry.Get(GameSession.Instance.PendingLevelId)?.Title ?? "LEVEL 1";
+                GetTree().Root.AddChild(new LevelTitleCard { Title = title, Delay = 1.5f, ReportWhenDone = true });
+            };
+        }
     }
 
     private void OnFeedback(string text, bool success) => _feedback.Text = text;

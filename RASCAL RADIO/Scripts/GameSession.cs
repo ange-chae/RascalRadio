@@ -53,24 +53,33 @@ public partial class GameSession : Node
 	private Random _rng;
 	private CallerBank _callerBank;
 	private LineOverrideSession _override;
-
-	public override void _EnterTree() => Instance = this;
+    public string PendingLevelId { get; set; } = "";
+    public LevelDefinition CurrentLevel { get; private set; }   // null during the tutorial
+    public event Action LevelStarted;
+    private readonly HashSet<long> _endingDone = new();
+    public override void _EnterTree() => Instance = this;
 
 	// Called on EVERY peer from PlayerList.StartGameRpc.
 	public void BeginLevel(string levelId)
 	{
-		LevelId = levelId;
-		CurrentStep = TutorialStep.MeetStudio;
-		QuotaMet = 0; QuotaTarget = 3;
-		CallerName = ""; CallerStory = ""; CallerNumber = 0; CallerTotal = 0;
-		KeypadLine = 0; KeypadLevel = 0; KeypadStatic = false;
-		RuleEvenSuffix = "05"; RuleOddSuffix = "99";
-		_tutorial = null; _broadcaster = null; _callers.Clear(); _override = null;
+        LevelId = levelId;
+        CurrentLevel = LevelRegistry.Get(levelId);
+        CurrentStep = TutorialStep.MeetStudio;
+        QuotaMet = 0; QuotaTarget = CurrentLevel?.QuotaTarget ?? 3;
+        CallerName = ""; CallerStory = ""; CallerNumber = 0; CallerTotal = 0;
+        KeypadLine = 0; KeypadLevel = 0; KeypadStatic = false;
+        RuleEvenSuffix = "05"; RuleOddSuffix = "99";
+        _tutorial = null; _broadcaster = null; _callers.Clear(); _override = null;
         AirtimeQuality = 100;
 
-        if (!Multiplayer.IsServer() || !IsTutorial) return;
+        if (!Multiplayer.IsServer()) return;
+        if (!IsTutorial)
+        {
+            if (CurrentLevel != null) SetupRealLevel(CurrentLevel);
+            return;
+        }
 
-		int players = GetNode<NetworkManager>("/root/NetworkManager").Players.Count;
+        int players = GetNode<NetworkManager>("/root/NetworkManager").Players.Count;
 		_tutorial = new TutorialLogic(players);
 		_tutorial.StepChanged += OnHostStepChanged;
 
@@ -80,16 +89,36 @@ public partial class GameSession : Node
 		// Every run picks different callers and a different keypad problem.
 		_rng = new Random();
 		_callerBank = new CallerBank(_rng);
-		_callers.Add(_callerBank.Legit(Genre.Drama));   // fits the topic: ACCEPT
-		_callers.Add(_callerBank.Raccoon(Genre.Drama)); // the odd one: REJECT
+        _callers.Add(_callerBank.Legit(Genre.Drama));    // caller 1: ACCEPT
+        _callers.Add(_callerBank.Legit(Genre.Drama));    // caller 2: ACCEPT
+        _callers.Add(_callerBank.Raccoon(Genre.Drama));  // caller 3: REJECT
 
-		// Tutorial keeps the manual's printed rule (05 / 99) and no static faults.
-		// A real shift should use LineOverrideRule.NewRandom(_rng) and allowStatic: true.
-		_override = new LineOverrideSession(_rng, LineOverrideRule.Default(), allowStatic: false);
+        // Tutorial keeps the manual's printed rule (05 / 99) and no static faults.
+        // A real shift should use LineOverrideRule.NewRandom(_rng) and allowStatic: true.
+        _override = new LineOverrideSession(_rng, LineOverrideRule.Default(), allowStatic: false);
 	}
 
-	// ---------- Requests (any peer -> host) ----------
-	public void Report(TutorialAction action) => RpcId(1, MethodName.ReportRpc, (int)action);
+    // Host only. Level coders fill this in: callers, quota, keypad for their level.
+    private void SetupRealLevel(LevelDefinition def)
+    {
+        _rng = new Random();
+        _callerBank = new CallerBank(_rng);
+        _callerIndex = 0;
+
+        _broadcaster = new BroadcasterLogic { PenaltiesEnabled = true };
+        _broadcaster.SetQuota(def.QuotaGenre, def.QuotaTarget);
+        _broadcaster.StruckOut += () => Say("💥 Three strikes! The station is off the air.");   // TODO: lose screen
+
+        if (def.BuildCallers != null) _callers.AddRange(def.BuildCallers(_callerBank));
+        if (def.HasKeypad)
+            _override = new LineOverrideSession(_rng, LineOverrideRule.NewRandom(_rng), def.AllowStatic);
+
+        if (_callers.Count > 0) SendCaller(0);
+        if (_override != null) SendKeypadProblem();
+    }
+
+    // ---------- Requests (any peer -> host) ----------
+    public void Report(TutorialAction action) => RpcId(1, MethodName.ReportRpc, (int)action);
 	public void Decide(bool accept) => RpcId(1, MethodName.DecideRpc, accept);
 	public void SubmitKeypad(string entry) => RpcId(1, MethodName.KeypadRpc, entry);
 
@@ -101,45 +130,56 @@ public partial class GameSession : Node
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void DecideRpc(bool accept)
-	{
-		if (!Multiplayer.IsServer() || _tutorial == null) return;
+    private void DecideRpc(bool accept)
+    {
+        if (!Multiplayer.IsServer()) return;
+        if (_tutorial == null) { RealDecide(accept); return; }   // real levels (teammates fill this in)
 
-		TutorialStep step = _tutorial.Step;
-		if (step != TutorialStep.PracticeCaller && step != TutorialStep.SuspiciousCaller)
-		{
-			Say("There is no caller to decide on right now.");
-			return;
-		}
+        TutorialStep step = _tutorial.Step;
+        // only the two caller steps take decisions; ignore stray clicks at any other time
+        if (step != TutorialStep.PracticeCaller && step != TutorialStep.SuspiciousCaller) return;
 
-		Caller caller = _callers[_callerIndex];
-		bool correct = accept ? _broadcaster.Accept(caller) : _broadcaster.Reject(caller);
+        // 1. judge the caller who is on the line right now, BEFORE anything changes
+        Caller caller = _callers[_callerIndex];
+        bool correct = accept ? _broadcaster.Accept(caller) : _broadcaster.Reject(caller);
 
-		if (!correct)
-		{
-			if (step == TutorialStep.SuspiciousCaller)
-				Say("↻ Something is fishy about this caller. Read the story again. No penalty.");
-			else
-				Say("↻ Not this time. Does the story fit the topic? Try again. No penalty.");
-			return;
-		}
+        // 2. wrong answer: explain, no penalty, and the step does NOT advance
+        if (!correct)
+        {
+            if (step == TutorialStep.SuspiciousCaller)
+                Say("↻ Something is fishy about this caller. Read the story again. No penalty.");
+            else
+                Say("↻ Not this time. Does the story fit the topic? Try again. No penalty.");
+            return;
+        }
 
-		if (accept) Rpc(MethodName.SyncQuotaRpc, _broadcaster.QuotaMet, _broadcaster.QuotaTarget);
-		Resolve(step == TutorialStep.PracticeCaller ? TutorialAction.CallerDecided : TutorialAction.RaccoonRejected);
-	}
+        // 3. right answer: the quota is synced AFTER Accept() has counted it
+        if (accept) Rpc(MethodName.SyncQuotaRpc, _broadcaster.QuotaMet, _broadcaster.QuotaTarget);
 
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+        // 4. practice has two callers to accept: bring in the second one before the step completes
+        if (step == TutorialStep.PracticeCaller && _callerIndex < 1)
+        {
+            SendCaller(_callerIndex + 1);
+            return;
+        }
+
+        // 5. done: move the tutorial forward exactly once
+        Resolve(step == TutorialStep.PracticeCaller ? TutorialAction.CallerDecided : TutorialAction.RaccoonRejected);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void KeypadRpc(string entry)
 	{
-		if (!Multiplayer.IsServer() || _tutorial == null || _override == null) return;
-		if (_tutorial.Step != TutorialStep.KeypadModule) return;
+        if (!Multiplayer.IsServer() || _override == null) return;
+        if (_tutorial != null && _tutorial.Step != TutorialStep.KeypadModule) return;
 
-		switch (_override.Submit(entry))
-		{
-			case KeypadResult.Correct:
-				Resolve(TutorialAction.KeypadSolved);
-				break;
-			case KeypadResult.StaticCleared:
+        switch (_override.Submit(entry))
+        {
+            case KeypadResult.Correct:
+                if (_tutorial != null) Resolve(TutorialAction.KeypadSolved);
+                else { Say(KeypadTag + "Line routed!", true); SendKeypadProblem(); }   // a fresh problem
+                break;
+            case KeypadResult.StaticCleared:
 				Rpc(MethodName.SyncKeypadRpc, _override.Problem.Line, _override.Problem.Level,
 					_override.Rule.EvenSuffix, _override.Rule.OddSuffix, false);
 				Say(KeypadTag + "Static cleared. Now enter the override code.", true);
@@ -153,8 +193,22 @@ public partial class GameSession : Node
 		}
 	}
 
-	// ---------- Host logic ----------
-	private long SenderId()
+    private void RealDecide(bool accept)
+    {
+        if (_broadcaster == null || _callers.Count == 0) return;
+
+        Caller caller = _callers[_callerIndex];
+        bool correct = accept ? _broadcaster.Accept(caller) : _broadcaster.Reject(caller);
+
+        if (accept && correct) Rpc(MethodName.SyncQuotaRpc, _broadcaster.QuotaMet, _broadcaster.QuotaTarget);
+        if (!correct) Say("Wrong call. That's a strike.");
+
+        if (_callerIndex + 1 < _callers.Count) SendCaller(_callerIndex + 1);
+        else Say("That was the last caller.", true);   // TODO: level complete screen
+    }
+
+    // ---------- Host logic ----------
+    private long SenderId()
 	{
 		long id = Multiplayer.GetRemoteSenderId();
 		return id == 0 ? 1 : id;   // 0 means "called locally on the host"
@@ -163,18 +217,17 @@ public partial class GameSession : Node
 	private void Resolve(TutorialAction action)
 	{
 		bool advanced = _tutorial.Report(action, SenderId());
-		if (advanced) Say("✔ Nice! Step complete.", true);
-		else if (action == TutorialAction.Acknowledged)
-			Say($"✔ {_tutorial.AckCount}/{_tutorial.PlayersNeeded} ready. Waiting for the others...", true);
+        if (!advanced && action == TutorialAction.Acknowledged)
+            Say($"✔ {_tutorial.AckCount}/{_tutorial.PlayersNeeded} ready. Waiting for the others...", true);
 	}
 
 	private void OnHostStepChanged(TutorialStep step)
 	{
 		if (step == TutorialStep.KeypadModule) SendKeypadProblem();   // data first, then the step
 		Rpc(MethodName.SyncStepRpc, (int)step);
-		if (step == TutorialStep.PracticeCaller) SendCaller(0);
-		else if (step == TutorialStep.SuspiciousCaller) SendCaller(1);
-	}
+        if (step == TutorialStep.PracticeCaller) SendCaller(0);
+        else if (step == TutorialStep.SuspiciousCaller) SendCaller(2);   // the raccoon is caller 3
+    }
 
 	private void SendKeypadProblem()
 	{
@@ -197,9 +250,33 @@ public partial class GameSession : Node
 	{
 		CurrentStep = (TutorialStep)step;
 		StepChanged?.Invoke(CurrentStep);
-	}
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    }
+
+    // Each peer calls this when its title card has finished showing.
+    public void ReportEndingDone() => RpcId(1, MethodName.EndingDoneRpc);
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void EndingDoneRpc()
+    {
+        if (!Multiplayer.IsServer()) return;
+        _endingDone.Add(SenderId());
+        int players = GetNode<NetworkManager>("/root/NetworkManager").Players.Count;
+        if (_endingDone.Count < players) return;
+        _endingDone.Clear();
+        Rpc(MethodName.StartPendingLevelRpc);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void StartPendingLevelRpc()
+    {
+        if (string.IsNullOrEmpty(PendingLevelId)) return;
+        BeginLevel(PendingLevelId);          // IsTutorial is now false
+        GetTree().ReloadCurrentScene();      // role screens restart in real-level mode
+        LevelStarted?.Invoke();
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void SyncCallerRpc(string name, string story, int number, int total)
 	{
 		CallerName = name; CallerStory = story; CallerNumber = number; CallerTotal = total;
