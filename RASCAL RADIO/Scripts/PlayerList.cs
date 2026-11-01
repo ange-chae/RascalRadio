@@ -229,18 +229,19 @@ public partial class PlayerList : Control
         var roles = ids.Select(id => PlayerRoles.TryGetValue(id, out var r) ? r : "").ToArray();
         var ready = ids.Select(id => (PlayerReady.TryGetValue(id, out var b) && b) ? 1 : 0).ToArray();
 
-        RpcId(requester, MethodName.SyncAllStateRpc, ids, roles, ready);
+        RpcId(requester, MethodName.SyncAllStateRpc, ids, roles, ready, _currentLevelIndex);
     }
 
     // Host -> the new player only. Fills in everything they missed.
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void SyncAllStateRpc(long[] peerIds, string[] roles, int[] ready)
+    private void SyncAllStateRpc(long[] peerIds, string[] roles, int[] ready, int levelIndex)
     {
         for (int i = 0; i < peerIds.Length; i++)
         {
             PlayerRoles[peerIds[i]] = roles[i];
             PlayerReady[peerIds[i]] = ready[i] == 1;
         }
+        UpdateLevelVisualLocal(levelIndex);
         RefreshPlayerList();
         GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
     }
@@ -251,10 +252,10 @@ public partial class PlayerList : Control
     {
         if (_networkManager == null) return;
 
-        if (Multiplayer.IsServer())
-        {
-            Rpc(MethodName.UpdateTapeVisualRpc, _currentLevelIndex);
-        }
+        //if (Multiplayer.IsServer())
+        //{
+        //    Rpc(MethodName.UpdateTapeVisualRpc, _currentLevelIndex);
+        //}
 
         var activeIds = _networkManager.Players.Keys.ToList();
         var keysToRemove = PlayerRoles.Keys.Where(k => !activeIds.Contains(k)).ToList();

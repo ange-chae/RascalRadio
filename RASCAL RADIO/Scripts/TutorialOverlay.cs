@@ -12,8 +12,9 @@ public partial class TutorialOverlay : CanvasLayer
     public string RoleName { get; set; } = "";
     public bool ShowDoneWhen { get; set; } = true;
 
-    private const int FontSize = 18;
-    private Label _speech, _done, _feedback, _hint;
+    private const int FontSize = 16;
+    private Label _speech, _feedback, _hint;
+    private Control _row;
     private Tween _typeTween;
 
     private static readonly Color Cream = new("FBEFD9");
@@ -26,7 +27,7 @@ public partial class TutorialOverlay : CanvasLayer
     private TextureRect _portrait;
     private PanelContainer _tab;
 
-    private const int PortraitSize = 96;
+    private const int PortraitSize = 64;
     private static readonly Color Muted = new("7A5C6E");
 
     private readonly DialogueSequencer _dialogue = new();
@@ -182,8 +183,8 @@ public partial class TutorialOverlay : CanvasLayer
         body.AddChild(tail);
 
         // The speech bubble itself
-        var bubble = _bubble = new PanelContainer { CustomMinimumSize = new Vector2(640, 0) };
-        var bubbleStyle = Box(Cream, Ink, 22, 3, 3, 14);
+        var bubble = _bubble = new PanelContainer { CustomMinimumSize = new Vector2(460, 0) };
+        var bubbleStyle = Box(Cream, Ink, 16, 3, 3, 10);
         bubbleStyle.CornerRadiusTopLeft = 0;   // the name tab attaches here
         bubbleStyle.ShadowColor = new Color(0, 0, 0, 0.28f);
         bubbleStyle.ShadowSize = 6;
@@ -196,33 +197,38 @@ public partial class TutorialOverlay : CanvasLayer
         bubble.AddChild(bubbleBox);
 
         _speech = MakeLine(bubbleBox);
-        _done = MakeLine(bubbleBox);
-        _done.AddThemeFontSizeOverride("font_size", FontSize - 3);
-        _done.AddThemeColorOverride("font_color", Muted);
-        _feedback = MakeLine(bubbleBox);
 
-        _hint = MakeLine(bubbleBox);
-        _hint.Text = "Click anywhere to hide the tutoial";
+        _feedback = MakeLine(bubbleBox);
+        _feedback.AddThemeFontSizeOverride("font_size", FontSize - 2);
+        _feedback.Visible = false;   // only shows when there is feedback
+
+        // one slim row: hint on the left, GOT IT on the right
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", 10);
+        bubbleBox.AddChild(row);
+        _row = row;
+
+        _hint = new Label
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
         _hint.AddThemeFontSizeOverride("font_size", FontSize - 4);
         _hint.AddThemeColorOverride("font_color", Muted);
+        row.AddChild(_hint);
 
-        _gotIt = new Button { Text = "GOT IT", SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd };
-        _gotIt.AddThemeFontSizeOverride("font_size", FontSize);
-        StyleButton(_gotIt);
+        _gotIt = new Button { Text = "GOT IT" };
+        _gotIt.AddThemeFontSizeOverride("font_size", FontSize - 2);
+        StyleButton(_gotIt, true);
         _gotIt.Pressed += () =>
         {
             GameSession.Instance.Report(TutorialAction.Acknowledged);
             _gotIt.Disabled = true;
-            _gotIt.Text = "Waiting for the others...";
+            _gotIt.Text = "GOT IT ✔";
         };
-        bubbleBox.AddChild(_gotIt);
+        row.AddChild(_gotIt);
 
         _dialogue.LineShown += ShowLine;
-        gs.StepChanged += OnStep;
-        gs.Feedback += OnFeedback;
-        OnStep(gs.CurrentStep);
-
-        // IMPORTANT: these three lines must stay at the very end of _Ready.
         gs.StepChanged += OnStep;
         gs.Feedback += OnFeedback;
         OnStep(gs.CurrentStep);
@@ -318,12 +324,15 @@ public partial class TutorialOverlay : CanvasLayer
     private void OnStep(TutorialStep step)
     {
         _step = step;
-        _done.Text = "Done when: " + TutorialText.DoneWhen(step);
+
         _feedback.Text = "";
+        _feedback.Visible = false;
         if (step == TutorialStep.MeetStudio) { _gotIt.Disabled = false; _gotIt.Text = "GOT IT"; }
         SetExpanded(true);
 
         var lines = TutorialText.HappeningLines(step);
+        if (step == TutorialStep.PracticeCaller)
+            lines = lines.Append($"Today's topic is {GameSession.Instance.Topic}. Only accept callers whose story fits it.").ToArray();
         if (step != TutorialStep.Done)
             lines = lines.Append(TutorialText.Job(step, RoleName)).ToArray();
         _dialogue.Start(lines);
@@ -335,11 +344,9 @@ public partial class TutorialOverlay : CanvasLayer
         bool ending = last && _step == TutorialStep.Done;
 
         _speech.Text = line;
-        _hint.Text = ending ? "" : last
-            ? "Click anywhere to hide this"
-            : "Click here or press SPACE to continue ▼   (click elsewhere to hide)";
-        _done.Visible = last && ShowDoneWhen && _step != TutorialStep.Done;
+        _hint.Text = ending ? "" : last ? "click anywhere to hide" : "SPACE or click ▼";
         _gotIt.Visible = last && _step == TutorialStep.MeetStudio;
+        _row.Visible = _hint.Text != "" || _gotIt.Visible;
 
         _typeTween?.Kill();
         _speech.VisibleRatio = 0;
@@ -361,5 +368,9 @@ public partial class TutorialOverlay : CanvasLayer
         }
     }
 
-    private void OnFeedback(string text, bool success) => _feedback.Text = text;
+    private void OnFeedback(string text, bool success)
+    {
+        _feedback.Text = text;
+        _feedback.Visible = !string.IsNullOrEmpty(text);
+    }
 }

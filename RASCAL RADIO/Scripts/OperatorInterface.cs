@@ -15,6 +15,10 @@ public partial class OperatorInterface : Control
     private Control _popup;
     private VBoxContainer _holder;
     private readonly System.Collections.Generic.List<Button> _slotBtns = new();
+    private Control _callerPanel;
+    private Control _phone;
+    private Tween _buzzTween;
+    private string _lastCallerKey = "";
 
     public override void _Ready()
     {
@@ -28,6 +32,10 @@ public partial class OperatorInterface : Control
 
         // module popup
         BuildUi();
+
+        _callerPanel = FindChild("CallerPanel", true, false) as Control;
+        _phone = FindChild("Phone", true, false) as Control;
+        if (_callerPanel != null) _callerPanel.Visible = false;
 
         // task + menu (same as Broadcaster)
         _taskLabel = GetNodeOrNull<RichTextLabel>("%TaskLabel");
@@ -43,7 +51,7 @@ public partial class OperatorInterface : Control
         var lobbyBtn = GetNodeOrNull<Button>("%LobbyBtn");
         if (menuBtn != null) menuBtn.Pressed += () => SetMenu(true);
         if (resumeBtn != null) resumeBtn.Pressed += () => SetMenu(false);
-        if (lobbyBtn != null) lobbyBtn.Pressed += () => GetTree().ChangeSceneToFile(LobbyScenePath);
+        if (lobbyBtn != null) lobbyBtn.Pressed += () => GameSession.Instance.ReturnToParty();
         if (_pauseMenu != null) _pauseMenu.Visible = false;
 
         gs.StepChanged += OnStep;
@@ -62,25 +70,27 @@ public partial class OperatorInterface : Control
     private void BuildUi()
     {
         // ---- popup (built in code, drawn on top) ----
+        var layer = new CanvasLayer { Layer = 20 };
+        AddChild(layer);
+
         _popup = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
-        _popup.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(_popup);
+        layer.AddChild(_popup);
+        _popup.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _popup.GuiInput += OnPopupInput;
 
         var dim = new ColorRect { Color = new Color(0, 0, 0, 0.45f), MouseFilter = MouseFilterEnum.Ignore };
-        dim.SetAnchorsPreset(LayoutPreset.FullRect);
         _popup.AddChild(dim);
-
-        var center = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _popup.AddChild(center);
+        dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 
         _panel = new PanelContainer { CustomMinimumSize = new Vector2(420, 380), MouseFilter = MouseFilterEnum.Stop };
         var style = new StyleBoxFlat { BgColor = new Color("#EEEED0"), BorderColor = new Color("#2B1B5A") };
         style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(8);
         _panel.AddThemeStyleboxOverride("panel", style);
-        center.AddChild(_panel);
+        _popup.AddChild(_panel);
+        _panel.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
+        _panel.GrowHorizontal = GrowDirection.Both;
+        _panel.GrowVertical = GrowDirection.Both;
 
         var margin = new MarginContainer();
         foreach (var side in new[] { "left", "right", "top", "bottom" })
@@ -141,14 +151,15 @@ public partial class OperatorInterface : Control
             var s = gs.CurrentStep;
             items.Add(("Meet the studio", s > TutorialStep.MeetStudio));
             items.Add(($"Handle all {gs.CallerTotal} callers: accept 2, reject the suspicious one", s > TutorialStep.SuspiciousCaller));
-            items.Add(("Fix the keypad", s > TutorialStep.KeypadModule));
+            items.Add(("Fix the keypad", s > TutorialStep.KeypadModule || (_modules.Count > 0 && _modules[0].Solved)));
         }
         else
         {
             // EDIT PER LEVEL
             items.Add(($"Accept {gs.QuotaTarget} callers ({gs.QuotaMet}/{gs.QuotaTarget})", gs.QuotaMet >= gs.QuotaTarget));
-            if (_modules.Count > 0)
-                items.Add(("Fix the keypad", _modules[0].Solved));
+            var keypadSlot = FindSlot("Keypad");
+            if (keypadSlot != null) items.Add(("Fix the keypad", keypadSlot.Solved));
+            if (FindSlot("Piano") != null) items.Add(("Play the jingles with the Technician", false));
         }
 
         _taskLabel.Text = string.Join("\n", items.Select(t => t.done
@@ -160,7 +171,7 @@ public partial class OperatorInterface : Control
     {
         if (e is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
         {
-            if (!_panel.GetGlobalRect().HasPoint(mb.GlobalPosition))
+            if (!_panel.GetRect().HasPoint(mb.Position))
                 CloseModule();
         }
     }
@@ -177,19 +188,49 @@ public partial class OperatorInterface : Control
 		GetNode<Label>("%VerdictLabel").Text = accept ? "ACCEPT" : "REJECT";
 	}
 
-	private void OnCaller()
-	{
-		var gs = GameSession.Instance;
-		if (gs.CallerName == "") return;
-		// The OPERATOR sees the story and reads it out loud.
-		SetCaller(gs.CallerName, gs.CallerNumber, gs.CallerTotal, gs.CallerStory);
-	}
+    private void OnCaller()
+    {
+        var gs = GameSession.Instance;
+        bool hasCaller = !string.IsNullOrEmpty(gs.CallerName);
+
+        if (_callerPanel != null) _callerPanel.Visible = hasCaller;
+
+        if (!hasCaller) { _lastCallerKey = ""; return; }
+
+        SetCaller(gs.CallerName, gs.CallerNumber, gs.CallerTotal, gs.CallerStory);
+
+        // buzz the phone once per new caller
+        string key = $"{gs.CallerName}#{gs.CallerNumber}";
+        if (key != _lastCallerKey)
+        {
+            _lastCallerKey = key;
+            BuzzPhone();
+        }
+    }
+
+    private void BuzzPhone()
+    {
+        if (_phone == null) return;
+        _buzzTween?.Kill();
+        _phone.PivotOffset = _phone.Size / 2;
+        _phone.Rotation = 0;
+
+        _buzzTween = CreateTween();
+        for (int i = 0; i < 12; i++)
+        {
+            float angle = (i % 2 == 0 ? 1f : -1f) * Mathf.DegToRad(4f);
+            _buzzTween.TweenProperty(_phone, "rotation", angle, 0.05);
+        }
+        _buzzTween.TweenProperty(_phone, "rotation", 0.0, 0.05);
+    }
 
     private void OnQuota()
     {
         SetText("%QuotaCount", $"{GameSession.Instance.QuotaMet}/{GameSession.Instance.QuotaTarget}");
         RefreshTasks();
     }
+
+    private ModuleSlot FindSlot(string title) => _modules.FirstOrDefault(m => m.Title == title);
 
     private void SetupSlots()
     {
@@ -206,6 +247,22 @@ public partial class OperatorInterface : Control
                 {
                     _keypad = new KeypadModule { Line = gs.KeypadLine, StaticFault = gs.KeypadStatic };
                     return _keypad;
+                }
+            });
+        }
+
+        if (!gs.IsTutorial && gs.CurrentLevel?.HasPiano == true)
+        {
+            _modules.Add(new ModuleSlot
+            {
+                Title = "Piano",
+                Build = () =>
+                {
+                    var ui = new StudioPianoUI();
+                    ui.Bind(gs.Piano);
+                    ui.KeyPressed += gs.PianoKey;
+                    ui.OctaveStepPressed += gs.PianoOctave;
+                    return ui;
                 }
             });
         }
@@ -232,6 +289,7 @@ public partial class OperatorInterface : Control
             }
         }
     }
+
 
     private void OpenModule(ModuleSlot module)
     {
@@ -260,6 +318,7 @@ public partial class OperatorInterface : Control
     {
         module.Solved = true;
         UpdateSlotButtons();
+        RefreshTasks();
         CloseModule();
     }
 
@@ -282,17 +341,19 @@ public partial class OperatorInterface : Control
         if (btn != null) btn.Disabled = step < TutorialStep.KeypadModule;
 
         if (step > TutorialStep.KeypadModule) _keypad?.SetSolved();
+        RefreshTasks();
     }
 
     private void OnKeypadChanged()
     {
         var gs = GameSession.Instance;
-        if (!gs.IsTutorial && gs.HasKeypadProblem && _modules.Count == 0) SetupSlots();
+        if (!gs.IsTutorial && gs.HasKeypadProblem && FindSlot("Keypad") == null) SetupSlots();
 
         _keypad?.Refresh(gs.KeypadLine, gs.KeypadStatic);
 
-        // A fresh problem means the module needs attention again
-        if (_modules.Count > 0) { _modules[0].Solved = false; UpdateSlotButtons(); }
+        // A fresh problem means the keypad needs attention again
+        var keypadSlot = FindSlot("Keypad");
+        if (keypadSlot != null) { keypadSlot.Solved = false; UpdateSlotButtons(); }
     }
 
     private void SetText(string path, string text)
