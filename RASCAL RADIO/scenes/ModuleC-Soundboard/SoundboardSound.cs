@@ -6,8 +6,14 @@ public partial class SoundboardSound : Node
 {
 	private const int MixRate = 44100;
 	private const int VoiceCount = 6;
+	private const float DefaultVolumeDb = -4f;
 	private const string OverrideFolder = "res://assets/sfx/soundboard/";
 	private static readonly string[] OverrideExtensions = { "ogg", "wav", "mp3" };
+
+	private static readonly Dictionary<string, float> PadVolumeDb = new()
+	{
+		["LAUGHTER"] = -8f,
+	};
 
 	private readonly Dictionary<string, AudioStream> _cache = new();
 	private readonly List<AudioStreamPlayer> _voices = new();
@@ -37,6 +43,7 @@ public partial class SoundboardSound : Node
 		var voice = _voices[_nextVoice];
 		_nextVoice = (_nextVoice + 1) % _voices.Count;
 		voice.Stream = stream;
+		voice.VolumeDb = PadVolumeDb.TryGetValue(padId, out float padDb) ? padDb : DefaultVolumeDb;
 		voice.Play();
 	}
 
@@ -48,7 +55,7 @@ public partial class SoundboardSound : Node
 		}
 		for (int i = 0; i < VoiceCount; i++)
 		{
-			var player = new AudioStreamPlayer { VolumeDb = -4f };
+			var player = new AudioStreamPlayer { VolumeDb = DefaultVolumeDb };
 			AddChild(player);
 			_voices.Add(player);
 		}
