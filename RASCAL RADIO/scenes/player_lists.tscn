@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="2_jone8"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_wl1yt"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="3_80ye2"]
+[ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="3_w676s"]
 [ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/textures/buttonPressed.tres" id="5_y8my7"]
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="6_80ye2"]
 [ext_resource type="StyleBox" uid="uid://d4bp4d1glgw57" path="res://assets/textures/readOnlyBox.tres" id="6_y8my7"]
@@ -14,6 +15,7 @@
 [ext_resource type="FontFile" uid="uid://cr26f1hy1iksj" path="res://assets/fonts/IBM_Plex_Mono/IBMPlexMono-Medium.ttf" id="10_xodqn"]
 [ext_resource type="Texture2D" uid="uid://do245gmdpspic" path="res://assets/images/PLAYERS ID.png" id="11_w676s"]
 [ext_resource type="FontFile" uid="uid://koratnoxwqp0" path="res://assets/fonts/IBM_Plex_Mono/IBMPlexMono-Bold.ttf" id="12_rsmfc"]
+[ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="15_xodqn"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qarm5"]
 bg_color = Color(0.36078432, 0.4862745, 0.43529412, 1)
@@ -175,8 +177,8 @@ offset_left = 127.0
 offset_top = 287.0
 offset_right = 229.0
 offset_bottom = 312.0
-theme_override_colors/font_color = Color(0.1764706, 0.22352941, 0.25882354, 1)
-theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_colors/font_color = Color(0.13908914, 0.17889464, 0.20873994, 1)
+theme_override_fonts/font = ExtResource("3_w676s")
 theme_override_font_sizes/font_size = 20
 text = "Room Code"
 
@@ -417,12 +419,14 @@ texture = ExtResource("8_gnd4y")
 expand_mode = 3
 stretch_mode = 5
 
-[node name="lblStatus" type="Label" parent="." unique_id=1581201290]
+[node name="Label" type="Label" parent="." unique_id=1581201290]
 layout_mode = 0
-offset_left = 210.0
-offset_top = 600.0
-offset_right = 464.0
-offset_bottom = 632.0
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 18
+offset_left = 157.0
+offset_top = 610.0
+offset_right = 521.0
+offset_bottom = 642.0
+theme_override_colors/font_color = Color(0.16565639, 0.16565642, 0.16565639, 1)
+theme_override_fonts/font = ExtResource("15_xodqn")
+theme_override_font_sizes/font_size = 14
+text = "* Click the icon beside your name to pick roles"
 horizontal_alignment = 1

@@ -9,6 +9,7 @@
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="7_cdh5t"]
 [ext_resource type="FontFile" uid="uid://hd4bvqjo0egh" path="res://assets/fonts/PressStart2P-Regular.ttf" id="8_cl4jf"]
 [ext_resource type="Script" uid="uid://b3bx6fw323o1y" path="res://assets/textures/RetroBar.cs" id="9_cl4jf"]
+[ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="10_3x1qp"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3x1qp"]
 bg_color = Color(0.93333334, 0.93333334, 0.80784315, 1)
@@ -331,9 +332,9 @@ text = "Strikes"
 [node name="ManualBtn" type="Button" parent="." unique_id=1273922493]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 440.0
+offset_left = 438.0
 offset_top = 481.0
-offset_right = 693.0
+offset_right = 691.0
 offset_bottom = 573.0
 text = "Open Manual "
 
@@ -489,6 +490,13 @@ text = " Module E:
 "
 alignment = 0
 
+[node name="Label" type="Label" parent="Popup/Margin/VBox/Column/ManualTabs/LeftVBox" unique_id=890055843]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.30507714, 0.30507714, 0.30507714, 1)
+theme_override_fonts/font = ExtResource("10_3x1qp")
+text = "* Press ESC to put down the manual *"
+horizontal_alignment = 1
+
 [node name="Instruction" type="PanelContainer" parent="Popup/Margin/VBox/Column" unique_id=1932407167]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -550,3 +558,10 @@ text = "1. Read the topic and the quota at the top.
 4. Broadcaster presses the matching button.
 
 5. Everyone checks that quota and strikes updated."
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1732828906]
+layout_mode = 0
+offset_left = 76.0
+offset_top = 34.0
+offset_right = 116.0
+offset_bottom = 74.0
