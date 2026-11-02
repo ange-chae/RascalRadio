@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://guxraxa2ra1d" path="res://assets/images/Cozy On-Air Caller Studio.png" id="2_qyrtx"]
 [ext_resource type="Texture2D" uid="uid://do245gmdpspic" path="res://assets/images/PLAYERS ID.png" id="4_f2kec"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="5_at03s"]
+[ext_resource type="FontFile" uid="uid://bebsbm2ovo6y1" path="res://assets/fonts/Fredoka/static/Fredoka_SemiExpanded-Medium.ttf" id="5_j1dfj"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="6_j1dfj"]
 [ext_resource type="FontFile" uid="uid://c8c85vk57ma0n" path="res://assets/fonts/ShareTech-Regular.ttf" id="7_2ddcl"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="8_n1df5"]
@@ -47,6 +48,18 @@ corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_68ld6"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gio3q"]
 bg_color = Color(0.35259333, 0.6067005, 0.41741642, 1)
@@ -127,7 +140,7 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.044779077, 0.013705869, 0.20188373, 1)
+border_color = Color(0.18039216, 0.1254902, 0.07450981, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -169,28 +182,41 @@ anchor_left = 0.614
 anchor_top = 0.372
 anchor_right = 0.614
 anchor_bottom = 0.372
-offset_left = 734.0
-offset_top = 325.0
-offset_right = 1081.0
+offset_left = 713.0
+offset_top = 274.0
+offset_right = 1119.0
 offset_bottom = 540.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_gn6xx")
 
 [node name="TargetPanel" type="PanelContainer" parent="Prompter" unique_id=778980290]
-custom_minimum_size = Vector2(0, 110)
-layout_mode = 0
-offset_left = 10.0
-offset_top = 13.0
-offset_right = 310.0
-offset_bottom = 182.0
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -190.0
+offset_top = -253.0
+offset_right = 160.0
+offset_bottom = -21.0
+grow_horizontal = 2
+grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
 
-[node name="TargetLabel" type="RichTextLabel" parent="Prompter/TargetPanel" unique_id=506338250]
-unique_name_in_owner = true
+[node name="Control" type="Control" parent="Prompter/TargetPanel" unique_id=118257762]
 layout_mode = 2
+
+[node name="TargetLabel" type="RichTextLabel" parent="Prompter/TargetPanel/Control" unique_id=506338250]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/default_color = Color(0.9263023, 0.8967212, 0.9343869, 1)
 theme_override_fonts/normal_font = ExtResource("2_iin0s")
 theme_override_font_sizes/normal_font_size = 22
-bbcode_enabled = true
 text = "Prompter..."
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -198,18 +224,18 @@ vertical_alignment = 1
 [node name="WordArea" type="Control" parent="." unique_id=893647794]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 338.0
-offset_top = 138.0
-offset_right = 797.0
-offset_bottom = 399.0
+offset_left = 358.0
+offset_top = 164.0
+offset_right = 775.0
+offset_bottom = 429.0
 
 [node name="Caller" type="PanelContainer" parent="." unique_id=1403856318]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 115.0
-offset_right = 266.0
-offset_bottom = 398.0
+offset_left = 3.0
+offset_top = 152.0
+offset_right = 251.0
+offset_bottom = 503.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_cck67")
@@ -218,13 +244,30 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_cck67")
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="CallerCard" type="PanelContainer" parent="Caller/LeftVBox" unique_id=1855508709]
-layout_mode = 2
-
 [node name="CallerRow" type="VBoxContainer" parent="Caller/LeftVBox" unique_id=328965227]
 layout_mode = 2
 theme_override_constants/separation = 0
 alignment = 1
+
+[node name="TopicPanel" type="Panel" parent="Caller/LeftVBox/CallerRow" unique_id=1011902283]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_68ld6")
+
+[node name="Topic" type="Label" parent="Caller/LeftVBox/CallerRow/TopicPanel" unique_id=2078323200]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 4.0
+offset_top = 11.0
+offset_right = 219.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("5_j1dfj")
+theme_override_font_sizes/font_size = 18
+text = "Drama and Life
+"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="avatar" type="TextureRect" parent="Caller/LeftVBox/CallerRow" unique_id=1094283035]
 custom_minimum_size = Vector2(120, 120)
@@ -256,18 +299,7 @@ theme_override_font_sizes/font_size = 14
 text = "Caller 1 out of 3."
 horizontal_alignment = 1
 
-[node name="Topic" type="Label" parent="Caller/LeftVBox" unique_id=1408814541]
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("5_at03s")
-theme_override_font_sizes/font_size = 16
-text = "Topic"
-horizontal_alignment = 1
-autowrap_mode = 3
-
 [node name="Spacer" type="Control" parent="Caller/LeftVBox" unique_id=1397747003]
-visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -363,30 +395,3 @@ theme_override_styles/normal = ExtResource("8_n1df5")
 theme_override_styles/pressed = ExtResource("9_1dplo")
 theme_override_styles/hover = ExtResource("10_ewm5s")
 text = "MENU"
-
-[node name="StatusLabel" type="Label" parent="." unique_id=1639903064]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 505.0
-offset_top = 75.0
-offset_right = 620.0
-offset_bottom = 103.0
-
-[node name="Panel" type="Panel" parent="." unique_id=1011902283]
-layout_mode = 0
-offset_left = 37.0
-offset_top = 434.0
-offset_right = 294.0
-offset_bottom = 527.0
-
-[node name="Label" type="Label" parent="Panel" unique_id=2078323200]
-layout_mode = 0
-offset_left = 14.0
-offset_top = 8.0
-offset_right = 251.0
-offset_bottom = 86.0
-text = "Topic
-"
-horizontal_alignment = 1
-vertical_alignment = 1

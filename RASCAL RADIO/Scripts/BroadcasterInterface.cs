@@ -97,6 +97,7 @@ public partial class BroadcasterInterface : Control
         {
             gs.CallerChanged += OnCaller;
             gs.QuotaChanged += OnQuota;
+            gs.TasksChanged += RefreshTasks;
             gs.TopicChanged += OnTopic;
             if (_tutorial) gs.StepChanged += OnStep;
         }
@@ -121,6 +122,7 @@ public partial class BroadcasterInterface : Control
         gs.StepChanged -= OnStep;
         gs.CallerChanged -= OnCaller;
         gs.QuotaChanged -= OnQuota;
+        gs.TasksChanged -= RefreshTasks;
         gs.TopicChanged -= OnTopic;
     }
 
@@ -225,6 +227,7 @@ public partial class BroadcasterInterface : Control
         if (_taskLabel == null) return;
 
         var gs = GameSession.Instance;
+        if (!_tutorial && gs != null) { _taskLabel.Text = gs.TaskBbcode(); return; }
         var items = new List<(string text, bool done)>();
 
         if (_tutorial && gs != null)

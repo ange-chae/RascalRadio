@@ -1,43 +1,153 @@
 [gd_scene format=3 uid="uid://cnkbwr25ylla3"]
 
 [ext_resource type="Script" uid="uid://r6chythj27hx" path="res://Scripts/OperatorInterface.cs" id="1_0gnke"]
-[ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="3_qctdg"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_tyn63"]
-[ext_resource type="FontFile" uid="uid://bebsbm2ovo6y1" path="res://assets/fonts/Fredoka/static/Fredoka_SemiExpanded-Medium.ttf" id="4_b7mkc"]
+[ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="4_b7mkc"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="4_qctdg"]
 [ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/textures/buttonPressed.tres" id="5_b7mkc"]
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="6_xncut"]
 [ext_resource type="FontFile" uid="uid://c8c85vk57ma0n" path="res://assets/fonts/ShareTech-Regular.ttf" id="7_1vsyy"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qarm5"]
-bg_color = Color(0.93333334, 0.93333334, 0.80784315, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1f8g2"]
+bg_color = Color(0.5810679, 0.21348098, 0.22163981, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 20
+border_color = Color(0.29559797, 0.09895743, 0.06954054, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_0aagu"]
-content_margin_left = 10.0
-content_margin_right = 10.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ptyr0"]
+bg_color = Color(0.3367624, 0.1047376, 0.11235956, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v8auc"]
-bg_color = Color(0.9529412, 0.7921569, 0.4627451, 0)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0l63i"]
+bg_color = Color(0.6627451, 0.2509804, 0.2627451, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_color = Color(0.25596198, 0.04484836, 0.054476798, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dna3g"]
+bg_color = Color(0.6609304, 0.25078335, 0.2628135, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0.25490198, 0.043137256, 0.05490196, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xtywi"]
+bg_color = Color(0.6627451, 0.2509804, 0.2627451, 1)
+border_width_left = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.25596198, 0.04484836, 0.054476798, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_71q0j"]
+bg_color = Color(0.7667362, 0.31237498, 0.325308, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 4
+border_color = Color(0.3372549, 0.105882354, 0.11372549, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lta6j"]
+bg_color = Color(0.4248843, 0.5987317, 0.63955224, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.14243859, 0.22217411, 0.3241878, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_esp36"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn6xx"]
+bg_color = Color(0.3952504, 0.21640605, 0.20321816, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 12
+border_color = Color(0.22161552, 0.10956269, 0.1023648, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sggwb"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skki2"]
 content_margin_left = 12.0
 content_margin_top = 12.0
 content_margin_right = 12.0
 content_margin_bottom = 12.0
-bg_color = Color(0.89411765, 0.8980392, 0.7058824, 1)
+bg_color = Color(0.32721385, 0.17336181, 0.16340402, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.15686275, 0.07450981, 0.49019608, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+border_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m36wf"]
+bg_color = Color(0.8224818, 0.76368463, 0.6912771, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 12
+border_color = Color(0.20475346, 0.10824413, 0.071760856, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_st1gu"]
+bg_color = Color(0.76000047, 0.6906548, 0.60242444, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 6
+border_color = Color(0.20392157, 0.10980392, 0.07058824, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1t40j"]
+bg_color = Color(0.8799238, 0.83674014, 0.78227717, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 12
+border_color = Color(0.20392157, 0.10980392, 0.07058824, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cpo66"]
 bg_color = Color(0.174824, 0.16032493, 0.17210701, 1)
@@ -53,141 +163,271 @@ corner_radius_bottom_left = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ncg58"]
 bg_color = Color(0.93333334, 0.93333334, 0.80784315, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
+border_width_left = 2
+border_width_right = 2
 border_width_bottom = 3
-border_color = Color(0.044779077, 0.013705869, 0.20188373, 1)
+border_color = Color(0.18001208, 0.12397096, 0.072565176, 1)
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qarm5"]
+bg_color = Color(0.8998166, 0.8794339, 0.814383, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.06833097, 0.05515579, 0.019681534, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_0aagu"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+
 [node name="OperatorInterface" type="Control" unique_id=727384516]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_0gnke")
+LobbyScenePath = null
 
-[node name="CallerPanel" type="Panel" parent="." unique_id=182882346]
+[node name="PhoneBox" type="Panel" parent="." unique_id=287036377]
 layout_mode = 0
-offset_left = 683.0
-offset_top = 210.0
-offset_right = 1125.0
-offset_bottom = 421.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
+offset_left = 822.0
+offset_top = 257.0
+offset_right = 1134.0
+offset_bottom = 633.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1f8g2")
 
-[node name="Margin" type="MarginContainer" parent="CallerPanel" unique_id=343397753]
+[node name="Panel" type="Panel" parent="PhoneBox" unique_id=1342893483]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 136.0
+offset_bottom = 346.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ptyr0")
+
+[node name="Phone" type="Panel" parent="PhoneBox/Panel" unique_id=1485486235]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 109.0
+offset_bottom = 100.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_0l63i")
+
+[node name="Panel" type="Panel" parent="PhoneBox/Panel/Phone" unique_id=1706797212]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 91.0
+offset_right = 86.0
+offset_bottom = 240.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dna3g")
+
+[node name="Panel2" type="Panel" parent="PhoneBox/Panel/Phone" unique_id=1262772193]
+layout_mode = 0
+offset_top = 229.0
+offset_right = 99.0
+offset_bottom = 308.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_xtywi")
+
+[node name="GridContainer" type="GridContainer" parent="PhoneBox" unique_id=1968229022]
+layout_mode = 0
+offset_left = 156.0
+offset_top = 164.0
+offset_right = 284.0
+offset_bottom = 317.0
+columns = 3
+
+[node name="Panel" type="Panel" parent="PhoneBox/GridContainer" unique_id=667577755]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel2" type="Panel" parent="PhoneBox/GridContainer" unique_id=1018025875]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel3" type="Panel" parent="PhoneBox/GridContainer" unique_id=210174884]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel4" type="Panel" parent="PhoneBox/GridContainer" unique_id=1801824770]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel5" type="Panel" parent="PhoneBox/GridContainer" unique_id=1306891607]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel6" type="Panel" parent="PhoneBox/GridContainer" unique_id=351548631]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel7" type="Panel" parent="PhoneBox/GridContainer" unique_id=635722084]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel8" type="Panel" parent="PhoneBox/GridContainer" unique_id=81456956]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="Panel9" type="Panel" parent="PhoneBox/GridContainer" unique_id=1154452048]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_71q0j")
+
+[node name="callerscreen" type="Panel" parent="PhoneBox" unique_id=1454240914]
+layout_mode = 0
+offset_left = 143.0
+offset_top = 26.0
+offset_right = 300.0
+offset_bottom = 130.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_lta6j")
+
+[node name="PanelContainer" type="PanelContainer" parent="PhoneBox/callerscreen" unique_id=2081822500]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 2.0
+offset_bottom = -21.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_styles/panel = SubResource("StyleBoxFlat_esp36")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CallerPanel/Margin" unique_id=1427739314]
-layout_mode = 2
-
-[node name="CallerContainer" type="VBoxContainer" parent="CallerPanel/Margin/HBoxContainer" unique_id=1388458574]
-custom_maximum_size = Vector2(340, -1)
-layout_mode = 2
-theme_override_constants/separation = 40
-
-[node name="NameLabel" type="Label" parent="CallerPanel/Margin/HBoxContainer/CallerContainer" unique_id=1066114383]
+[node name="NameLabel" type="Label" parent="PhoneBox/callerscreen/PanelContainer" unique_id=1066114383]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("3_tyn63")
+theme_override_colors/font_color = Color(0.14117648, 0.22352941, 0.3254902, 1)
+theme_override_fonts/font = ExtResource("4_b7mkc")
 theme_override_font_sizes/font_size = 26
-text = " Monique "
+horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="CallerNumLabel" type="Label" parent="CallerPanel/Margin/HBoxContainer/CallerContainer/NameLabel" unique_id=1854698295]
+[node name="CallerNumLabel" type="Label" parent="PhoneBox/callerscreen/PanelContainer/NameLabel" unique_id=1854698295]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
-offset_top = 36.0
-offset_right = 250.0
-offset_bottom = 56.0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+offset_left = 27.0
+offset_top = 35.0
+offset_right = 128.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(0.14117648, 0.22352941, 0.3254902, 1)
 theme_override_constants/line_spacing = 7
 theme_override_constants/paragraph_spacing = 2
-theme_override_fonts/font = ExtResource("3_qctdg")
+theme_override_fonts/font = ExtResource("4_b7mkc")
 theme_override_font_sizes/font_size = 14
-text = "  Caller 1 of 4"
+horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="QuoteLabel" type="Label" parent="CallerPanel/Margin/HBoxContainer/CallerContainer" unique_id=914679919]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 1
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_constants/line_spacing = -6
-theme_override_fonts/font = ExtResource("4_b7mkc")
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxTexture_0aagu")
-text = "My sister and I haven't talked in years. I want to say sorry to her on the radio."
-autowrap_mode = 2
+[node name="ModulePanel" type="Panel" parent="." unique_id=397111386]
+layout_mode = 0
+offset_left = 63.0
+offset_top = 109.0
+offset_right = 558.0
+offset_bottom = 620.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_gn6xx")
 
-[node name="Avatar" type="TextureRect" parent="CallerPanel/Margin/HBoxContainer" unique_id=109441222]
-visible = false
-custom_minimum_size = Vector2(170, 150)
-layout_mode = 2
-expand_mode = 1
-
-[node name="Polygon2D" type="Polygon2D" parent="CallerPanel" unique_id=1655799678]
-position = Vector2(-592, -275)
-color = Color(0.93333334, 0.93333334, 0.80784315, 1)
-polygon = PackedVector2Array(833, 450, 878, 487, 921, 500, 888, 523, 998, 553, 943, 515, 971, 498, 923, 469, 924, 449)
-
-[node name="Popup" type="PanelContainer" parent="." unique_id=407417997]
+[node name="Popup" type="PanelContainer" parent="ModulePanel" unique_id=407417997]
 unique_name_in_owner = true
 clip_contents = true
 layout_mode = 0
-offset_left = 43.0
-offset_top = 94.0
-offset_right = 647.0
-offset_bottom = 624.0
+offset_left = 16.0
+offset_top = 17.0
+offset_right = 471.0
+offset_bottom = 436.0
 theme_type_variation = &"type PanelMain"
-theme_override_styles/panel = SubResource("StyleBoxFlat_v8auc")
+theme_override_styles/panel = SubResource("StyleBoxFlat_sggwb")
 
-[node name="Right" type="PanelContainer" parent="Popup" unique_id=140086021]
+[node name="Right" type="PanelContainer" parent="ModulePanel/Popup" unique_id=140086021]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 6.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_skki2")
 
-[node name="Grid" type="GridContainer" parent="Popup/Right" unique_id=1053142724]
+[node name="Grid" type="GridContainer" parent="ModulePanel/Popup/Right" unique_id=1053142724]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
 
-[node name="Slot1Btn" type="Button" parent="Popup/Right/Grid" unique_id=831595657]
+[node name="Slot1Btn" type="Button" parent="ModulePanel/Popup/Right/Grid" unique_id=948706787]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_pressed_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_hover_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_fonts/font = ExtResource("3_tyn63")
+theme_override_styles/normal = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_st1gu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1t40j")
+text = "Piano"
+icon_alignment = 1
 
-[node name="Slot2Btn" type="Button" parent="Popup/Right/Grid" unique_id=521594571]
+[node name="Slot2Btn" type="Button" parent="ModulePanel/Popup/Right/Grid" unique_id=1960617120]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_pressed_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_hover_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_fonts/font = ExtResource("3_tyn63")
+theme_override_styles/normal = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_st1gu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1t40j")
+text = "Piano"
+icon_alignment = 1
 
-[node name="Slot3Btn" type="Button" parent="Popup/Right/Grid" unique_id=109752336]
+[node name="Slot3Btn" type="Button" parent="ModulePanel/Popup/Right/Grid" unique_id=595239336]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_pressed_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_hover_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_fonts/font = ExtResource("3_tyn63")
+theme_override_styles/normal = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_st1gu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1t40j")
+text = "Piano"
+icon_alignment = 1
 
-[node name="Slot4Btn" type="Button" parent="Popup/Right/Grid" unique_id=543601782]
+[node name="Slot4Btn" type="Button" parent="ModulePanel/Popup/Right/Grid" unique_id=434649113]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_pressed_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_colors/font_hover_color = Color(0.16872084, 0.110006, 0.05950766, 1)
+theme_override_fonts/font = ExtResource("3_tyn63")
+theme_override_styles/normal = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_st1gu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1t40j")
+text = "Piano"
+icon_alignment = 1
+
+[node name="Label" type="Label" parent="ModulePanel" unique_id=1308718363]
+layout_mode = 0
+offset_left = 195.0
+offset_top = 457.0
+offset_right = 287.0
+offset_bottom = 480.0
+theme_override_colors/font_color = Color(0.8235294, 0.7647059, 0.6901961, 1)
+theme_override_fonts/font = ExtResource("3_tyn63")
+theme_override_font_sizes/font_size = 18
+text = "Studio Desk"
 
 [node name="TimePanel" type="PanelContainer" parent="." unique_id=336892204]
 layout_mode = 0
@@ -226,6 +466,49 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/default_color = Color(0, 0, 0, 1)
 text = "Task"
+
+[node name="CallerPanel" type="Panel" parent="." unique_id=182882346]
+layout_mode = 0
+offset_left = 603.0
+offset_top = 138.0
+offset_right = 912.0
+offset_bottom = 317.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
+
+[node name="Margin" type="MarginContainer" parent="CallerPanel" unique_id=343397753]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="QuoteLabel" type="Label" parent="CallerPanel/Margin" unique_id=914679919]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_constants/line_spacing = -6
+theme_override_fonts/font = ExtResource("4_b7mkc")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxTexture_0aagu")
+autowrap_mode = 3
+
+[node name="Avatar" type="TextureRect" parent="CallerPanel/Margin" unique_id=109441222]
+visible = false
+custom_minimum_size = Vector2(170, 150)
+layout_mode = 2
+expand_mode = 1
+
+[node name="Polygon2D" type="Polygon2D" parent="CallerPanel" unique_id=984093018]
+position = Vector2(123.99997, 8)
+scale = Vector2(0.6666667, 0.972973)
+color = Color(0.8980392, 0.8784314, 0.8156863, 1)
+polygon = PackedVector2Array(184, 172, 217.39886, 192.9451, 243, 209, 244, 172)
 
 [node name="MenuBtn" type="Button" parent="." unique_id=1074809774]
 unique_name_in_owner = true

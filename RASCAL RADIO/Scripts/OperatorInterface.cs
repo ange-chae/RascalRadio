@@ -19,6 +19,8 @@ public partial class OperatorInterface : Control
     private Control _phone;
     private Tween _buzzTween;
     private string _lastCallerKey = "";
+    private ModuleSlot _openSlot;
+    private Button _flipBtn;
 
     public override void _Ready()
     {
@@ -58,6 +60,9 @@ public partial class OperatorInterface : Control
         gs.CallerChanged += OnCaller;
         gs.QuotaChanged += OnQuota;
         gs.KeypadChanged += OnKeypadChanged;
+        gs.TasksChanged += OnTasksChanged;
+        gs.FlipChanged += ApplyFlip;
+        gs.TopicChanged += RefreshTasks;
 
         SetText("%StrikeCount", "none");
         SetupSlots();
@@ -99,6 +104,11 @@ public partial class OperatorInterface : Control
 
         _holder = new VBoxContainer();
         margin.AddChild(_holder);
+
+        _flipBtn = new Button { Text = "FLIP BACK", Visible = false, CustomMinimumSize = new Vector2(0, 40) };
+        UiStyle.StyleButton(_flipBtn, UiStyle.Yellow);
+        _flipBtn.Pressed += () => GameSession.Instance.RequestUnflip();
+        _holder.AddChild(_flipBtn);
 
         // ---- slot buttons already in the scene ----
         for (int i = 1; i <= 4; i++)
@@ -144,6 +154,7 @@ public partial class OperatorInterface : Control
     {
         if (_taskLabel == null) return;
         var gs = GameSession.Instance;
+        if (!gs.IsTutorial) { _taskLabel.Text = gs.TaskBbcode(); return; }
         var items = new System.Collections.Generic.List<(string text, bool done)>();
 
         if (gs.IsTutorial)
@@ -238,7 +249,7 @@ public partial class OperatorInterface : Control
         _modules.Clear();
 
         // Register modules. Add more here later (wires, dials, etc.)
-        if (gs.IsTutorial || gs.HasKeypadProblem)
+        if (gs.IsTutorial || gs.HasKeypadProblem || gs.CurrentLevel?.HasKeypad == true)
         {
             _modules.Add(new ModuleSlot
             {
@@ -288,6 +299,8 @@ public partial class OperatorInterface : Control
                 btn.Disabled = true;
             }
         }
+
+        OnTasksChanged();
     }
 
 
@@ -302,7 +315,12 @@ public partial class OperatorInterface : Control
         }
 
         foreach (Node c in _holder.GetChildren())
-            if (c is Control ctrl) ctrl.Visible = (ctrl == module.Instance);
+            if (c is Control ctrl && ctrl != _flipBtn) ctrl.Visible = (ctrl == module.Instance);
+
+        _openSlot = module;
+        _openModule = module.Instance;
+        _popup.Visible = true;
+        CallDeferred(nameof(ApplyFlip));
 
         _openModule = module.Instance;
         _popup.Visible = true;
@@ -312,6 +330,8 @@ public partial class OperatorInterface : Control
     {
         _popup.Visible = false;
         _openModule = null;
+        _openSlot = null;
+        ApplyFlip();
     }
 
     private void OnModuleSolved(ModuleSlot module)
@@ -324,13 +344,16 @@ public partial class OperatorInterface : Control
 
     private void UpdateSlotButtons()
     {
+        var gs = GameSession.Instance;
         for (int i = 0; i < _modules.Count; i++)
         {
             var btn = GetNodeOrNull<Button>($"%Slot{i + 1}Btn");
             if (btn == null) continue;
             var m = _modules[i];
-            btn.Text = m.Solved ? $"{m.Title} ✔" : $"{m.Title} !";
-            btn.Modulate = m.Solved ? new Color(0.7f, 1f, 0.7f) : Colors.White;
+            bool flipped = !m.Solved && gs.FlippedModule == m.Title;
+            btn.Text = m.Solved ? $"{m.Title} ✔" : flipped ? $"{m.Title} !!" : $"{m.Title} !";
+            btn.Modulate = m.Solved ? new Color(0.7f, 1f, 0.7f) : flipped ? new Color(1f, 0.7f, 0.7f) : Colors.White;
+            btn.Disabled = m.Solved;
         }
     }
 
@@ -351,9 +374,32 @@ public partial class OperatorInterface : Control
 
         _keypad?.Refresh(gs.KeypadLine, gs.KeypadStatic);
 
-        // A fresh problem means the keypad needs attention again
         var keypadSlot = FindSlot("Keypad");
-        if (keypadSlot != null) { keypadSlot.Solved = false; UpdateSlotButtons(); }
+        if (keypadSlot != null && gs.IsTutorial) { keypadSlot.Solved = false; UpdateSlotButtons(); }
+    }
+
+    private void OnTasksChanged()
+    {
+        var gs = GameSession.Instance;
+        if (!gs.IsTutorial)
+        {
+            foreach (var m in _modules)
+                m.Solved = gs.IsDone(m.Title == "Keypad" ? TaskKind.Keypad : TaskKind.Piano);
+            UpdateSlotButtons();
+            if (_openSlot != null && _openSlot.Solved) CloseModule();   // module finished: it closes and its button turns green
+        }
+        RefreshTasks();
+    }
+
+    private void ApplyFlip()
+    {
+        if (_panel == null) return;
+        var gs = GameSession.Instance;
+        bool flipped = _openSlot != null && gs.FlippedModule != "" && gs.FlippedModule == _openSlot.Title;
+        _panel.PivotOffset = _panel.Size / 2;
+        _panel.Rotation = flipped ? Mathf.Pi : 0f;
+        if (_flipBtn != null) _flipBtn.Visible = flipped;
+        UpdateSlotButtons();
     }
 
     private void SetText(string path, string text)

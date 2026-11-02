@@ -1,5 +1,7 @@
 using Godot;
 using RascalRadio.Core.Models;
+using static StudioPianoData;
+using System.Linq;
 
 public partial class TechnicianInterface : PopupFrame
 {
@@ -17,6 +19,9 @@ public partial class TechnicianInterface : PopupFrame
     private const int KeypadPageIndex = 0;
     private const int PianoPageIndex = 1;
     private int _page;
+    private RichTextLabel _taskLabel;
+
+    private Button _manualBtn;
 
     // ===== YOUR INSTRUCTIONS GO HERE =====
     // Old text, kept so you can copy from it. Delete it when you don't need it.
@@ -56,7 +61,7 @@ public partial class TechnicianInterface : PopupFrame
             "3. Tell the Operator the code. They type it and press ROUTE.\n\n" +
             "CLEARING STATIC FAULTS\n" +
             "Press CLEAR, enter 0000, then press ROUTE.\n\n" +
-            (gs != null && gs.IsTutorial ? "In practice mode a wrong code costs nothing." : ""); ;
+            (gs != null && gs.IsTutorial ? "In practice mode a wrong code costs nothing." : "") + FlipHelp();
     }
 
     // The jingle table is built from StudioPianoData, so the manual can never disagree with the game.
@@ -74,20 +79,23 @@ public partial class TechnicianInterface : PopupFrame
 
         sb.Append("OCTAVE\n");
         sb.Append("NORMAL = leave it alone.\n");
-        sb.Append("-  = Operator presses the [-] button first.\n");
-        sb.Append("+  = Operator presses the [+] button first.\n\n");
+        sb.Append("-  = Operator presses the [lb]-[rb] button first.\n");
+        sb.Append("+  = Operator presses the [lb]+[rb] button first.\n\n");
 
         sb.Append("JINGLES\n");
         foreach (var jingle in StudioPianoData.GetJingles())
         {
             sb.Append($"\n{jingle.Key.ToUpper()}\n");
             int n = 1;
-            foreach (var cue in jingle.Value)
-                sb.Append($"  {n++}. {cue.ColorName}, {cue.Letter}, {StudioPianoData.OctaveLabel(cue.Octave)}\n");
+            foreach (var cue in jingle.Value) {
+                string hex = StudioPianoData.SwatchColors.TryGetValue(cue.ColorName, out var c) ? "#" + c.ToHtml(false) : "#888888";
+                sb.Append($"  {n++}. [color={hex}]{cue.ColorName}[/color], {cue.Letter}, {StudioPianoData.OctaveLabel(cue.Octave)}\n");
+            }       
         }
 
         sb.Append("\nKEYS FLASHING RED?\n");
         sb.Append("Operator plays B A G F E D C. Then the jingle continues.");
+        sb.Append(FlipHelp());
         return sb.ToString();
     }
     public override void _Ready()
@@ -98,12 +106,22 @@ public partial class TechnicianInterface : PopupFrame
         if (gs != null && gs.IsTutorial) AddChild(new TutorialOverlay { RoleName = "Technician" });
 
         base._Ready();
+        StyleBars();
 
         var manual = GetNodeOrNull<Control>("%Popup");
         if (manual != null) manual.Visible = false;   // the manual starts closed
 
-        var manualBtn = GetNodeOrNull<Button>("%ManualBtn");
-        if (manualBtn != null) manualBtn.Pressed += ToggleManual;
+        _manualBtn = GetNodeOrNull<Button>("%ManualBtn")
+            ?? FindChild("ManualBtn", true, false) as Button
+            ?? FindChildren("*", "Button", true, false).OfType<Button>()
+                .FirstOrDefault(b => b.Text.ToLower().Contains("manual"));
+
+        if (_manualBtn != null) _manualBtn.Pressed += ToggleManual;
+        else GD.PushError("TechnicianInterface: manual button not found. Name it ManualBtn.");
+
+        // NEW: task box setup (step 8b)
+        _taskLabel = GetNodeOrNull<RichTextLabel>("%TaskLabel");
+        if (_taskLabel != null) { _taskLabel.BbcodeEnabled = true; _taskLabel.FitContent = true; _taskLabel.ScrollActive = false; }
 
         string[] tabs = { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" };
         for (int i = 0; i < tabs.Length; i++)
@@ -123,11 +141,25 @@ public partial class TechnicianInterface : PopupFrame
         gs.AirtimeChanged += OnHealth;
         gs.KeypadChanged += OnHealth;
         gs.StrikesChanged += OnStrikes;
+        gs.TasksChanged += RefreshTasks;   // NEW
+        gs.TopicChanged += RefreshTasks;   // NEW
+        gs.FlipChanged += OnHealth;        // NEW
         if (gs.Piano != null) gs.Piano.FaultChanged += OnPianoFault;
         OnHealth();
         OnStrikes();
         OnQuota();
+        RefreshTasks();                    // NEW
         if (gs.IsTutorial) OnStep(gs.CurrentStep);
+    }
+
+    private void StyleBars()
+    {
+        var d = GameSession.Instance?.CurrentLevel;
+        int qFloor = d?.QualityFloor ?? 45;
+        int sFloor = d?.SignalFloor ?? 30;
+
+        if (GetNodeOrNull<RetroBar>("%QualityBar") is { } q) { q.DangerBelow = qFloor; q.WarnBelow = qFloor + 20; }
+        if (GetNodeOrNull<RetroBar>("%SignalBar") is { } s) { s.DangerBelow = sFloor; s.WarnBelow = sFloor + 36; }
     }
 
     private void ToggleManual()
@@ -145,6 +177,12 @@ public partial class TechnicianInterface : PopupFrame
         }
     }
 
+    private void RefreshTasks()
+    {
+        var gs = GameSession.Instance;
+        if (_taskLabel != null && gs != null && !gs.IsTutorial) _taskLabel.Text = gs.TaskBbcode();
+    }
+
     private void OnHealth()
     {
         var gs = GameSession.Instance;
@@ -156,20 +194,34 @@ public partial class TechnicianInterface : PopupFrame
     private void OnStrikes()
     {
         var gs = GameSession.Instance;
-        SetText("%StrikeCount", gs.Strikes == 0 ? "none" : $"{gs.Strikes}/{GameSession.MaxStrikes}");
+        int max = GameSession.MaxStrikes;
+
+        var parts = new string[max];
+        for (int i = 0; i < max; i++) parts[i] = i < gs.Strikes ? "X" : "-";
+        SetText("%StrikeCount", string.Join(" ", parts));   // none: "- - -", one strike: "X - -", three: "X X X"
+
+        var lbl = GetNodeOrNull<Label>("%StrikeCount");
+        if (lbl != null)
+            lbl.AddThemeColorOverride("font_color",
+                gs.Strikes == 0 ? new Color("2FD6A0")        // green
+              : gs.Strikes == 1 ? new Color("FFD25A")        // yellow
+                                : new Color("E5484D"));      // red
     }
     public override void _ExitTree()
-	{
-		var gs = GameSession.Instance;
-		if (gs == null) return;
+    {
+        var gs = GameSession.Instance;
+        if (gs == null) return;
         gs.AirtimeChanged -= OnHealth;
         gs.KeypadChanged -= OnHealth;
         gs.StrikesChanged -= OnStrikes;
+        gs.TasksChanged -= RefreshTasks;   // NEW
+        gs.TopicChanged -= RefreshTasks;   // NEW
+        gs.FlipChanged -= OnHealth;        // NEW
         if (gs.Piano != null) gs.Piano.FaultChanged -= OnPianoFault;
         gs.StepChanged -= OnStep;
-		gs.QuotaChanged -= OnQuota;
-		gs.KeypadChanged -= OnKeypadChanged;
-	}
+        gs.QuotaChanged -= OnQuota;
+        gs.KeypadChanged -= OnKeypadChanged;
+    }
 
     private void OnKeypadChanged()
     {
@@ -190,6 +242,11 @@ public partial class TechnicianInterface : PopupFrame
 		if (l != null) l.Text = text;
 	}
 
+    private static string FlipHelp() =>
+    "\n\nMODULE UPSIDE DOWN?\n" +
+    "The raccoon turned it. Operator presses the FLIP BACK button on the module panel.\n" +
+    "It is at the opposite corner while the panel is upside down.";
+
     private void ShowPage(int i)
     {
         _page = i;
@@ -204,6 +261,7 @@ public partial class TechnicianInterface : PopupFrame
             text.Text = i == KeypadPageIndex ? MathPage()
                       : i == PianoPageIndex ? PianoPage()
                       : "";
+            text.BbcodeEnabled = true;
         }
 
         // ===== PICTURE APPEARS HERE =====
@@ -227,8 +285,7 @@ public partial class TechnicianInterface : PopupFrame
         if (popup == null || !popup.Visible) return;
 
         // The MANUAL button handles its own toggle.
-        var btn = GetNodeOrNull<Control>("%ManualBtn");
-        if (btn != null && btn.GetGlobalRect().HasPoint(mb.GlobalPosition)) return;
+        if (_manualBtn != null && _manualBtn.GetGlobalRect().HasPoint(mb.GlobalPosition)) return;
 
         // A click on the manual itself does nothing (unless Popup is a full-screen holder).
         var rect = popup.GetGlobalRect();

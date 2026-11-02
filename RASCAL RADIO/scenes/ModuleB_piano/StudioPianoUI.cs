@@ -7,6 +7,8 @@ using Godot;
 /// Local test: connect KeyPressed to module.RequestKey.
 /// LAN: connect KeyPressed to an RPC that asks the host to call RequestKey.
 /// </summary>
+/// 
+
 public partial class StudioPianoUI : PanelContainer
 {
 	public event Action<string> KeyPressed;
@@ -51,7 +53,21 @@ public partial class StudioPianoUI : PanelContainer
 		RefreshAll();
 	}
 
-	private void EnsureBuilt()
+    public override void _ExitTree()
+    {
+        if (_module == null) return;
+        _module.Configured -= RefreshAll;
+        _module.StatusChanged -= OnStatusChanged;
+        _module.CueChanged -= OnCueChanged;
+        _module.OctaveChanged -= OnOctaveChanged;
+        _module.KeyResult -= OnKeyResult;
+        _module.TimeChanged -= OnTimeChanged;
+        _module.FaultChanged -= OnFaultChanged;
+        _module.FaultProgressChanged -= OnFaultProgressChanged;
+        _module = null;
+    }
+
+    private void EnsureBuilt()
 	{
 		if (_built)
 		{
@@ -85,8 +101,8 @@ public partial class StudioPianoUI : PanelContainer
 		var cueRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
 		cueRow.AddThemeConstantOverride("separation", 12);
 		root.AddChild(cueRow);
-		_cueSwatch = new ColorRect { CustomMinimumSize = new Vector2(48, 48) };
-		cueRow.AddChild(_cueSwatch);
+        _cueSwatch = new ColorRect { CustomMinimumSize = new Vector2(72, 72) };
+        cueRow.AddChild(_cueSwatch);
 		_cueLabel = new Label();
 		_cueLabel.AddThemeFontSizeOverride("font_size", 36);
 		cueRow.AddChild(_cueLabel);
@@ -235,13 +251,19 @@ public partial class StudioPianoUI : PanelContainer
 			}
 			_cueLabel.Text = text;
 		}
-		else
-		{
-			// Notes hidden: the Technician reads them from the manual table.
-			_cueSwatch.Visible = false;
-			_cueLabel.Text = $"PLAY: {_module.SequenceName.ToUpper()}";
-		}
-		_progressLabel.Text = $"Step {index + 1} of {total}";
+        else
+        {
+            // Letter and octave stay hidden (the Technician reads them).
+            // The colored light still shows which step is live.
+            _cueSwatch.Visible = true;
+            _cueSwatch.Color = StudioPianoData.SwatchColors.TryGetValue(cue.ColorName, out var swatch)
+                ? swatch
+                : Colors.Gray;
+            _cueLabel.Text = $"{cue.ColorName} LIGHT";
+        }
+        _progressLabel.Text = _module.ShowNotes
+            ? $"Step {index + 1} of {total}"
+            : $"{_module.SequenceName.ToUpper()} - step {index + 1} of {total}";
 	}
 
 	private void OnOctaveChanged(int octave)

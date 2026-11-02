@@ -1,8 +1,9 @@
-using System;
-using System.Collections.Generic;
 using Godot;
 using RascalRadio.Core.Models;
 using RascalRadio.Core.Systems;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 // AUTOLOAD (Project Settings > Globals > Autoload, name: GameSession).
 // The HOST owns the real state. Clients only send requests (RpcId(1, ...)),
@@ -10,8 +11,18 @@ using RascalRadio.Core.Systems;
 public partial class GameSession : Node
 {
 	public static GameSession Instance { get; private set; }
-    public const string PartyScenePath = "res://scenes/player_lists.tscn"; 
-    private GameOverScreen _gameOverScreen;
+    public const string PartyScenePath = "res://scenes/player_lists.tscn";
+
+    public readonly List<LevelTask> Tasks = new();
+    public bool LevelFinished { get; private set; }
+    public bool Ended => GameOver || LevelFinished;
+    public string FlippedModule { get; private set; } = "";
+    public event Action TasksChanged;
+    public event Action FlipChanged;
+    private Node _endScreen;
+
+    public int FaultCount => (Piano != null && Piano.InFault ? 1 : 0) + (KeypadStatic ? 1 : 0) + (FlippedModule != "" ? 1 : 0);
+    public int Signal => Mathf.Clamp(100 - 35 * FaultCount, 0, 100);
 
     // Keypad feedback lines start with this tag so the keypad can pick them out of the Feedback event.
     public const string KeypadTag = "🔢 ";
@@ -37,13 +48,11 @@ public partial class GameSession : Node
     private bool _callerOnLine;
 
     // Same on every peer: the piano runs in lockstep and the keypad state is synced.
-    public int FaultCount => (Piano != null && Piano.InFault ? 1 : 0) + (KeypadStatic ? 1 : 0);
-    public int Signal => Mathf.Clamp(100 - 35 * FaultCount, 0, 100);
+
 
     private double _qualityTick, _sabotageTimer = -1;
 
-
-
+    private double _qualityLow, _signalLow;
     // Line Override problem. The Operator UI shows ONLY KeypadLine (+ the static fault).
     // The Technician UI shows ONLY the level and the rule. Neither can solve it alone.
     public int KeypadLine { get; private set; }
@@ -83,11 +92,13 @@ public partial class GameSession : Node
         Piano = new StudioPianoModule();
         AddChild(Piano);
         Piano.Completed += OnPianoCompleted;
+        Piano.KeyResult += OnPianoKey;
     }
 
     public override void _ExitTree()
     {
         if (Piano != null) Piano.Completed -= OnPianoCompleted;
+        if (Piano != null) Piano.KeyResult -= OnPianoKey;
     }
 
     // Called on EVERY peer from PlayerList.StartGameRpc.
@@ -103,7 +114,10 @@ public partial class GameSession : Node
         _tutorial = null; _broadcaster = null; _callers.Clear(); _override = null;
         AirtimeQuality = 100;
         Strikes = 0; GameOver = false; _qualityTick = 0; _sabotageTimer = -1;
+        LevelFinished = false; FlippedModule = ""; BuildTasks();
         Topic = Genre.Drama;
+        _qualityLow = 0; _signalLow = 0;
+
 
         Piano.SetActive(false);
         Piano.Reset();
@@ -158,7 +172,7 @@ public partial class GameSession : Node
 
         if (def.HasPiano) StartRandomPiano();
         if (_callers.Count > 0) ScheduleNextCaller(0, 5.0);   // first caller rings after 5 seconds
-        if (_override != null) SendKeypadProblem();
+        if (_override != null) SendKeypadProblem(0);   // first problem is always clean
     }
 
     // ---------- Requests (any peer -> host) ----------
@@ -221,7 +235,7 @@ public partial class GameSession : Node
         {
             case KeypadResult.Correct:
                 if (_tutorial != null) Resolve(TutorialAction.KeypadSolved);
-                else { Say(KeypadTag + "Line routed!", true); SendKeypadProblem(); }   // a fresh problem
+                else OnKeypadRouted();
                 break;
             case KeypadResult.StaticCleared:
 				Rpc(MethodName.SyncKeypadRpc, _override.Problem.Line, _override.Problem.Level,
@@ -232,33 +246,39 @@ public partial class GameSession : Node
 				Say(KeypadTag + "⚡ Static on the line. Ask the Technician how to clear it.");
 				break;
 			default:
-				Say(KeypadTag + "Wrong code. Read the line number to the Technician and try again. No penalty.");
+                AddMistake(TaskKind.Keypad);
+                Say(KeypadTag + "Wrong code. Read the line number to the Technician and try again. No penalty.");
 				break;
 		}
 	}
 
     private void RealDecide(bool accept)
     {
-        if (GameOver || !_callerOnLine || _broadcaster == null || _callers.Count == 0) return;
-        _callerOnLine = false;   // ignores double-clicks and presses while nobody is on the line
+        if (Ended || !_callerOnLine || _broadcaster == null || _callers.Count == 0) return;
+        _callerOnLine = false;
 
         Caller caller = _callers[_callerIndex];
         int strikesBefore = _broadcaster.Strikes;
         bool correct = accept ? _broadcaster.Accept(caller) : _broadcaster.Reject(caller);
 
+        var callersTask = TaskOf(TaskKind.Callers);
         if (accept && correct) Rpc(MethodName.SyncQuotaRpc, _broadcaster.QuotaMet, _broadcaster.QuotaTarget);
+        if (!correct && callersTask != null) callersTask.Mistakes++;
+        if (callersTask != null && _broadcaster.QuotaMet >= callersTask.Target) callersTask.Done = true;
         if (_broadcaster.Strikes != strikesBefore) Rpc(MethodName.SyncStrikesRpc, _broadcaster.Strikes);
         if (!correct) Say("Wrong call. That's a strike.");
 
         if (_broadcaster.Strikes >= BroadcasterLogic.MaxStrikes) { Rpc(MethodName.GameOverRpc); return; }
-
         if (accept && caller.IsRaccoon) TriggerSabotage();
 
-        Rpc(MethodName.SyncCallerRpc, "", "", 0, _callers.Count);   // line goes quiet: both screens hide the caller
+        SyncTasks();
+        Rpc(MethodName.SyncCallerRpc, "", "", 0, _callers.Count);   // line goes quiet
+
+        if (callersTask?.Done == true) { Say("Quota reached!", true); CheckLevelDone(); return; }
         if (_callerIndex + 1 < _callers.Count)
             ScheduleNextCaller(_callerIndex + 1, (CurrentLevel?.CallerGap ?? 6) * (0.75 + _rng.NextDouble() * 0.5));
         else
-            Say("That was the last caller.", true);   // TODO: level complete screen
+            FinishLevel();   // out of callers
     }
 
     private void ScheduleNextCaller(int index, double delay)
@@ -295,13 +315,13 @@ public partial class GameSession : Node
         else if (step == TutorialStep.SuspiciousCaller) SendCaller(2);   // the raccoon is caller 3
     }
 
-	private void SendKeypadProblem()
-	{
-		var p = _override.NewProblem();
-		Rpc(MethodName.SyncKeypadRpc, p.Line, p.Level, _override.Rule.EvenSuffix, _override.Rule.OddSuffix, p.StaticFault);
-	}
+    private void SendKeypadProblem(double staticChance = 0.2)
+    {
+        var p = _override.NewProblem(null, staticChance);
+        Rpc(MethodName.SyncKeypadRpc, p.Line, p.Level, _override.Rule.EvenSuffix, _override.Rule.OddSuffix, p.StaticFault);
+    }
 
-	private void SendCaller(int index)
+    private void SendCaller(int index)
 	{
         _callerOnLine = true;
         _callerIndex = index;
@@ -428,9 +448,25 @@ public partial class GameSession : Node
 
     private void OnPianoCompleted()
     {
-        if (!Multiplayer.IsServer()) return;
+        if (!Multiplayer.IsServer() || CurrentLevel == null || Ended) return;
+
+        var t = TaskOf(TaskKind.Piano);
+        if (t != null)
+        {
+            t.Progress++;
+            if (t.Progress >= t.Target)
+            {
+                t.Done = true;
+                Piano.SetActive(false);
+                if (FlippedModule == "Piano") Rpc(MethodName.SyncFlipRpc, "");
+                Say("🎹 Piano finished!", true);
+                SyncTasks(); CheckLevelDone();
+                return;
+            }
+            SyncTasks();
+        }
         Say("🎹 Jingle played!", true);
-        StartRandomPiano();   // a fresh jingle; remove this line if the piano should only run once
+        StartRandomPiano();
     }
 
     private void SetTopic(Genre genre) => Rpc(MethodName.SyncTopicRpc, (int)genre);
@@ -466,20 +502,19 @@ public partial class GameSession : Node
     // ---------- Quality, sabotage, strikes (host) ----------
     public override void _Process(double delta)
     {
-        if (CurrentLevel == null || IsTutorial || GameOver || _broadcaster == null) return;
+        if (CurrentLevel == null || IsTutorial || Ended || _broadcaster == null) return;
         if (!Multiplayer.HasMultiplayerPeer() || !Multiplayer.IsServer()) return;
-        if (!Multiplayer.IsServer() || IsTutorial || GameOver || CurrentLevel == null || _broadcaster == null) return;
 
-        // Quality: faults drain it, calm seconds heal it.
         _qualityTick += delta;
         if (_qualityTick >= 1.0)
         {
             _qualityTick -= 1.0;
             int faults = FaultCount;
-            ApplyAirtime(faults > 0 ? -2 * faults : 1);
+            ApplyAirtime(faults > 0 ? -CurrentLevel.FaultDrain * faults : CurrentLevel.CalmRecovery);
         }
 
-        // Raccoon sabotage timer
+        CheckHealthTasks(delta);
+
         if (_sabotageTimer > 0)
         {
             _sabotageTimer -= delta;
@@ -495,34 +530,31 @@ public partial class GameSession : Node
 
     public void TriggerSabotage()
     {
-        if (!Multiplayer.IsServer() || GameOver) return;
+        if (!Multiplayer.IsServer() || Ended) return;
 
         var options = new List<Action>();
+        bool pianoLive = CurrentLevel?.HasPiano == true && !IsDone(TaskKind.Piano);
+        bool keypadLive = _override?.Problem != null && !IsDone(TaskKind.Keypad);
 
-        // Piano: keys flash red (only while a jingle is being played)
-        if (CurrentLevel?.HasPiano == true && Piano.Active && !Piano.InFault
-            && Piano.Status == StudioPianoModule.PianoStatus.Working)
-        {
-            options.Add(() =>
-            {
-                Say("The raccoon is chewing the piano wires! Keys flashing red.");
-                TriggerPianoFault();
-            });
-        }
+        if (pianoLive && Piano.Active && !Piano.InFault && Piano.Status == StudioPianoModule.PianoStatus.Working)
+            options.Add(() => { Say("🦝 The raccoon is chewing the piano wires! Keys flashing red."); TriggerPianoFault(); });
 
-        // Keypad: static on the current line problem
-        if (_override?.Problem != null && !_override.Problem.StaticFault)
-        {
+        if (keypadLive && !_override.Problem.StaticFault)
             options.Add(() =>
             {
                 var p = _override.Problem;
                 p.StaticFault = true;
                 Rpc(MethodName.SyncKeypadRpc, p.Line, p.Level, _override.Rule.EvenSuffix, _override.Rule.OddSuffix, true);
-                Say(KeypadTag + "The raccoon is on the line! Static. Ask the Technician how to clear it.");
+                Say(KeypadTag + "⚡ The raccoon is on the line! Static. Ask the Technician how to clear it.");
             });
+
+        if (CurrentLevel?.FlipSabotage == true && FlippedModule == "")
+        {
+            if (keypadLive) options.Add(() => FlipModule("Keypad"));
+            if (pianoLive) options.Add(() => FlipModule("Piano"));
         }
 
-        if (options.Count == 0) return;   // nothing to sabotage right now
+        if (options.Count == 0) return;
         options[_rng.Next(options.Count)]();
     }
 
@@ -538,8 +570,8 @@ public partial class GameSession : Node
     {
         GameOver = true;
         Piano.SetActive(false);
-        _gameOverScreen = new GameOverScreen();
-        GetTree().Root.AddChild(_gameOverScreen);
+        _endScreen = new GameOverScreen();
+        GetTree().Root.AddChild(_endScreen);
     }
 
     // ---------- Back to the players list ----------
@@ -566,8 +598,9 @@ public partial class GameSession : Node
 
     private void ResetSession()
     {
-        if (IsInstanceValid(_gameOverScreen)) _gameOverScreen.QueueFree();   // it lives on the root, so free it by hand
-        _gameOverScreen = null;
+        if (IsInstanceValid(_endScreen)) _endScreen.QueueFree();
+        _endScreen = null;
+        Tasks.Clear(); FlippedModule = ""; LevelFinished = false;
 
         CurrentLevel = null; LevelId = ""; GameOver = false;
         _tutorial = null; _broadcaster = null; _override = null; _callers.Clear(); _endingDone.Clear();
@@ -577,5 +610,186 @@ public partial class GameSession : Node
         Piano.Reset();
 
         _session++; _callerOnLine = false;
+    }
+
+    // ---------- Tasks and score ----------
+    public LevelTask TaskOf(TaskKind k) => Tasks.Find(t => t.Kind == k);
+    public bool IsDone(TaskKind k) => TaskOf(k)?.Done == true;
+
+    private void BuildTasks()
+    {
+        Tasks.Clear();
+        var d = CurrentLevel;
+        if (d == null) return;
+        Tasks.Add(new LevelTask { Kind = TaskKind.Callers, Target = d.QuotaTarget });
+        if (d.HasKeypad) Tasks.Add(new LevelTask { Kind = TaskKind.Keypad, Target = d.KeypadTarget });
+        if (d.HasPiano) Tasks.Add(new LevelTask { Kind = TaskKind.Piano, Target = d.PianoTarget });
+        Tasks.Add(new LevelTask { Kind = TaskKind.Quality });
+        Tasks.Add(new LevelTask { Kind = TaskKind.Signal });
+    }
+
+    public string TaskText(LevelTask t) => t.Kind switch
+    {
+        TaskKind.Callers => $"Accept {t.Target} {Topic} callers ({Math.Min(QuotaMet, t.Target)}/{t.Target})",
+        TaskKind.Keypad => $"Route {t.Target} lines on the keypad ({t.Progress}/{t.Target})",
+        TaskKind.Piano => $"Play {t.Target} jingles ({t.Progress}/{t.Target})",
+        TaskKind.Quality => $"Keep Quality above {CurrentLevel?.QualityFloor}%",
+        _ => $"Keep Signal above {CurrentLevel?.SignalFloor}%",
+    };
+
+    // The same text on every role's Task box.
+    public string TaskBbcode()
+    {
+        var sb = new StringBuilder();
+        foreach (var t in Tasks)
+        {
+            string text = TaskText(t);
+            if (t.Failed) sb.Append($"[color=#B3261E]- {text} (FAILED)[/color]\n");
+            else if (t.Done) sb.Append($"[color=#7A7A7A][s]- {text}[/s][/color]\n");
+            else sb.Append($"- {text}\n");
+        }
+        return sb.ToString().TrimEnd('\n');
+    }
+
+    public static (string Rank, string Title) Rating(int score) =>
+        score >= 40 ? ("S", "Perfect Broadcast") :
+        score >= 31 ? ("A", "Golden Broadcast") :
+        score >= 25 ? ("B", "Stable Broadcast") :
+                      ("F", "Broadcast Failure");
+
+    private void AddMistake(TaskKind k)
+    {
+        var t = TaskOf(k);
+        if (t == null) return;
+        t.Mistakes++;
+        SyncTasks();
+    }
+
+    private void OnPianoKey(string letter, bool correct)
+    {
+        if (!Multiplayer.IsServer() || CurrentLevel == null || Ended || correct) return;
+        if (!IsDone(TaskKind.Piano)) AddMistake(TaskKind.Piano);
+    }
+
+    private void OnKeypadRouted()
+    {
+        var t = TaskOf(TaskKind.Keypad);
+        if (t == null) { Say(KeypadTag + "Line routed!", true); SendKeypadProblem(); return; }
+
+        t.Progress++;
+        Say(KeypadTag + "Line routed!", true);
+        if (t.Progress >= t.Target)
+        {
+            t.Done = true;
+            Rpc(MethodName.SyncKeypadRpc, 0, 0, _override.Rule.EvenSuffix, _override.Rule.OddSuffix, false);   // line 0 = nothing incoming
+            if (FlippedModule == "Keypad") Rpc(MethodName.SyncFlipRpc, "");
+            Say(KeypadTag + "✔ All lines routed.", true);
+        }
+        else SendKeypadProblem();
+
+        SyncTasks();
+        CheckLevelDone();
+    }
+
+    private void CheckHealthTasks(double delta)
+    {
+        var d = CurrentLevel;
+        bool changed = false;
+
+        var q = TaskOf(TaskKind.Quality);
+        if (q != null && !q.Failed)
+        {
+            _qualityLow = AirtimeQuality <= d.QualityFloor ? _qualityLow + delta : 0;   // resets when it recovers
+            if (_qualityLow >= d.HealthGrace) { q.Failed = true; changed = true; }
+        }
+
+        var s = TaskOf(TaskKind.Signal);
+        if (s != null && !s.Failed)
+        {
+            _signalLow = Signal <= d.SignalFloor ? _signalLow + delta : 0;
+            if (_signalLow >= d.HealthGrace) { s.Failed = true; changed = true; }
+        }
+
+        if (changed) SyncTasks();
+    }
+    private void CheckLevelDone()
+    {
+        foreach (var t in Tasks)
+            if (!t.IsHealth && !t.Done) return;
+        FinishLevel();
+    }
+
+    private void FinishLevel()
+    {
+        if (!Multiplayer.IsServer() || Ended || Tasks.Count == 0) return;
+
+        int total = Tasks.Count, completed = 0;
+        double share = 25.0 / total, accuracy = 0;
+        foreach (var t in Tasks)
+        {
+            bool ok = t.IsHealth ? !t.Failed : t.Done;
+            if (!ok) continue;
+            completed++;
+            accuracy += share * Math.Max(0.0, 1.0 - 0.25 * t.Mistakes);   // each mistake costs 25% of this task's share
+        }
+        int completionPts = Mathf.RoundToInt(25f * completed / total);
+        int accuracyPts = Mathf.RoundToInt((float)accuracy);
+        Rpc(MethodName.LevelCompleteRpc, completionPts, accuracyPts, completed, total);
+    }
+
+    private void SyncTasks()
+    {
+        var data = new int[Tasks.Count * 4];
+        for (int i = 0; i < Tasks.Count; i++)
+        {
+            var t = Tasks[i];
+            data[i * 4] = t.Progress; data[i * 4 + 1] = t.Done ? 1 : 0;
+            data[i * 4 + 2] = t.Failed ? 1 : 0; data[i * 4 + 3] = t.Mistakes;
+        }
+        Rpc(MethodName.SyncTasksRpc, data);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncTasksRpc(int[] data)
+    {
+        for (int i = 0; i < Tasks.Count && i * 4 + 3 < data.Length; i++)
+        {
+            var t = Tasks[i];
+            t.Progress = data[i * 4]; t.Done = data[i * 4 + 1] == 1;
+            t.Failed = data[i * 4 + 2] == 1; t.Mistakes = data[i * 4 + 3];
+        }
+        TasksChanged?.Invoke();
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void LevelCompleteRpc(int completionPts, int accuracyPts, int completed, int total)
+    {
+        LevelFinished = true;
+        Piano.SetActive(false);
+        _endScreen = new LevelResultScreen { CompletionPts = completionPts, AccuracyPts = accuracyPts, Completed = completed, Total = total };
+        GetTree().Root.AddChild(_endScreen);
+    }
+
+    // ---------- Upside-down sabotage ----------
+    private void FlipModule(string module)
+    {
+        Say($"🦝 The raccoon flipped the {module} upside down! Press FLIP BACK on it.");
+        Rpc(MethodName.SyncFlipRpc, module);
+    }
+
+    public void RequestUnflip() => RpcId(1, MethodName.UnflipRpc);
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void UnflipRpc()
+    {
+        if (!Multiplayer.IsServer() || FlippedModule == "") return;
+        Rpc(MethodName.SyncFlipRpc, "");
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncFlipRpc(string module)
+    {
+        FlippedModule = module;
+        FlipChanged?.Invoke();
     }
 }

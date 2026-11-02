@@ -4,5 +4,13 @@ public enum Genre
 {
     Drama,
     Comedy,
-    Music
+    Music,
+    Romance,
+    Horror, 
+    Heartwarming, 
+    Thriller,
+    Mystery,
+    Tragedy, 
+    Revenge,
+    Supernatural
 }
