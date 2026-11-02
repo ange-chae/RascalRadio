@@ -42,7 +42,7 @@ public partial class GameSession : Node
 	public int CallerTotal { get; private set; }
     public int Strikes { get; private set; }
     public bool GameOver { get; private set; }
-    public static int MaxStrikes => BroadcasterLogic.MaxStrikes;
+    public static int MaxStrikes => Instance?._broadcaster?.MaxStrikes ?? Instance?.CurrentLevel?.MaxStrikes ?? BroadcasterLogic.DefaultMaxStrikes;
     public event Action StrikesChanged;
     private int _session;          // changes whenever a level starts or ends, so old timers do nothing
     private bool _callerOnLine;
@@ -64,6 +64,7 @@ public partial class GameSession : Node
     public int AirtimeQuality { get; private set; } = 100;
     public event Action AirtimeChanged;
     public StudioPianoModule Piano { get; private set; }
+    public SoundboardModule Soundboard { get; private set; }
     private static readonly string[] PianoSequences = { "Morning Jingle", "Night Jingle", "Breaking News Alert" };
 
     // Plain C# events. Subscribers MUST unsubscribe in _ExitTree.
@@ -93,12 +94,17 @@ public partial class GameSession : Node
         AddChild(Piano);
         Piano.Completed += OnPianoCompleted;
         Piano.KeyResult += OnPianoKey;
+
+        Soundboard = new SoundboardModule();
+        AddChild(Soundboard);
+        Soundboard.Completed += OnSoundboardCompleted;
     }
 
     public override void _ExitTree()
     {
         if (Piano != null) Piano.Completed -= OnPianoCompleted;
         if (Piano != null) Piano.KeyResult -= OnPianoKey;
+        if (Soundboard != null) Soundboard.Completed -= OnSoundboardCompleted;
     }
 
     // Called on EVERY peer from PlayerList.StartGameRpc.
@@ -121,6 +127,8 @@ public partial class GameSession : Node
 
         Piano.SetActive(false);
         Piano.Reset();
+        Soundboard?.SetActive(false);
+        Soundboard?.Reset();
 
         _session++; _callerOnLine = false;
 
@@ -162,7 +170,7 @@ public partial class GameSession : Node
         Genre topic = def.Genres[_rng.Next(def.Genres.Count)];
         SetTopic(topic);
 
-        _broadcaster = new BroadcasterLogic { PenaltiesEnabled = true };
+        _broadcaster = new BroadcasterLogic { PenaltiesEnabled = true, MaxStrikes = def.MaxStrikes };
         _broadcaster.SetQuota(topic, def.QuotaTarget);
         ScheduleSabotage();
 
@@ -171,6 +179,7 @@ public partial class GameSession : Node
             _override = new LineOverrideSession(_rng, LineOverrideRule.NewRandom(_rng), def.AllowStatic);
 
         if (def.HasPiano) StartRandomPiano();
+        if (def.HasSoundboard) StartRandomSoundboard();
         if (_callers.Count > 0) ScheduleNextCaller(0, 5.0);   // first caller rings after 5 seconds
         if (_override != null) SendKeypadProblem(0);   // first problem is always clean
     }
@@ -268,7 +277,7 @@ public partial class GameSession : Node
         if (_broadcaster.Strikes != strikesBefore) Rpc(MethodName.SyncStrikesRpc, _broadcaster.Strikes);
         if (!correct) Say("Wrong call. That's a strike.");
 
-        if (_broadcaster.Strikes >= BroadcasterLogic.MaxStrikes) { Rpc(MethodName.GameOverRpc); return; }
+        if (_broadcaster.Strikes >= _broadcaster.MaxStrikes) { Rpc(MethodName.GameOverRpc); return; }
         if (accept && caller.IsRaccoon) TriggerSabotage();
 
         SyncTasks();
@@ -499,6 +508,60 @@ public partial class GameSession : Node
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void PianoFaultRpc() => Piano.TriggerFault();
 
+    // Soundboard Host & RPCs
+    public void StartRandomSoundboard(float timeLimit = 0f, bool showSequence = false)
+    {
+        if (!Multiplayer.IsServer()) return;
+        _rng ??= new Random();
+        var seqs = SoundboardData.GetSequences();
+        var list = new List<string>(seqs.Keys);
+        string name = list[_rng.Next(list.Count)];
+        Rpc(MethodName.SoundboardConfigureRpc, name, timeLimit, showSequence);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SoundboardConfigureRpc(string sequenceName, float timeLimit, bool showSequence)
+    {
+        if (SoundboardData.GetSequences().TryGetValue(sequenceName, out var seq))
+        {
+            Soundboard.Configure(seq, timeLimit, showSequence);
+            Soundboard.SetActive(true);
+            Soundboard.Start();
+        }
+    }
+
+    public void SoundboardPad(string padId)
+    {
+        if (!Multiplayer.HasMultiplayerPeer()) { Soundboard.RequestPad(padId); return; }
+        Rpc(MethodName.SoundboardApplyPadRpc, padId);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SoundboardApplyPadRpc(string padId) => Soundboard.RequestPad(padId);
+
+    public void SoundboardReset()
+    {
+        if (!Multiplayer.HasMultiplayerPeer()) { Soundboard.ResetSequence(); return; }
+        Rpc(MethodName.SoundboardApplyResetRpc);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SoundboardApplyResetRpc() => Soundboard.ResetSequence();
+
+    private void OnSoundboardCompleted()
+    {
+        if (!Multiplayer.IsServer() || CurrentLevel == null || Ended) return;
+        var t = TaskOf(TaskKind.Soundboard);
+        if (t != null && !t.Done)
+        {
+            t.Progress++;
+            if (t.Progress >= t.Target) t.Done = true;
+            SyncTasks();
+        }
+        Say("📻 Sound cue played!", true);
+        StartRandomSoundboard();
+    }
+
     // ---------- Quality, sabotage, strikes (host) ----------
     public override void _Process(double delta)
     {
@@ -608,6 +671,8 @@ public partial class GameSession : Node
         _sabotageTimer = -1; _qualityTick = 0;
         Piano.SetActive(false);
         Piano.Reset();
+        Soundboard?.SetActive(false);
+        Soundboard?.Reset();
 
         _session++; _callerOnLine = false;
     }
@@ -624,6 +689,7 @@ public partial class GameSession : Node
         Tasks.Add(new LevelTask { Kind = TaskKind.Callers, Target = d.QuotaTarget });
         if (d.HasKeypad) Tasks.Add(new LevelTask { Kind = TaskKind.Keypad, Target = d.KeypadTarget });
         if (d.HasPiano) Tasks.Add(new LevelTask { Kind = TaskKind.Piano, Target = d.PianoTarget });
+        if (d.HasSoundboard) Tasks.Add(new LevelTask { Kind = TaskKind.Soundboard, Target = d.SoundboardTarget });
         Tasks.Add(new LevelTask { Kind = TaskKind.Quality });
         Tasks.Add(new LevelTask { Kind = TaskKind.Signal });
     }
@@ -633,6 +699,7 @@ public partial class GameSession : Node
         TaskKind.Callers => $"Accept {t.Target} {Topic} callers ({Math.Min(QuotaMet, t.Target)}/{t.Target})",
         TaskKind.Keypad => $"Route {t.Target} lines on the keypad ({t.Progress}/{t.Target})",
         TaskKind.Piano => $"Play {t.Target} jingles ({t.Progress}/{t.Target})",
+        TaskKind.Soundboard => $"Play {t.Target} sound cues ({t.Progress}/{t.Target})",
         TaskKind.Quality => $"Keep Quality above {CurrentLevel?.QualityFloor}%",
         _ => $"Keep Signal above {CurrentLevel?.SignalFloor}%",
     };

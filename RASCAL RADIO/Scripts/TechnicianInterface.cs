@@ -98,6 +98,22 @@ public partial class TechnicianInterface : PopupFrame
         sb.Append(FlipHelp());
         return sb.ToString();
     }
+
+    private static string SoundboardPage()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("SOUNDBOARD\n\n");
+        sb.Append("The Operator sees the cue prompt. You have the sound effect sequence. Read each pad in order.\n\n");
+        sb.Append("AVAILABLE PADS:\nAPPLAUSE, LAUGHTER, BUZZER, PHONE, DRUM ROLL\n\n");
+        sb.Append("CUE SEQUENCES:\n");
+        foreach (var seq in SoundboardData.GetSequences())
+        {
+            sb.Append($"\n[b]{seq.Key.ToUpper()}[/b]\n");
+            sb.Append("  " + string.Join("  ->  ", seq.Value) + "\n");
+        }
+        sb.Append(FlipHelp());
+        return sb.ToString();
+    }
     public override void _Ready()
     {
         var gs = GameSession.Instance;
@@ -260,6 +276,7 @@ public partial class TechnicianInterface : PopupFrame
         {
             text.Text = i == KeypadPageIndex ? MathPage()
                       : i == PianoPageIndex ? PianoPage()
+                      : i == 2 ? SoundboardPage()
                       : "";
             text.BbcodeEnabled = true;
         }

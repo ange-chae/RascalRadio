@@ -1,4 +1,4 @@
-public enum TaskKind { Callers, Keypad, Piano, Quality, Signal }
+public enum TaskKind { Callers, Keypad, Piano, Quality, Signal, Soundboard }
 
 public class LevelTask
 {

@@ -278,6 +278,22 @@ public partial class OperatorInterface : Control
             });
         }
 
+        if (!gs.IsTutorial && gs.CurrentLevel?.HasSoundboard == true)
+        {
+            _modules.Add(new ModuleSlot
+            {
+                Title = "Soundboard",
+                Build = () =>
+                {
+                    var ui = new SoundboardUI();
+                    ui.Bind(gs.Soundboard);
+                    ui.PadPressed += gs.SoundboardPad;
+                    ui.ResetSequencePressed += gs.SoundboardReset;
+                    return ui;
+                }
+            });
+        }
+
         for (int i = 0; i < 4; i++)
         {
             var btn = GetNodeOrNull<Button>($"%Slot{i + 1}Btn");

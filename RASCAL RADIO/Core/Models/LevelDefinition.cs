@@ -17,6 +17,7 @@ public class LevelDefinition
     public Genre[] AcceptedGenres = null;
     public IReadOnlyList<Genre> Genres => AcceptedGenres ?? new[] { QuotaGenre };
     public int QuotaTarget = 3;
+    public int MaxStrikes = 3;
     public double SegmentTime = 12.0;
     public double SabotageInterval = 0;
     // The callers in the order they ring in. This is the main thing level coders write.
@@ -25,8 +26,10 @@ public class LevelDefinition
     public bool HasKeypad = false;     // does this level use the Line Override keypad?
     public bool AllowStatic = true;    // static faults on the keypad
     public bool HasPiano = false;      // does this level use Module B: Piano?
+    public bool HasSoundboard = false; // does this level use Module C: Soundboard?
     public int KeypadTarget = 3;        // lines to route to finish the keypad task
     public int PianoTarget = 2;         // jingles to play to finish the piano task
+    public int SoundboardTarget = 2;    // cues to play to finish the soundboard task
     public int QualityFloor = 55;       // Quality must stay ABOVE this
     public int SignalFloor = 30;        // Signal must stay ABOVE this (30 = both modules faulty at once)
     public bool FlipSabotage = false;   // raccoon can turn a module upside down

@@ -88,8 +88,8 @@ public partial class SoundboardUI : PanelContainer
 		root.AddChild(grid);
 		foreach (string padId in SoundboardData.Pads)
 		{
-			var button = new Button { Text = padId, CustomMinimumSize = new Vector2(180, 110) };
-			button.AddThemeFontSizeOverride("font_size", 22);
+			var button = new Button { Text = padId, CustomMinimumSize = new Vector2(120, 60) };
+			button.AddThemeFontSizeOverride("font_size", 15);
 			button.AddThemeStyleboxOverride("normal", MakePadStyle("90a4ae"));
 			button.AddThemeStyleboxOverride("hover", MakePadStyle("b0bec5"));
 			button.AddThemeStyleboxOverride("pressed", MakePadStyle("78909c"));

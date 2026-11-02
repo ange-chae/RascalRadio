@@ -24,7 +24,9 @@ public partial class GameOverScreen : CanvasLayer
         title.AddThemeFontSizeOverride("font_size", 56);
         box.AddChild(title);
 
-        var sub = new Label { Text = "Three strikes. The station is down.", HorizontalAlignment = HorizontalAlignment.Center };
+        int max = GameSession.MaxStrikes;
+        string reason = max == 1 ? "No mistakes allowed. The station is down." : $"{max} strikes. The station is down.";
+        var sub = new Label { Text = reason, HorizontalAlignment = HorizontalAlignment.Center };
         sub.AddThemeFontSizeOverride("font_size", 22);
         box.AddChild(sub);
 

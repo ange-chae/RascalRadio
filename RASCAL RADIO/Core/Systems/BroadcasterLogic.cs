@@ -5,7 +5,8 @@ namespace RascalRadio.Core.Systems;
 
 public class BroadcasterLogic
 {
-	public const int MaxStrikes = 3;
+	public const int DefaultMaxStrikes = 3;
+	public int MaxStrikes { get; set; } = DefaultMaxStrikes;
 
 	public int Strikes { get; private set; }
 	public int QuotaMet { get; private set; }
