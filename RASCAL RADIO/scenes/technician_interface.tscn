@@ -270,6 +270,9 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/background = SubResource("StyleBoxFlat_kawat")
 show_percentage = false
 script = ExtResource("9_cl4jf")
+Segments = null
+DangerBelow = null
+WarnBelow = null
 
 [node name="SignalLabel" type="Label" parent="Computer/compScreen" unique_id=1034367335]
 unique_name_in_owner = true
@@ -300,6 +303,9 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/background = SubResource("StyleBoxFlat_kawat")
 show_percentage = false
 script = ExtResource("9_cl4jf")
+Segments = null
+DangerBelow = null
+WarnBelow = null
 
 [node name="StrikeCount" type="Label" parent="Computer/compScreen" unique_id=1903162605]
 unique_name_in_owner = true
@@ -332,15 +338,14 @@ text = "Strikes"
 [node name="ManualBtn" type="Button" parent="." unique_id=1273922493]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 438.0
-offset_top = 481.0
-offset_right = 691.0
-offset_bottom = 573.0
+offset_left = 436.0
+offset_top = 491.0
+offset_right = 689.0
+offset_bottom = 583.0
 text = "Open Manual "
 
 [node name="Popup" type="PanelContainer" parent="." unique_id=811324710]
 unique_name_in_owner = true
-visible = false
 custom_minimum_size = Vector2(1000, 580)
 clip_contents = true
 layout_mode = 1
@@ -465,7 +470,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_5lucv")
 theme_override_styles/hover = SubResource("StyleBoxFlat_bkebu")
 toggle_mode = true
 button_group = SubResource("ButtonGroup_v0ep5")
-text = " Module D: 
+text = " Module D: Simon Says
 
 "
 alignment = 0
@@ -560,8 +565,7 @@ text = "1. Read the topic and the quota at the top.
 5. Everyone checks that quota and strikes updated."
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1732828906]
+visible = false
 layout_mode = 0
-offset_left = 76.0
-offset_top = 34.0
-offset_right = 116.0
-offset_bottom = 74.0
+offset_right = 1152.0
+offset_bottom = 648.0

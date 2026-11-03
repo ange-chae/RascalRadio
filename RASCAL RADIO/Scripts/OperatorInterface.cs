@@ -1,6 +1,7 @@
 using Godot;
 using RascalRadio.Core.Models;
 using System.Linq;
+using RascalRadio.Modules;
 
 public partial class OperatorInterface : Control
 {
@@ -87,10 +88,11 @@ public partial class OperatorInterface : Control
         _popup.AddChild(dim);
         dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 
-        _panel = new PanelContainer { CustomMinimumSize = new Vector2(420, 380), MouseFilter = MouseFilterEnum.Stop };
-        var style = new StyleBoxFlat { BgColor = new Color("#EEEED0"), BorderColor = new Color("#2B1B5A") };
-        style.SetBorderWidthAll(3);
-        style.SetCornerRadiusAll(8);
+        _panel = new PanelContainer { CustomMinimumSize = new Vector2(280, 0), MouseFilter = MouseFilterEnum.Stop };
+        var style = new StyleBoxFlat { BgColor = new Color("#7A3036"), BorderColor = new Color("#301E2E") };
+        style.SetBorderWidthAll(4);
+        style.BorderWidthBottom = 7;
+        style.SetCornerRadiusAll(10);
         _panel.AddThemeStyleboxOverride("panel", style);
         _popup.AddChild(_panel);
         _panel.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
@@ -316,6 +318,20 @@ public partial class OperatorInterface : Control
             }
         }
 
+        if (!gs.IsTutorial && gs.CurrentLevel?.HasMemory == true)
+        {
+            _modules.Add(new ModuleSlot
+            {
+                Title = "Memory",
+                Build = () =>
+                {
+                    var memory = new MemoryModule { PenaltiesEnabled = true, UseOwnStrikes = false };
+                    memory.Strike += _ => gs.MemoryStrike();
+                    memory.Solved += gs.MemorySolved;
+                    return memory;
+                }
+            });
+        }
         OnTasksChanged();
     }
 
@@ -400,7 +416,7 @@ public partial class OperatorInterface : Control
         if (!gs.IsTutorial)
         {
             foreach (var m in _modules)
-                m.Solved = gs.IsDone(m.Title == "Keypad" ? TaskKind.Keypad : TaskKind.Piano);
+                m.Solved = gs.IsDone(KindOf(m.Title));
             UpdateSlotButtons();
             if (_openSlot != null && _openSlot.Solved) CloseModule();   // module finished: it closes and its button turns green
         }
@@ -417,6 +433,14 @@ public partial class OperatorInterface : Control
         if (_flipBtn != null) _flipBtn.Visible = flipped;
         UpdateSlotButtons();
     }
+
+    private static TaskKind KindOf(string title) => title switch
+    {
+        "Keypad" => TaskKind.Keypad,
+        "Piano" => TaskKind.Piano,
+        "Soundboard" => TaskKind.Soundboard,
+        _ => TaskKind.Memory,
+    };
 
     private void SetText(string path, string text)
 	{

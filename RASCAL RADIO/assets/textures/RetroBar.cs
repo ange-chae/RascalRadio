@@ -18,6 +18,11 @@ public partial class RetroBar : ProgressBar
     public override void _Ready()
     {
         ShowPercentage = false;   // we draw our own
+        if (Segments <= 0) Segments = 20;
+        if (DangerBelow <= 0) DangerBelow = 30;
+        if (WarnBelow <= 0) WarnBelow = 60;
+        if (CustomMinimumSize.Y < 24f)
+            CustomMinimumSize = new Vector2(CustomMinimumSize.X, 24f);
         var empty = new StyleBoxEmpty();
         AddThemeStyleboxOverride("background", empty);
         AddThemeStyleboxOverride("fill", empty);

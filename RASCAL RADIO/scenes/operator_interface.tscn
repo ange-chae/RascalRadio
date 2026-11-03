@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="4_b7mkc"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="4_qctdg"]
 [ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/textures/buttonPressed.tres" id="5_b7mkc"]
+[ext_resource type="FontFile" uid="uid://cr26f1hy1iksj" path="res://assets/fonts/IBM_Plex_Mono/IBMPlexMono-Medium.ttf" id="5_qctdg"]
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="6_xncut"]
 [ext_resource type="FontFile" uid="uid://c8c85vk57ma0n" path="res://assets/fonts/ShareTech-Regular.ttf" id="7_1vsyy"]
 
@@ -191,6 +192,11 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_0gnke")
 LobbyScenePath = null
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=901204624]
+layout_mode = 0
+offset_right = 1151.0
+offset_bottom = 648.0
 
 [node name="PhoneBox" type="Panel" parent="." unique_id=287036377]
 layout_mode = 0
@@ -493,9 +499,10 @@ layout_mode = 2
 size_flags_vertical = 1
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_constants/line_spacing = -6
-theme_override_fonts/font = ExtResource("4_b7mkc")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("5_qctdg")
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxTexture_0aagu")
+text = "hello"
 autowrap_mode = 3
 
 [node name="Avatar" type="TextureRect" parent="CallerPanel/Margin" unique_id=109441222]

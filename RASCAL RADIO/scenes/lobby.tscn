@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://tqykh5rxjluu"]
 
 [ext_resource type="Script" uid="uid://cxas0736hb8gq" path="res://Scripts/Lobby.cs" id="1_q60fs"]
+[ext_resource type="Texture2D" uid="uid://57d0h0fay05m" path="res://assets/images/hostJoin.png" id="2_0gjkf"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_pc087"]
 [ext_resource type="StyleBox" uid="uid://60qh36d2o4ux" path="res://assets/textures/panel-style.tres" id="3_yad6j"]
 [ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="4_apkv3"]
@@ -83,6 +84,12 @@ corner_radius_bottom_left = 8
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_q60fs")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1353578788]
+layout_mode = 0
+offset_right = 1155.0
+offset_bottom = 648.0
+texture = ExtResource("2_0gjkf")
 
 [node name="Back" type="Button" parent="." unique_id=1112266627]
 layout_mode = 0
@@ -348,7 +355,7 @@ size = Vector2i(500, 500)
 theme_override_styles/panel = SubResource("StyleBoxFlat_oipnb")
 
 [node name="diskShape" type="Polygon2D" parent="HostPopup" unique_id=1433278963]
-color = Color(0.7228715, 0.25179353, 0.21727306, 1)
+color = Color(0.72156864, 0.25882354, 0.18431373, 1)
 polygon = PackedVector2Array(0, 0, 410, 0, 500, 70, 500, 500, 0, 500)
 uv = PackedVector2Array(0, -2, 410, -2, 497, 70, 499, 495, 5, 494)
 

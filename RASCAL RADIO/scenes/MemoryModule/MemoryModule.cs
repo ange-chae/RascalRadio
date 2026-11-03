@@ -18,7 +18,7 @@ namespace RascalRadio.Modules
         public bool PenaltiesEnabled = true; // false = tutorial mode: wrong press just says "try again"
         public int MaxStrikes = 3;
         public bool ShowLog = false;         // true = show your past presses (easier, good for tutorial)
-
+        public bool UseOwnStrikes = true;    // false = the game counts strikes, so the module never locks itself
         static readonly Color Gold = Color.FromHtml("#FFD36B");
         static readonly Color Good = Color.FromHtml("#3FA34D");
         static readonly Color Bad = Color.FromHtml("#E4572E");
@@ -152,7 +152,7 @@ namespace RascalRadio.Modules
                 _lamps[i].AddThemeColorOverride("font_color", n < _stage ? Colors.White : MemoryRules.Ink);
             }
             _strikeLabel.Text = "STATIC  " + new string('X', _strikes) + new string('-', Math.Max(0, MaxStrikes - _strikes));
-            _strikeLabel.Visible = PenaltiesEnabled;
+            _strikeLabel.Visible = PenaltiesEnabled && UseOwnStrikes;
             var parts = Enumerable.Range(1, Math.Min(_stage, 6) - 1)
                 .Select(s => $"S{s}: POS {_histPos[s] + 1} {MemoryRules.ColorNames[_histColor[s]]}");
             _log.Text = ShowLog && _stage > 1 ? "LOG  " + string.Join("  |  ", parts) : "";
@@ -246,7 +246,7 @@ namespace RascalRadio.Modules
             _strikes++;
             EmitSignal(SignalName.Strike, _strikes);
             Refresh();
-            if (_strikes >= MaxStrikes)
+            if (UseOwnStrikes && _strikes >= MaxStrikes)
             {
                 Say("Signal lost! Too much static.", Bad);
                 EmitSignal(SignalName.Failed);

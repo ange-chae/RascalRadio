@@ -26,6 +26,15 @@ public partial class SoundboardUI : PanelContainer
 		EnsureBuilt();
 	}
 
+    private static Color PadColor(string padId) => padId switch
+    {
+        "RED" => Color.FromHtml("e57373"),
+        "BLUE" => Color.FromHtml("64b5f6"),
+        "GREEN" => Color.FromHtml("81c784"),
+        "YELLOW" => Color.FromHtml("fff176"),
+        _ => Color.FromHtml("90a4ae"),
+    };
+    
 	public void Bind(SoundboardModule module)
 	{
 		EnsureBuilt();
@@ -82,7 +91,7 @@ public partial class SoundboardUI : PanelContainer
 		_timerLabel = MakeLabel("", 16);
 		root.AddChild(_timerLabel);
 
-		var grid = new GridContainer { Columns = 3 };
+		var grid = new GridContainer { Columns = 2 };
 		grid.AddThemeConstantOverride("h_separation", 10);
 		grid.AddThemeConstantOverride("v_separation", 10);
 		root.AddChild(grid);
@@ -90,10 +99,11 @@ public partial class SoundboardUI : PanelContainer
 		{
 			var button = new Button { Text = padId, CustomMinimumSize = new Vector2(120, 60) };
 			button.AddThemeFontSizeOverride("font_size", 15);
-			button.AddThemeStyleboxOverride("normal", MakePadStyle("90a4ae"));
-			button.AddThemeStyleboxOverride("hover", MakePadStyle("b0bec5"));
-			button.AddThemeStyleboxOverride("pressed", MakePadStyle("78909c"));
-			button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+            Color baseColor = PadColor(padId);
+            button.AddThemeStyleboxOverride("normal", MakePadStyle(baseColor));
+            button.AddThemeStyleboxOverride("hover", MakePadStyle(baseColor.Lightened(0.2f)));
+            button.AddThemeStyleboxOverride("pressed", MakePadStyle(baseColor.Darkened(0.2f)));
+            button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
 			foreach (var colorName in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
 			{
 				button.AddThemeColorOverride(colorName, Color.FromHtml("102027"));
@@ -117,20 +127,20 @@ public partial class SoundboardUI : PanelContainer
 		return label;
 	}
 
-	private static StyleBoxFlat MakePadStyle(string hex)
-	{
-		var style = new StyleBoxFlat { BgColor = Color.FromHtml(hex), BorderColor = Color.FromHtml("37474f") };
-		style.SetBorderWidthAll(3);
-		style.SetCornerRadiusAll(14);
-		return style;
-	}
+    private static StyleBoxFlat MakePadStyle(Color color)
+    {
+        var style = new StyleBoxFlat { BgColor = color, BorderColor = Color.FromHtml("37474f") };
+        style.SetBorderWidthAll(3);
+        style.SetCornerRadiusAll(14);
+        return style;
+    }
 
-	private static PanelContainer MakeChip(int number, string effect, string state, bool done, bool isNext)
+    private static PanelContainer MakeChip(int number, string effect, string state, bool done, bool isNext)
 	{
 		var style = new StyleBoxFlat
 		{
-			BgColor = done ? Color.FromHtml("2e7d32") : Color.FromHtml("37474f"),
-			BorderColor = isNext ? Color.FromHtml("fdd835") : Color.FromHtml("90a4ae"),
+            BgColor = done ? Color.FromHtml("2e7d32") : (effect == "?" ? Color.FromHtml("37474f") : PadColor(effect)),
+            BorderColor = isNext ? Color.FromHtml("fdd835") : Color.FromHtml("90a4ae"),
 		};
 		style.SetBorderWidthAll(isNext ? 4 : 1);
 		style.SetCornerRadiusAll(8);
@@ -144,14 +154,22 @@ public partial class SoundboardUI : PanelContainer
 		box.AddChild(MakeLabel($"STEP {number}", 14));
 		box.AddChild(MakeLabel(effect, 22));
 		box.AddChild(MakeLabel(state == "" ? " " : state, 14));
-		return chip;
+
+        if (!done && effect != "?")
+        {
+            foreach (Node n in box.GetChildren())
+            {
+                if (n is Label l) l.AddThemeColorOverride("font_color", Color.FromHtml("102027"));
+            }
+        }
+        return chip;
 	}
 
 	private void RefreshAll()
 	{
 		_instructionLabel.Text = _module.ShowSequence
-			? "Press the pads in order."
-			: "SOUND CUE HIDDEN - ask the Technician for the sequence.";
+			? "Read each flash to the Technician, then press the pad the manual gives."
+            : "SOUND CUE HIDDEN - ask the Technician for the sequence.";
 		_messageLabel.Text = "";
 		OnStatusChanged(_module.Status);
 		OnProgressChanged(_module.Progress, _module.Sequence.Count);
@@ -228,14 +246,12 @@ public partial class SoundboardUI : PanelContainer
 			CreateTween().TweenProperty(button, "modulate", Colors.White, 0.45);
 		}
 
-		_sound.Play(padId);
+        _sound.Play(SoundboardData.SoundFor(padId));
 
-		if (!correct)
+        if (!correct)
 		{
-			_messageLabel.Text = expectedNext != null
-				? $"WRONG PAD - next effect: {expectedNext}"
-				: "WRONG PAD - check the sequence with the Technician";
-		}
+            _messageLabel.Text = "WRONG PAD - check the manual";
+        }
 	}
 
 	private void OnTimeChanged(float secondsLeft)

@@ -66,7 +66,16 @@ public partial class SoundboardTest : Control
 		};
 		tests.AddChild(soundButton);
 
-		LoadSequence(_currentSequence);
+        var strikeButton = new Button { Text = "Strikes: 0" };
+        strikeButton.Pressed += () =>
+        {
+            int next = (_module.Strikes + 1) % 3;
+            _module.SetStrikes(next);
+            strikeButton.Text = $"Strikes: {next}";
+        };
+        tests.AddChild(strikeButton);
+
+        LoadSequence(_currentSequence);
 	}
 
 	private void LoadSequence(string sequenceName)

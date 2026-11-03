@@ -8,7 +8,7 @@ public class BroadcasterLogic
 	public const int DefaultMaxStrikes = 3;
 	public int MaxStrikes { get; set; } = DefaultMaxStrikes;
 
-	public int Strikes { get; private set; }
+    public int Strikes { get; private set; }
 	public int QuotaMet { get; private set; }
 	public int QuotaTarget { get; set; } = 3;
 	public Genre CurrentQuota { get; set; } = Genre.Drama;
@@ -53,4 +53,6 @@ public class BroadcasterLogic
 		QuotaTarget = target;
 		QuotaMet = 0;
 	}
+
+    public void ExternalStrike() => AddStrike();   // strikes that come from modules (wrong code, wrong key)
 }

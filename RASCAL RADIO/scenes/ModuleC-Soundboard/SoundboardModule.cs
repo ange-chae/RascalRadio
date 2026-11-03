@@ -27,8 +27,11 @@ public partial class SoundboardModule : Node
 	public int Progress { get; private set; }
 	public float TimeLimit { get; private set; }
 	public float TimeLeft { get; private set; }
+    public int Strikes { get; private set; }
 
-	private bool _running;
+    public void SetStrikes(int strikes) => Strikes = strikes;
+
+    private bool _running;
 
 	private bool CanAcceptInput => Active && _running;
 
@@ -102,9 +105,10 @@ public partial class SoundboardModule : Node
 			return;
 		}
 
-		string expected = Sequence[Progress];
+        int strikes = GameSession.Instance?.Strikes ?? Strikes;
+        string expected = SoundboardData.PadToPress(Sequence[Progress], strikes);
 
-		if (padId == expected)
+        if (padId == expected)
 		{
 			Progress++;
 			PadResult?.Invoke(padId, true, null);
@@ -123,8 +127,8 @@ public partial class SoundboardModule : Node
 		}
 		else
 		{
-			PadResult?.Invoke(padId, false, ShowSequence ? expected : null);
-			SetStatus(SoundboardStatus.Retry);
+            PadResult?.Invoke(padId, false, null);
+            SetStatus(SoundboardStatus.Retry);
 			GetTree().CreateTimer(RetryDisplayTime).Timeout += OnRetryTimeout;
 		}
 	}

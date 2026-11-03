@@ -88,6 +88,9 @@ public partial class GameSession : Node
     private readonly HashSet<long> _endingDone = new();
     public override void _EnterTree() => Instance = this;
 
+    private const ulong ModuleStrikeCooldownMs = 1200;   // wrong presses closer together than this give ONE strike. 0 = every wrong press is a strike.
+    private ulong _lastModuleStrikeMs;
+
     public override void _Ready()
     {
         Piano = new StudioPianoModule();
@@ -123,6 +126,7 @@ public partial class GameSession : Node
         LevelFinished = false; FlippedModule = ""; BuildTasks();
         Topic = Genre.Drama;
         _qualityLow = 0; _signalLow = 0;
+        _lastModuleStrikeMs = 0;
 
 
         Piano.SetActive(false);
@@ -254,11 +258,11 @@ public partial class GameSession : Node
 			case KeypadResult.StaticBlocked:
 				Say(KeypadTag + "⚡ Static on the line. Ask the Technician how to clear it.");
 				break;
-			default:
-                AddMistake(TaskKind.Keypad);
-                Say(KeypadTag + "Wrong code. Read the line number to the Technician and try again. No penalty.");
-				break;
-		}
+            default:
+                if (_tutorial != null) Say(KeypadTag + "Wrong code. Read the line number to the Technician and try again. No penalty.");
+                else ModuleStrike(TaskKind.Keypad, KeypadTag + "Wrong code. That's a strike.");
+                break;
+        }
 	}
 
     private void RealDecide(bool accept)
@@ -562,6 +566,31 @@ public partial class GameSession : Node
         StartRandomSoundboard();
     }
 
+    // ---------- Memory (Module D) ----------
+    public void MemoryStrike() => RpcId(1, MethodName.MemoryStrikeRpc);
+    public void MemorySolved() => RpcId(1, MethodName.MemorySolvedRpc);
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void MemoryStrikeRpc()
+    {
+        if (!Multiplayer.IsServer() || CurrentLevel == null || Ended || IsDone(TaskKind.Memory)) return;
+        ModuleStrike(TaskKind.Memory, "Wrong memory button. That's a strike.");
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void MemorySolvedRpc()
+    {
+        if (!Multiplayer.IsServer() || CurrentLevel == null || Ended) return;
+        var t = TaskOf(TaskKind.Memory);
+        if (t == null || t.Done) return;
+
+        t.Progress++;
+        if (t.Progress >= t.Target) t.Done = true;
+        Say("Memory module solved!", true);
+        SyncTasks();
+        CheckLevelDone();
+    }
+
     // ---------- Quality, sabotage, strikes (host) ----------
     public override void _Process(double delta)
     {
@@ -624,8 +653,10 @@ public partial class GameSession : Node
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void SyncStrikesRpc(int strikes)
     {
+        bool gotStrike = strikes > Strikes;
         Strikes = strikes;
         StrikesChanged?.Invoke();
+        if (gotStrike) ShowStrikeFlash();
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -690,6 +721,7 @@ public partial class GameSession : Node
         if (d.HasKeypad) Tasks.Add(new LevelTask { Kind = TaskKind.Keypad, Target = d.KeypadTarget });
         if (d.HasPiano) Tasks.Add(new LevelTask { Kind = TaskKind.Piano, Target = d.PianoTarget });
         if (d.HasSoundboard) Tasks.Add(new LevelTask { Kind = TaskKind.Soundboard, Target = d.SoundboardTarget });
+        if (d.HasMemory) Tasks.Add(new LevelTask { Kind = TaskKind.Memory, Target = d.MemoryTarget });
         Tasks.Add(new LevelTask { Kind = TaskKind.Quality });
         Tasks.Add(new LevelTask { Kind = TaskKind.Signal });
     }
@@ -700,8 +732,9 @@ public partial class GameSession : Node
         TaskKind.Keypad => $"Route {t.Target} lines on the keypad ({t.Progress}/{t.Target})",
         TaskKind.Piano => $"Play {t.Target} jingles ({t.Progress}/{t.Target})",
         TaskKind.Soundboard => $"Play {t.Target} sound cues ({t.Progress}/{t.Target})",
+        TaskKind.Memory => $"Solve {t.Target} memory puzzle{(t.Target == 1 ? "" : "s")} ({t.Progress}/{t.Target})",
         TaskKind.Quality => $"Keep Quality above {CurrentLevel?.QualityFloor}%",
-        _ => $"Keep Signal above {CurrentLevel?.SignalFloor}%",
+
     };
 
     // The same text on every role's Task box.
@@ -735,7 +768,42 @@ public partial class GameSession : Node
     private void OnPianoKey(string letter, bool correct)
     {
         if (!Multiplayer.IsServer() || CurrentLevel == null || Ended || correct) return;
-        if (!IsDone(TaskKind.Piano)) AddMistake(TaskKind.Piano);
+        if (!IsDone(TaskKind.Piano)) ModuleStrike(TaskKind.Piano, "Wrong piano key. That's a strike.");
+    }
+
+    // Host only: a wrong answer inside a module.
+    private void ModuleStrike(TaskKind kind, string message)
+    {
+        if (!Multiplayer.IsServer() || CurrentLevel == null || _broadcaster == null || Ended) return;
+
+        var task = TaskOf(kind);
+        if (task != null) task.Mistakes++;   // always hurts that task's accuracy score
+        SyncTasks();
+
+        ulong now = Time.GetTicksMsec();
+        if (_lastModuleStrikeMs != 0 && now - _lastModuleStrikeMs < ModuleStrikeCooldownMs) return;   // button mashing counts once
+        _lastModuleStrikeMs = now;
+
+        _broadcaster.ExternalStrike();
+        Rpc(MethodName.SyncStrikesRpc, _broadcaster.Strikes);
+        Say(message);
+        if (_broadcaster.Strikes >= _broadcaster.MaxStrikes) Rpc(MethodName.GameOverRpc);
+    }
+
+    // Runs on every peer: the whole screen flashes red for about a second.
+    private void ShowStrikeFlash()
+    {
+        var layer = new CanvasLayer { Layer = 90 };   // above gameplay, below the end screens
+        GetTree().Root.AddChild(layer);
+
+        var rect = new ColorRect { Color = new Color(0.9f, 0.1f, 0.1f, 0f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        layer.AddChild(rect);
+        rect.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+
+        var tween = layer.CreateTween();
+        tween.TweenProperty(rect, "color:a", 0.5f, 0.08);   // snap to red
+        tween.TweenProperty(rect, "color:a", 0.0f, 0.92);   // fade out
+        tween.TweenCallback(Callable.From(layer.QueueFree));
     }
 
     private void OnKeypadRouted()

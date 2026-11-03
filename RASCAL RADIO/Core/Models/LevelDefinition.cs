@@ -33,7 +33,8 @@ public class LevelDefinition
     public int QualityFloor = 55;       // Quality must stay ABOVE this
     public int SignalFloor = 30;        // Signal must stay ABOVE this (30 = both modules faulty at once)
     public bool FlipSabotage = false;   // raccoon can turn a module upside down
-
+    public bool HasMemory = false;      // does this level use Module D: Memory?
+    public int MemoryTarget = 1;        // memory puzzles to solve to finish the memory task
     public int FaultDrain = 1;        // Quality lost per second for each active fault
     public int CalmRecovery = 2;      // Quality regained per second when there are no faults
     public double HealthGrace = 10;   // seconds Quality/Signal must stay below the floor in a row before the task fails

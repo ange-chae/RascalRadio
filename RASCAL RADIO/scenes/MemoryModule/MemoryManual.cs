@@ -5,6 +5,26 @@ namespace RascalRadio.Modules
     /// <summary>Technician side: the printed manual for the Memory module. Built in code from MemoryRules.</summary>
     public partial class MemoryManual : Control
     {
+        /// <summary>Same manual text as the panel below, as BBCode for the Technician's RichTextLabel.</summary>
+        public static string PageText()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("TECHNICIAN'S MANUAL: MEMORY\n\n");
+            sb.Append("The button that BLINKS is the signal. Find the stage, then the blinking color, and tell the Operator what to press.\n\n");
+            sb.Append("Positions: 1 top-left | 2 top-right | 3 bottom-left | 4 bottom-right. Wrong press = static, back to stage 1.\n");
+
+            for (int s = 0; s < MemoryRules.Stages; s++)
+            {
+                sb.Append($"\n[b]STAGE {s + 1}[/b]\n");
+                for (int d = 0; d < 4; d++)
+                {
+                    string hex = "#" + MemoryRules.ColorValues[d].ToHtml(false);
+                    sb.Append($"[color={hex}]{MemoryRules.Tag(d)} BLINKS[/color]: {MemoryRules.Describe(MemoryRules.Table[s][d])}\n");
+                }
+            }
+            return sb.ToString();
+        }
+
         public override void _Ready()
         {
             CustomMinimumSize = new Vector2(460, 560);
