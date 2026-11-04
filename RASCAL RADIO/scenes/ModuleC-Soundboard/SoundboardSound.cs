@@ -6,8 +6,8 @@ public partial class SoundboardSound : Node
 {
 	private const int MixRate = 44100;
 	private const int VoiceCount = 6;
-	private const float DefaultVolumeDb = -4f;
-	private const string OverrideFolder = "res://assets/sfx/soundboard/";
+    private const float DefaultVolumeDb = -12f;   // was -4f
+    private const string OverrideFolder = "res://assets/sfx/soundboard/";
 	private static readonly string[] OverrideExtensions = { "ogg", "wav", "mp3" };
 
 	private static readonly Dictionary<string, float> PadVolumeDb = new()

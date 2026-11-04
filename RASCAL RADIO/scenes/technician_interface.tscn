@@ -477,6 +477,7 @@ alignment = 0
 
 [node name="TabE" type="Button" parent="Popup/Margin/VBox/Column/ManualTabs/LeftVBox" unique_id=700178490]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)

@@ -95,26 +95,25 @@ public partial class TechnicianInterface : PopupFrame
     private static string SoundboardPage()
     {
         var sb = new System.Text.StringBuilder();
-        sb.Append("The Operator reads out each color that flashes. Check the number of strikes on your computer, then tell them which pad to press.\n");
+        sb.Append("The Operator reads out each sound cue on their soundboard screen. Check the number of strikes on your computer, then tell them which pad to press.\n");
 
-        string[] flashes = SoundboardData.Pads;
-        string[] headings = { "If there are no strikes:", "If there is one strike:", "Otherwise:" };
+        string[] cues = SoundboardData.Pads;
+        string[] headings = { "If there are no strikes:", "If there is one strike:", "If there are two or more strikes:" };
 
         for (int row = 0; row < headings.Length; row++)
         {
             sb.Append($"\n[b]{headings[row]}[/b]\n");
-            for (int i = 0; i < flashes.Length; i++)
+            for (int i = 0; i < cues.Length; i++)
             {
-                string flash = flashes[i].ToLower();
-                string press = SoundboardData.PadToPress(flashes[i], row).ToLower();
+                string cue = SoundboardUI.NameOf(cues[i]);
+                string press = SoundboardUI.NameOf(SoundboardData.PadToPress(cues[i], row));
 
-                if (i == flashes.Length - 1) sb.Append($"Otherwise, press {press}.\n");
-                else if (i == 0) sb.Append($"If the flash is {flash}, press {press}.\n");
-                else sb.Append($"Otherwise, if the flash is {flash}, press {press}.\n");
+                string lead = i == 0 ? "If" : "Otherwise, if";
+                sb.Append($"{lead} the cue is [b]{cue}[/b], press [b]{press}[/b].\n");
             }
         }
 
-        sb.Append("\nCheck the strikes again before every flash, because they can change.");
+        sb.Append("\nCheck the strikes again before every cue, because they can change.");
         sb.Append(FlipHelp());
         return sb.ToString();
     }

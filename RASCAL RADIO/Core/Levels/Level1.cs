@@ -35,8 +35,8 @@ public static class Level1
 		PianoTarget = 2,             // jingles the Operator must play. Higher = longer level.
 		QualityFloor = 45,           // Quality must stay above this %. Higher = harder.
 		SignalFloor = 30,            // Signal must stay above this %. 30 = both modules faulty at once.
-		FaultDrain = 1,              // Quality lost per second per active fault. Higher = harder.
-		CalmRecovery = 2,            // Quality regained per second with no faults. Lower = harder.
+		FaultDrain = 2,              // Quality lost per second per active fault. Higher = harder.
+		CalmRecovery = 1,            // Quality regained per second with no faults. Lower = harder.
 		HealthGrace = 10,            // Signal must stay above this %. 30 means both modules can't be faulty at once.
 		FlipSabotage = true,         // the raccoon can turn a module upside down
 

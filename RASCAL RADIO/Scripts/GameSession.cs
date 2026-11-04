@@ -734,7 +734,8 @@ public partial class GameSession : Node
         TaskKind.Soundboard => $"Play {t.Target} sound cues ({t.Progress}/{t.Target})",
         TaskKind.Memory => $"Solve {t.Target} memory puzzle{(t.Target == 1 ? "" : "s")} ({t.Progress}/{t.Target})",
         TaskKind.Quality => $"Keep Quality above {CurrentLevel?.QualityFloor}%",
-
+        TaskKind.Signal => $"Keep Signal above {CurrentLevel?.SignalFloor}%",
+        _ => t.Kind.ToString()   // safety net so a new TaskKind never crashes the game
     };
 
     // The same text on every role's Task box.

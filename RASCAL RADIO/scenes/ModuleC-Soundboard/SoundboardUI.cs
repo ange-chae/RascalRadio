@@ -4,27 +4,83 @@ using Godot;
 
 public partial class SoundboardUI : PanelContainer
 {
-	public event Action<string> PadPressed;
-	public event Action ResetSequencePressed;
+    public event Action<string> PadPressed;
+    public event Action ResetSequencePressed;
 
-	private SoundboardModule _module;
-	private bool _built;
-	private SoundboardSound _sound;
+    // ------------------------------------------------------------------
+    // SFX NAMES - edit the values on the right to rename the pads and cues.
+    // The keys (RED, BLUE...) are the internal pad ids used by SoundboardData,
+    // the module and the sequences, so don't change those.
+    // The Technician's manual must use these same names.
+    // ------------------------------------------------------------------
+    private static readonly Dictionary<string, string> PadNames = new()
+    {
+        { "RED",    "BUZZER" },
+        { "BLUE",   "PHONE" },
+        { "GREEN",  "APPLAUSE" },
+        { "YELLOW", "DRUM ROLL" },
+    };
 
-	private Label _statusLabel;
-	private Label _instructionLabel;
-	private HBoxContainer _sequenceRow;
-	private Label _progressLabel;
-	private Label _messageLabel;
-	private Label _timerLabel;
-	private readonly Dictionary<string, Button> _padButtons = new();
+    public static string NameOf(string padId) =>
+        PadNames.TryGetValue(padId, out var name) ? name : padId;
 
-	public SoundboardSound Sound => _sound;
+    // Palette (matches the game's buttons and manual)
+    private static readonly Color Ink = new Color(0.1254902f, 0.09019608f, 0.25490198f);   // navy border
+    private static readonly Color Body = Color.FromHtml("4a2a2c");                          // device casing
+    private static readonly Color LcdBg = Color.FromHtml("14211f");
+    private static readonly Color LcdText = Color.FromHtml("a5d6a7");
+    private static readonly Color Amber = Color.FromHtml("ffd54f");
+    private static readonly Color Mustard = Color.FromHtml("ffd166");
 
-	public override void _Ready()
-	{
-		EnsureBuilt();
-	}
+    private SoundboardModule _module;
+    private bool _built;
+    private SoundboardSound _sound;
+
+    private PanelContainer _lcd;
+    private PanelContainer _led;
+    private StyleBoxFlat _ledStyle;
+    private Label _statusLabel;
+    private Label _timerLabel;
+    private HBoxContainer _cueRow;
+    private readonly Dictionary<string, Button> _padButtons = new();
+
+    public SoundboardSound Sound => _sound;
+
+    public override void _Ready()
+    {
+        EnsureBuilt();
+    }
+
+    public override void _ExitTree()
+    {
+        Unbind();
+    }
+
+    public void Bind(SoundboardModule module)
+    {
+        Unbind();
+        EnsureBuilt();
+        _module = module;
+        module.Configured += RefreshAll;
+        module.StatusChanged += OnStatusChanged;
+        module.ProgressChanged += OnProgressChanged;
+        module.PadResult += OnPadResult;
+        module.TimeChanged += OnTimeChanged;
+        RefreshAll();
+    }
+
+    private void Unbind()
+    {
+        if (_module == null) return;
+        _module.Configured -= RefreshAll;
+        _module.StatusChanged -= OnStatusChanged;
+        _module.ProgressChanged -= OnProgressChanged;
+        _module.PadResult -= OnPadResult;
+        _module.TimeChanged -= OnTimeChanged;
+        _module = null;
+    }
+
+    // ---------------------------------------------------------------- build
 
     private static Color PadColor(string padId) => padId switch
     {
@@ -34,230 +90,264 @@ public partial class SoundboardUI : PanelContainer
         "YELLOW" => Color.FromHtml("fff176"),
         _ => Color.FromHtml("90a4ae"),
     };
-    
-	public void Bind(SoundboardModule module)
-	{
-		EnsureBuilt();
-		_module = module;
-		module.Configured += RefreshAll;
-		module.StatusChanged += OnStatusChanged;
-		module.ProgressChanged += OnProgressChanged;
-		module.PadResult += OnPadResult;
-		module.TimeChanged += OnTimeChanged;
-		RefreshAll();
-	}
 
-	private void EnsureBuilt()
-	{
-		if (_built)
-		{
-			return;
-		}
-		_built = true;
-
-		_sound = new SoundboardSound();
-		AddChild(_sound);
-
-		var margin = new MarginContainer();
-		foreach (var side in new[] { "left", "right", "top", "bottom" })
-		{
-			margin.AddThemeConstantOverride("margin_" + side, 16);
-		}
-		AddChild(margin);
-
-		var root = new VBoxContainer();
-		root.AddThemeConstantOverride("separation", 12);
-		margin.AddChild(root);
-
-		root.AddChild(MakeLabel("SOUNDBOARD", 28));
-
-		_statusLabel = MakeLabel("", 24);
-		root.AddChild(_statusLabel);
-
-		_instructionLabel = MakeLabel("", 16);
-		root.AddChild(_instructionLabel);
-
-		_sequenceRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-		_sequenceRow.AddThemeConstantOverride("separation", 8);
-		root.AddChild(_sequenceRow);
-
-		_progressLabel = MakeLabel("", 18);
-		root.AddChild(_progressLabel);
-
-		_messageLabel = MakeLabel("", 20);
-		_messageLabel.AddThemeColorOverride("font_color", Color.FromHtml("ffb74d"));
-		root.AddChild(_messageLabel);
-
-		_timerLabel = MakeLabel("", 16);
-		root.AddChild(_timerLabel);
-
-		var grid = new GridContainer { Columns = 2 };
-		grid.AddThemeConstantOverride("h_separation", 10);
-		grid.AddThemeConstantOverride("v_separation", 10);
-		root.AddChild(grid);
-		foreach (string padId in SoundboardData.Pads)
-		{
-			var button = new Button { Text = padId, CustomMinimumSize = new Vector2(120, 60) };
-			button.AddThemeFontSizeOverride("font_size", 15);
-            Color baseColor = PadColor(padId);
-            button.AddThemeStyleboxOverride("normal", MakePadStyle(baseColor));
-            button.AddThemeStyleboxOverride("hover", MakePadStyle(baseColor.Lightened(0.2f)));
-            button.AddThemeStyleboxOverride("pressed", MakePadStyle(baseColor.Darkened(0.2f)));
-            button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
-			foreach (var colorName in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
-			{
-				button.AddThemeColorOverride(colorName, Color.FromHtml("102027"));
-			}
-			button.Pressed += () => PadPressed?.Invoke(padId);
-			grid.AddChild(button);
-			_padButtons[padId] = button;
-		}
-
-		var reset = new Button { Text = "RESET SEQUENCE", CustomMinimumSize = new Vector2(260, 56) };
-		reset.AddThemeFontSizeOverride("font_size", 20);
-		reset.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-		reset.Pressed += () => ResetSequencePressed?.Invoke();
-		root.AddChild(reset);
-	}
-
-	private static Label MakeLabel(string text, int fontSize)
-	{
-		var label = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center };
-		label.AddThemeFontSizeOverride("font_size", fontSize);
-		return label;
-	}
-
-    private static StyleBoxFlat MakePadStyle(Color color)
+    private void EnsureBuilt()
     {
-        var style = new StyleBoxFlat { BgColor = color, BorderColor = Color.FromHtml("37474f") };
+        if (_built) return;
+        _built = true;
+
+        _sound = new SoundboardSound();
+        AddChild(_sound);
+
+        // Casing of the soundboard
+        var casing = new StyleBoxFlat { BgColor = Body, BorderColor = Ink };
+        casing.SetBorderWidthAll(4);
+        casing.BorderWidthBottom = 10;
+        casing.SetCornerRadiusAll(16);
+        AddThemeStyleboxOverride("panel", casing);
+
+        var margin = new MarginContainer();
+        foreach (var side in new[] { "left", "right", "top", "bottom" })
+            margin.AddThemeConstantOverride("margin_" + side, 18);
+        AddChild(margin);
+
+        var root = new VBoxContainer();
+        root.AddThemeConstantOverride("separation", 16);
+        margin.AddChild(root);
+
+        root.AddChild(BuildLcd());
+        root.AddChild(BuildPadGrid());
+        root.AddChild(BuildResetButton());
+    }
+
+    // The screen at the top: status LED, timer and the cue sequence
+    private Control BuildLcd()
+    {
+        _lcd = new PanelContainer();
+        var lcdStyle = new StyleBoxFlat { BgColor = LcdBg, BorderColor = Ink };
+        lcdStyle.SetBorderWidthAll(3);
+        lcdStyle.SetCornerRadiusAll(8);
+        lcdStyle.SetContentMarginAll(12);
+        _lcd.AddThemeStyleboxOverride("panel", lcdStyle);
+
+        var box = new VBoxContainer();
+        box.AddThemeConstantOverride("separation", 10);
+        _lcd.AddChild(box);
+
+        // top row: LED + status on the left, timer on the right
+        var top = new HBoxContainer();
+        top.AddThemeConstantOverride("separation", 8);
+        box.AddChild(top);
+
+        _led = new PanelContainer { CustomMinimumSize = new Vector2(16, 16), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        _ledStyle = new StyleBoxFlat { BgColor = Colors.White };
+        _ledStyle.SetCornerRadiusAll(8);
+        _led.AddThemeStyleboxOverride("panel", _ledStyle);
+        top.AddChild(_led);
+
+        _statusLabel = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _statusLabel.AddThemeFontSizeOverride("font_size", 16);
+        _statusLabel.AddThemeColorOverride("font_color", LcdText);
+        top.AddChild(_statusLabel);
+
+        _timerLabel = new Label { HorizontalAlignment = HorizontalAlignment.Right };
+        _timerLabel.AddThemeFontSizeOverride("font_size", 18);
+        _timerLabel.AddThemeColorOverride("font_color", Amber);
+        top.AddChild(_timerLabel);
+
+        _cueRow = new HBoxContainer();
+        _cueRow.AddThemeConstantOverride("separation", 6);
+        box.AddChild(_cueRow);
+
+        return _lcd;
+    }
+
+    // The pads: big, chunky, 2x2 like a real sampler
+    private Control BuildPadGrid()
+    {
+        var grid = new GridContainer { Columns = 2 };
+        grid.AddThemeConstantOverride("h_separation", 14);
+        grid.AddThemeConstantOverride("v_separation", 14);
+
+        foreach (string padId in SoundboardData.Pads)
+        {
+            var button = new Button
+            {
+                Text = NameOf(padId),
+                CustomMinimumSize = new Vector2(170, 100),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                FocusMode = FocusModeEnum.None
+            };
+            button.AddThemeFontSizeOverride("font_size", 20);
+
+            Color baseColor = PadColor(padId);
+            button.AddThemeStyleboxOverride("normal", MakePadStyle(baseColor, 10));
+            button.AddThemeStyleboxOverride("hover", MakePadStyle(baseColor.Lightened(0.2f), 10));
+            button.AddThemeStyleboxOverride("pressed", MakePadStyle(baseColor.Darkened(0.15f), 3));
+            button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+            foreach (var colorName in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
+                button.AddThemeColorOverride(colorName, Ink);
+
+            string captured = padId;
+            button.Pressed += () => PadPressed?.Invoke(captured);
+            grid.AddChild(button);
+            _padButtons[padId] = button;
+        }
+        return grid;
+    }
+
+    private Control BuildResetButton()
+    {
+        var reset = new Button
+        {
+            Text = "RESET",
+            CustomMinimumSize = new Vector2(170, 52),
+            SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+            FocusMode = FocusModeEnum.None
+        };
+        reset.AddThemeFontSizeOverride("font_size", 20);
+        reset.AddThemeStyleboxOverride("normal", MakePadStyle(Mustard, 8));
+        reset.AddThemeStyleboxOverride("hover", MakePadStyle(Mustard.Lightened(0.35f), 8));
+        reset.AddThemeStyleboxOverride("pressed", MakePadStyle(Mustard, 3));
+        reset.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+        foreach (var colorName in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
+            reset.AddThemeColorOverride(colorName, Ink);
+        reset.Pressed += () => ResetSequencePressed?.Invoke();
+        return reset;
+    }
+
+    private static StyleBoxFlat MakePadStyle(Color color, int bottomBorder)
+    {
+        var style = new StyleBoxFlat { BgColor = color, BorderColor = Ink };
         style.SetBorderWidthAll(3);
-        style.SetCornerRadiusAll(14);
+        style.BorderWidthBottom = bottomBorder;
+        style.SetCornerRadiusAll(12);
         return style;
     }
 
-    private static PanelContainer MakeChip(int number, string effect, string state, bool done, bool isNext)
-	{
-		var style = new StyleBoxFlat
-		{
-            BgColor = done ? Color.FromHtml("2e7d32") : (effect == "?" ? Color.FromHtml("37474f") : PadColor(effect)),
-            BorderColor = isNext ? Color.FromHtml("fdd835") : Color.FromHtml("90a4ae"),
-		};
-		style.SetBorderWidthAll(isNext ? 4 : 1);
-		style.SetCornerRadiusAll(8);
-		style.SetContentMarginAll(8);
-
-		var chip = new PanelContainer { CustomMinimumSize = new Vector2(120, 0) };
-		chip.AddThemeStyleboxOverride("panel", style);
-
-		var box = new VBoxContainer();
-		chip.AddChild(box);
-		box.AddChild(MakeLabel($"STEP {number}", 14));
-		box.AddChild(MakeLabel(effect, 22));
-		box.AddChild(MakeLabel(state == "" ? " " : state, 14));
-
-        if (!done && effect != "?")
+    // One cell on the LCD: just the cue name, no extra text
+    private static PanelContainer MakeCue(string text, bool done, bool isNext)
+    {
+        var style = new StyleBoxFlat
         {
-            foreach (Node n in box.GetChildren())
-            {
-                if (n is Label l) l.AddThemeColorOverride("font_color", Color.FromHtml("102027"));
-            }
+            BgColor = done ? Color.FromHtml("2e7d32") : Color.FromHtml("0d1716"),
+            BorderColor = isNext ? Amber : Color.FromHtml("37474f"),
+        };
+        style.SetBorderWidthAll(isNext ? 3 : 1);
+        style.SetCornerRadiusAll(6);
+        style.SetContentMarginAll(8);
+
+        var cell = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(96, 54),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        cell.AddThemeStyleboxOverride("panel", style);
+
+        var label = new Label
+        {
+            Text = text,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        label.AddThemeFontSizeOverride("font_size", 15);
+        label.AddThemeColorOverride("font_color", done ? Colors.White : (isNext ? Amber : LcdText));
+        cell.AddChild(label);
+        return cell;
+    }
+
+    // -------------------------------------------------------------- refresh
+
+    private void RefreshAll()
+    {
+        if (_module == null) return;
+        OnStatusChanged(_module.Status);
+        OnProgressChanged(_module.Progress, _module.Sequence.Count);
+        OnTimeChanged(_module.TimeLeft);
+    }
+
+    private void RebuildSequence()
+    {
+        if (_module == null || !IsInstanceValid(_cueRow)) return;
+
+        foreach (Node child in _cueRow.GetChildren())
+        {
+            _cueRow.RemoveChild(child);
+            child.QueueFree();
         }
-        return chip;
-	}
 
-	private void RefreshAll()
-	{
-		_instructionLabel.Text = _module.ShowSequence
-			? "Read each flash to the Technician, then press the pad the manual gives."
-            : "SOUND CUE HIDDEN - ask the Technician for the sequence.";
-		_messageLabel.Text = "";
-		OnStatusChanged(_module.Status);
-		OnProgressChanged(_module.Progress, _module.Sequence.Count);
-		OnTimeChanged(_module.TimeLeft);
-	}
+        int total = _module.Sequence.Count;
+        for (int i = 0; i < total; i++)
+        {
+            bool done = i < _module.Progress;
+            bool isNext = i == _module.Progress
+                && _module.Status != SoundboardModule.SoundboardStatus.Complete;
 
-	private void RebuildSequence()
-	{
-		foreach (Node child in _sequenceRow.GetChildren())
-		{
-			_sequenceRow.RemoveChild(child);
-			child.QueueFree();
-		}
+            // Cue shows the real sfx name. Hidden cues show "?" until they are done.
+            // Show finished cues and the one the Operator has to do now. Future cues stay hidden.
+            string text = (_module.ShowSequence || done || isNext) ? NameOf(_module.Sequence[i]) : "?";
+            _cueRow.AddChild(MakeCue(text, done, isNext));
+        }
+    }
 
-		int total = _module.Sequence.Count;
-		for (int i = 0; i < total; i++)
-		{
-			bool done = i < _module.Progress;
-			bool isNext = i == _module.Progress
-				&& _module.Status != SoundboardModule.SoundboardStatus.Complete;
+    private void OnStatusChanged(SoundboardModule.SoundboardStatus status)
+    {
+        switch (status)
+        {
+            case SoundboardModule.SoundboardStatus.Ready:
+                SetStatus("READY", Color.FromHtml("cfd8dc"));
+                break;
+            case SoundboardModule.SoundboardStatus.Working:
+                SetStatus("LIVE", Color.FromHtml("64b5f6"));
+                break;
+            case SoundboardModule.SoundboardStatus.Check:
+                SetStatus("TIME'S UP", Color.FromHtml("ffb74d"));
+                break;
+            case SoundboardModule.SoundboardStatus.Complete:
+                SetStatus("DONE", Color.FromHtml("81c784"));
+                break;
+            case SoundboardModule.SoundboardStatus.Retry:
+                SetStatus("WRONG PAD", Color.FromHtml("e57373"));
+                break;
+        }
+        RebuildSequence();
+    }
 
-			string effect = (_module.ShowSequence || done) ? _module.Sequence[i] : "?";
-			string state = done ? "DONE" : (isNext ? "NEXT" : "");
+    private void SetStatus(string text, Color color)
+    {
+        if (!IsInstanceValid(_statusLabel)) return;
+        _statusLabel.Text = text;
+        _ledStyle.BgColor = color;
+        _led.QueueRedraw();
+    }
 
-			_sequenceRow.AddChild(MakeChip(i + 1, effect, state, done, isNext));
-			if (i < total - 1)
-			{
-				_sequenceRow.AddChild(MakeLabel(">", 24));
-			}
-		}
-	}
+    private void OnProgressChanged(int done, int total)
+    {
+        RebuildSequence();
+    }
 
-	private void OnStatusChanged(SoundboardModule.SoundboardStatus status)
-	{
-		switch (status)
-		{
-			case SoundboardModule.SoundboardStatus.Ready:
-				SetStatusText("READY", Colors.White);
-				break;
-			case SoundboardModule.SoundboardStatus.Working:
-				SetStatusText("WORKING", Color.FromHtml("64b5f6"));
-				break;
-			case SoundboardModule.SoundboardStatus.Check:
-				SetStatusText("CHECK - time ran out", Color.FromHtml("ffb74d"));
-				break;
-			case SoundboardModule.SoundboardStatus.Complete:
-				SetStatusText("COMPLETE", Color.FromHtml("81c784"));
-				break;
-			case SoundboardModule.SoundboardStatus.Retry:
-				SetStatusText("RETRY - wrong pad", Color.FromHtml("ffb74d"));
-				break;
-		}
-		RebuildSequence();
-	}
-
-	private void SetStatusText(string text, Color color)
-	{
-		_statusLabel.Text = text;
-		_statusLabel.AddThemeColorOverride("font_color", color);
-	}
-
-	private void OnProgressChanged(int done, int total)
-	{
-		_progressLabel.Text = total > 0 ? $"Progress: {done} of {total}" : "";
-		_messageLabel.Text = "";
-		RebuildSequence();
-	}
-
-	private void OnPadResult(string padId, bool correct, string expectedNext)
-	{
-		if (_padButtons.TryGetValue(padId, out var button))
-		{
-			button.Modulate = correct ? new Color(0.55f, 1.4f, 0.55f) : new Color(1.7f, 1.2f, 0.5f);
-			CreateTween().TweenProperty(button, "modulate", Colors.White, 0.45);
-		}
+    private void OnPadResult(string padId, bool correct, string expectedNext)
+    {
+        if (_padButtons.TryGetValue(padId, out var button) && IsInstanceValid(button))
+        {
+            button.Modulate = correct ? new Color(0.7f, 1.3f, 0.7f) : new Color(1.6f, 0.9f, 0.7f);
+            CreateTween().TweenProperty(button, "modulate", Colors.White, 0.4);
+        }
 
         _sound.Play(SoundboardData.SoundFor(padId));
 
-        if (!correct)
-		{
-            _messageLabel.Text = "WRONG PAD - check the manual";
+        // Wrong pad: flash the screen red
+        if (!correct && IsInstanceValid(_lcd))
+        {
+            _lcd.Modulate = new Color(1.6f, 0.7f, 0.7f);
+            CreateTween().TweenProperty(_lcd, "modulate", Colors.White, 0.5);
         }
-	}
+    }
 
-	private void OnTimeChanged(float secondsLeft)
-	{
-		_timerLabel.Text = _module.TimeLimit > 0f
-			? $"TIME LEFT: {Mathf.CeilToInt(secondsLeft)}"
-			: "";
-	}
+    private void OnTimeChanged(float secondsLeft)
+    {
+        if (_module == null || !IsInstanceValid(_timerLabel)) return;
+        _timerLabel.Text = _module.TimeLimit > 0f ? $"{Mathf.CeilToInt(secondsLeft)}s" : "";
+    }
 }

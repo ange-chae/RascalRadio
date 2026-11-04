@@ -32,7 +32,8 @@ public partial class PlayerList : Control
     private Button _btnStartGame;
     private Button _btnLeave;
     private Label _lblStatus;
-
+    private CanvasLayer _readyPromptLayer;
+    private bool _awaitingReadyAfterRandomize = false;
     private BaseButton _btnPrev;
     private BaseButton _btnNext;
     private Label _lblLevelName;
@@ -57,6 +58,11 @@ public partial class PlayerList : Control
             { "RadioOperator",   "res://assets/images/operator-pfp.png" },
         };
 
+    private const string BtnNormalUid = "uid://dywn3v8hwh5jo";
+    private const string BtnHoverUid = "uid://bf1agbxok27wh";
+    private const string BtnPressedUid = "uid://b2iksnxkt56yq";
+
+    private static readonly Color BtnInk = new Color(0.1254902f, 0.09019608f, 0.25490198f);
     private Texture2D GetAvatarForRole(string role)
     {
         if (!string.IsNullOrEmpty(role) && RoleAvatarPaths.TryGetValue(role, out string path))
@@ -83,6 +89,11 @@ public partial class PlayerList : Control
         _btnNext = FindChild("btnNext", true, false) as BaseButton;
         _lblLevelName = FindChild("LblLevelName", true, false) as Label;
         _cassette = FindChildren("*", "VBoxContainer", true, false).OfType<CassetteSelector>().FirstOrDefault();
+        ChildExitingTree += node =>
+        {
+            if (node.Name == "RoleSelectionOverlay")
+                CallDeferred(MethodName.UpdateReadyPrompt);
+        };
 
         if (_networkManager == null) return;
 
@@ -144,6 +155,7 @@ public partial class PlayerList : Control
 
     private void OnPrevPressed() => ChangeLevel(-1);
     private void OnNextPressed() => ChangeLevel(1);
+
 
     private void ChangeLevel(int direction)
     {
@@ -208,10 +220,16 @@ public partial class PlayerList : Control
     private void ApplyRandomRolesRpc(long[] peerIds, string[] roles)
     {
         for (int i = 0; i < peerIds.Length; i++)
-        {
-            PlayerRoles[peerIds[i]] = roles[i];
-            PlayerReady[peerIds[i]] = false;   // roles changed, so everyone re-confirms
-        }
+            PlayerRoles[peerIds[i]] = roles[i];   // ready state is kept
+
+        long me = Multiplayer.GetUniqueId();
+        PlayerReady.TryGetValue(me, out bool alreadyReady);
+        _awaitingReadyAfterRandomize = !alreadyReady;   // only prompt people who aren't ready yet
+
+        ShowStatusMessage(
+            Multiplayer.IsServer() ? "You randomized the roles!" : "The host randomized the roles!",
+            new Color("#FF9800"));
+
         RefreshPlayerList();
         GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
     }
@@ -242,7 +260,6 @@ public partial class PlayerList : Control
             PlayerReady[peerIds[i]] = ready[i] == 1;
         }
         UpdateLevelVisualLocal(levelIndex);
-        RefreshPlayerList();
         GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
     }
 
@@ -324,7 +341,8 @@ public partial class PlayerList : Control
 
                     bool isConflict = !string.IsNullOrEmpty(pRole) && roleCounts.ContainsKey(pRole) && roleCounts[pRole] > 1;
 
-                    if (nameLabel != null) nameLabel.Text = playerName;
+                    if (nameLabel != null)
+                        nameLabel.Text = (peerId == localPeerId) ? $"{playerName} (you)" : playerName;
 
                     if (statusLabel != null)
                     {
@@ -366,6 +384,7 @@ public partial class PlayerList : Control
 
                         if (isLocalPlayer) avatarBtn.Connect(BaseButton.SignalName.Pressed, clickCallable);
                     }
+
                     playerIndex++;
                 }
                 else
@@ -383,6 +402,9 @@ public partial class PlayerList : Control
                         if (avatarBtn.IsConnected(BaseButton.SignalName.Pressed, clickCallable))
                             avatarBtn.Disconnect(BaseButton.SignalName.Pressed, clickCallable);
                     }
+
+                    var openReadyBtn = slotNode.FindChild("btnReady", true, false) as Button;
+                    if (openReadyBtn != null) openReadyBtn.Visible = false;
                 }
             }
         }
@@ -409,6 +431,8 @@ public partial class PlayerList : Control
                 _btnStartGame.Text = "Waiting..";
             }
         }
+
+        UpdateReadyPrompt();
     }
 
     private CanvasLayer _toastLayer;
@@ -503,6 +527,95 @@ public partial class PlayerList : Control
             roleSelectOverlay.Size = GetViewportRect().Size;
             roleSelectOverlay.GlobalPosition = Vector2.Zero;
         }
+    }
+
+    private bool IsRoleOverlayOpen()
+    {
+        var overlay = GetNodeOrNull("RoleSelectionOverlay");
+        return overlay != null && !overlay.IsQueuedForDeletion();
+    }
+
+    // Shows or hides the big centered Ready button
+    private void UpdateReadyPrompt()
+    {
+        long me = Multiplayer.GetUniqueId();
+        PlayerRoles.TryGetValue(me, out string role);
+        PlayerReady.TryGetValue(me, out bool ready);
+
+        if (ready) _awaitingReadyAfterRandomize = false;
+
+        bool show = _awaitingReadyAfterRandomize
+                    && !string.IsNullOrEmpty(role)
+                    && !IsRoleOverlayOpen();   // the overlay already has its own Ready button
+
+        if (show)
+        {
+            if (!IsInstanceValid(_readyPromptLayer)) BuildReadyPrompt();
+            _readyPromptLayer.Visible = true;
+        }
+        else if (IsInstanceValid(_readyPromptLayer))
+        {
+            _readyPromptLayer.Visible = false;
+        }
+    }
+
+    private StyleBox LoadButtonStyle(string uid, Color bg, int bottomBorder)
+    {
+        if (ResourceLoader.Exists(uid))
+            return GD.Load<StyleBox>(uid);
+
+        // Fallback: same look as the .tres files, built in code
+        var sb = new StyleBoxFlat { BgColor = bg, BorderColor = BtnInk };
+        sb.SetBorderWidthAll(3);
+        sb.BorderWidthBottom = bottomBorder;
+        sb.SetCornerRadiusAll(8);
+        return sb;
+    }
+
+    private void BuildReadyPrompt()
+    {
+        _readyPromptLayer = new CanvasLayer { Layer = 40 };
+        AddChild(_readyPromptLayer);
+
+        var btn = new Button
+        {
+            Text = "READY",
+            CustomMinimumSize = new Vector2(180, 84),
+            FocusMode = Control.FocusModeEnum.None
+        };
+
+        // Your styles
+        btn.AddThemeStyleboxOverride("normal", LoadButtonStyle(BtnNormalUid, new Color(1f, 0.82f, 0.4f), 8));
+        btn.AddThemeStyleboxOverride("hover", LoadButtonStyle(BtnHoverUid, new Color(1f, 0.91f, 0.71f), 8));
+        btn.AddThemeStyleboxOverride("pressed", LoadButtonStyle(BtnPressedUid, new Color(0.99f, 0.82f, 0.4f), 3));
+        btn.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+
+        // Dark navy text to match the border
+        btn.AddThemeColorOverride("font_color", BtnInk);
+        btn.AddThemeColorOverride("font_hover_color", BtnInk);
+        btn.AddThemeColorOverride("font_pressed_color", BtnInk);
+        btn.AddThemeColorOverride("font_focus_color", BtnInk);
+        btn.AddThemeFontSizeOverride("font_size", 34);
+
+        btn.Pressed += OnLocalReadyClicked;
+        _readyPromptLayer.AddChild(btn);
+
+        // Center bottom, 40px up from the bottom edge
+        btn.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.Minsize, 40);
+        btn.GrowHorizontal = Control.GrowDirection.Both;
+        btn.GrowVertical = Control.GrowDirection.Begin;
+    }
+
+    private void OnLocalReadyClicked()
+    {
+        long me = Multiplayer.GetUniqueId();
+        PlayerRoles.TryGetValue(me, out string role);
+        if (string.IsNullOrEmpty(role)) return;
+
+        _awaitingReadyAfterRandomize = false;
+        Rpc(MethodName.UpdatePlayerStateRpc, me, role, true);
+        CheckStartConditionsAndNotify();
+        UpdateReadyPrompt();
     }
 
     private void OnRoomTerminated(string reason) => GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
