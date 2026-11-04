@@ -284,8 +284,7 @@ public partial class SoundboardUI : PanelContainer
             bool isNext = i == _module.Progress
                 && _module.Status != SoundboardModule.SoundboardStatus.Complete;
 
-            // Cue shows the real sfx name. Hidden cues show "?" until they are done.
-            // Show finished cues and the one the Operator has to do now. Future cues stay hidden.
+       
             string text = (_module.ShowSequence || done || isNext) ? NameOf(_module.Sequence[i]) : "?";
             _cueRow.AddChild(MakeCue(text, done, isNext));
         }
