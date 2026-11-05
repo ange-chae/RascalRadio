@@ -22,9 +22,11 @@ public static class Level1
 		// ---------- Modules (the Operator's Studio Desk) ----------
 		HasKeypad = true,             // Line Override keypad on or off
 		HasPiano = true,              // Piano module on or off
+        KeypadMinLine = 10,
+        KeypadMaxLine = 99,
 
-		// ---------- Prompter (the Broadcaster's keys) ----------
-		SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
+        // ---------- Prompter (the Broadcaster's keys) ----------
+        SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
 		PrompterLineRest = 12,         // seconds of quiet after each line. Lower = harder.
 		PrompterParagraphRest = 6,    // longer breather after a whole paragraph. Lower = harder.
 
@@ -35,8 +37,8 @@ public static class Level1
 		PianoTarget = 2,             // jingles the Operator must play. Higher = longer level.
 		QualityFloor = 45,           // Quality must stay above this %. Higher = harder.
 		SignalFloor = 30,            // Signal must stay above this %. 30 = both modules faulty at once.
-		FaultDrain = 2,              // Quality lost per second per active fault. Higher = harder.
-		CalmRecovery = 1,            // Quality regained per second with no faults. Lower = harder.
+		FaultDrain = 1,              // Quality lost per second per active fault. Higher = harder.
+		CalmRecovery = 3,            // Quality regained per second with no faults. Lower = harder.
 		HealthGrace = 10,            // Signal must stay above this %. 30 means both modules can't be faulty at once.
 		FlipSabotage = true,         // the raccoon can turn a module upside down
 
@@ -51,6 +53,9 @@ public static class Level1
 			return list.OrderBy(_ => System.Random.Shared.Next()).ToList();   // shuffle so the order is different every run
 		},
 
-				   // seconds below a floor before the task fails. Lower = harder.
-	};
+        ClockStartMinute = 8 * 60,
+        ClockEndMinute = 9 * 60,
+        ShiftSeconds = 240,
+        // seconds below a floor before the task fails. Lower = harder.
+    };
 }

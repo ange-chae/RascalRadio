@@ -22,7 +22,9 @@ public class LevelDefinition
     public double SabotageInterval = 0;
     // The callers in the order they ring in. This is the main thing level coders write.
     public Func<CallerBank, Genre, List<Caller>> BuildCallers;
-
+    public int KeypadMinLine = 1;     // smallest line number the Operator can get
+    public int KeypadMaxLine = 9;     // largest line number (99 = tens, 999 = hundreds, 9999 = thousands)
+    public LineRuleMode KeypadRule = LineRuleMode.DigitSum;
     public bool HasKeypad = false;     // does this level use the Line Override keypad?
     public bool AllowStatic = true;    // static faults on the keypad
     public bool HasPiano = false;      // does this level use Module B: Piano?
@@ -38,4 +40,7 @@ public class LevelDefinition
     public int FaultDrain = 1;        // Quality lost per second for each active fault
     public int CalmRecovery = 2;      // Quality regained per second when there are no faults
     public double HealthGrace = 10;   // seconds Quality/Signal must stay below the floor in a row before the task fails
+    public int ClockStartMinute = 8 * 60;    // minutes after midnight
+    public int ClockEndMinute = 9 * 60;
+    public double ShiftSeconds = 240;        // real seconds the whole shift takes
 }

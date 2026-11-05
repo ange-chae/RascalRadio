@@ -23,6 +23,7 @@ public partial class OperatorInterface : Control
     private ModuleSlot _openSlot;
     private Button _flipBtn;
 
+    public override void _EnterTree() => GD.Print($"[Operator] _EnterTree peer={Multiplayer.GetUniqueId()}");
     public override void _Ready()
     {
         var gs = GameSession.Instance;
@@ -57,13 +58,30 @@ public partial class OperatorInterface : Control
         if (lobbyBtn != null) lobbyBtn.Pressed += () => GameSession.Instance.ReturnToParty();
         if (_pauseMenu != null) _pauseMenu.Visible = false;
 
-        gs.StepChanged += OnStep;
-        gs.CallerChanged += OnCaller;
-        gs.QuotaChanged += OnQuota;
-        gs.KeypadChanged += OnKeypadChanged;
-        gs.TasksChanged += OnTasksChanged;
-        gs.FlipChanged += ApplyFlip;
-        gs.TopicChanged += RefreshTasks;
+        var timeLabel = FindChild("TimeLabel", true, false) as Label;
+        if (timeLabel != null)
+        {
+            var clock = new Timer { WaitTime = 0.5, Autostart = true };
+            clock.Timeout += () =>
+            {
+                if (IsInstanceValid(timeLabel) && GameSession.Instance != null)
+                    timeLabel.Text = GameSession.Instance.ClockText();
+            };
+            AddChild(clock);
+        }
+
+        Subscribe();
+        //gs.StepChanged -= OnStep;
+        //gs.CallerChanged -= OnCaller;
+        //gs.QuotaChanged -= OnQuota;
+        //gs.KeypadChanged -= OnKeypadChanged;
+        //gs.TasksChanged -= OnTasksChanged;   
+        //gs.FlipChanged -= ApplyFlip;         
+        //gs.TopicChanged -= RefreshTasks;
+
+        GD.Print($"[Operator] after subscribe: gs={gs.GetInstanceId()} step={gs.StepSubs} caller={gs.CallerSubs}");
+        GetTree().CreateTimer(1.0).Timeout += () =>
+            GD.Print($"[Operator] +1s: gs={GameSession.Instance.GetInstanceId()} step={GameSession.Instance.StepSubs} caller={GameSession.Instance.CallerSubs}");
 
         SetText("%StrikeCount", "none");
         SetupSlots();
@@ -71,6 +89,24 @@ public partial class OperatorInterface : Control
         OnCaller();
         if (gs.IsTutorial) OnStep(gs.CurrentStep);
         RefreshTasks();
+        Subscribe();
+    }
+
+    private void Subscribe()
+    {
+        var gs = GameSession.Instance;
+        if (gs == null) return;
+
+        // remove first so calling this twice never double-subscribes
+        gs.StepChanged -= OnStep; gs.StepChanged += OnStep;
+        gs.CallerChanged -= OnCaller; gs.CallerChanged += OnCaller;
+        gs.QuotaChanged -= OnQuota; gs.QuotaChanged += OnQuota;
+        gs.KeypadChanged -= OnKeypadChanged; gs.KeypadChanged += OnKeypadChanged;
+        gs.TasksChanged -= OnTasksChanged; gs.TasksChanged += OnTasksChanged;
+        gs.FlipChanged -= ApplyFlip; gs.FlipChanged += ApplyFlip;
+        gs.TopicChanged -= RefreshTasks; gs.TopicChanged += RefreshTasks;
+
+        GD.Print($"[Operator] Subscribe(): step={gs.StepSubs} caller={gs.CallerSubs}");
     }
 
     private void BuildUi()
@@ -128,6 +164,7 @@ public partial class OperatorInterface : Control
 
     public override void _ExitTree()
     {
+        GD.Print($"[Operator] _ExitTree peer={Multiplayer.GetUniqueId()}");
         var gs = GameSession.Instance;
         if (gs == null) return;
         gs.StepChanged -= OnStep;
@@ -203,6 +240,7 @@ public partial class OperatorInterface : Control
 
     private void OnCaller()
     {
+        GD.Print("[Operator] OnCaller '" + GameSession.Instance.CallerName + "'");
         var gs = GameSession.Instance;
         bool hasCaller = !string.IsNullOrEmpty(gs.CallerName);
 
@@ -296,6 +334,21 @@ public partial class OperatorInterface : Control
             });
         }
 
+        if (!gs.IsTutorial && gs.CurrentLevel?.HasMemory == true)
+        {
+            _modules.Add(new ModuleSlot
+            {
+                Title = "Memory",
+                Build = () =>
+                {
+                    var memory = new MemoryModule { PenaltiesEnabled = true, UseOwnStrikes = false };
+                    memory.Strike += _ => gs.MemoryStrike();
+                    memory.Solved += gs.MemorySolved;
+                    return memory;
+                }
+            });
+        }
+
         for (int i = 0; i < 4; i++)
         {
             var btn = GetNodeOrNull<Button>($"%Slot{i + 1}Btn");
@@ -318,20 +371,7 @@ public partial class OperatorInterface : Control
             }
         }
 
-        if (!gs.IsTutorial && gs.CurrentLevel?.HasMemory == true)
-        {
-            _modules.Add(new ModuleSlot
-            {
-                Title = "Memory",
-                Build = () =>
-                {
-                    var memory = new MemoryModule { PenaltiesEnabled = true, UseOwnStrikes = false };
-                    memory.Strike += _ => gs.MemoryStrike();
-                    memory.Solved += gs.MemorySolved;
-                    return memory;
-                }
-            });
-        }
+      
         OnTasksChanged();
     }
 
@@ -391,6 +431,7 @@ public partial class OperatorInterface : Control
 
     private void OnStep(TutorialStep step)
     {
+        GD.Print("[Operator] OnStep " + step);
         // Tutorial: keypad button only becomes usable at the keypad step
         var btn = GetNodeOrNull<Button>("%Slot1Btn");
         if (btn != null) btn.Disabled = step < TutorialStep.KeypadModule;

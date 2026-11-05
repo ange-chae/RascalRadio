@@ -87,6 +87,18 @@ public partial class BroadcasterInterface : Control
         FindNodes();
         WireButtons();
 
+        var timeLabel = FindChild("TimeLabel", true, false) as Label;
+        if (timeLabel != null)
+        {
+            var clock = new Timer { WaitTime = 0.5, Autostart = true };
+            clock.Timeout += () =>
+            {
+                if (IsInstanceValid(timeLabel) && GameSession.Instance != null)
+                    timeLabel.Text = GameSession.Instance.ClockText();
+            };
+            AddChild(clock);
+        }
+
         // starting state
         if (_pauseMenu != null) _pauseMenu.Visible = false;
         if (_deadAirLabel != null) _deadAirLabel.Visible = false;

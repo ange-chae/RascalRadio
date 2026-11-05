@@ -10,7 +10,9 @@ using System.Text;
 // and the host replies with Authority RPCs that every peer applies locally.
 public partial class GameSession : Node
 {
-	public static GameSession Instance { get; private set; }
+    public int StepSubs => StepChanged?.GetInvocationList().Length ?? 0;
+    public int CallerSubs => CallerChanged?.GetInvocationList().Length ?? 0;
+    public static GameSession Instance { get; private set; }
     public const string PartyScenePath = "res://scenes/player_lists.tscn";
 
     public readonly List<LevelTask> Tasks = new();
@@ -49,9 +51,8 @@ public partial class GameSession : Node
 
     // Same on every peer: the piano runs in lockstep and the keypad state is synced.
 
-
+    private const string FirstLevelId = "morning_broadcast";
     private double _qualityTick, _sabotageTimer = -1;
-
     private double _qualityLow, _signalLow;
     // Line Override problem. The Operator UI shows ONLY KeypadLine (+ the static fault).
     // The Technician UI shows ONLY the level and the rule. Neither can solve it alone.
@@ -91,6 +92,23 @@ public partial class GameSession : Node
     private const ulong ModuleStrikeCooldownMs = 1200;   // wrong presses closer together than this give ONE strike. 0 = every wrong press is a strike.
     private ulong _lastModuleStrikeMs;
 
+    private ulong _levelStartMs;
+
+    public bool ShiftTimeUp =>
+        CurrentLevel != null && (Time.GetTicksMsec() - _levelStartMs) / 1000.0 >= CurrentLevel.ShiftSeconds;
+
+    public string ClockText()
+    {
+        var d = CurrentLevel;
+        if (d == null) return "8:00 AM";   // tutorial: fixed time
+
+        double t = Math.Clamp((Time.GetTicksMsec() - _levelStartMs) / 1000.0 / d.ShiftSeconds, 0.0, 1.0);
+        int minutes = (int)(d.ClockStartMinute + t * (d.ClockEndMinute - d.ClockStartMinute));
+        int h24 = (minutes / 60) % 24, m = minutes % 60;
+        int h12 = h24 % 12 == 0 ? 12 : h24 % 12;
+        return $"{h12}:{m:00} {(h24 >= 12 ? "PM" : "AM")}";
+    }
+
     public override void _Ready()
     {
         Piano = new StudioPianoModule();
@@ -127,6 +145,7 @@ public partial class GameSession : Node
         Topic = Genre.Drama;
         _qualityLow = 0; _signalLow = 0;
         _lastModuleStrikeMs = 0;
+        _levelStartMs = Time.GetTicksMsec();
 
 
         Piano.SetActive(false);
@@ -180,7 +199,7 @@ public partial class GameSession : Node
 
         if (def.BuildCallers != null) _callers.AddRange(def.BuildCallers(_callerBank, topic));
         if (def.HasKeypad)
-            _override = new LineOverrideSession(_rng, LineOverrideRule.NewRandom(_rng), def.AllowStatic);
+            _override = new LineOverrideSession(_rng, LineOverrideRule.NewRandom(_rng, def.KeypadRule), def.AllowStatic, def.KeypadMinLine, def.KeypadMaxLine);
 
         if (def.HasPiano) StartRandomPiano();
         if (def.HasSoundboard) StartRandomSoundboard();
@@ -264,6 +283,25 @@ public partial class GameSession : Node
                 break;
         }
 	}
+    private static void Fire(Action a)
+    {
+        if (a == null) return;
+        foreach (Action h in a.GetInvocationList())
+        {
+            try { h(); }
+            catch (Exception e) { GD.PushError($"[GameSession] subscriber {h.Target?.GetType().Name}.{h.Method.Name} failed: {e}"); }
+        }
+    }
+
+    private static void Fire<T>(Action<T> a, T arg)
+    {
+        if (a == null) return;
+        foreach (Action<T> h in a.GetInvocationList())
+        {
+            try { h(arg); }
+            catch (Exception e) { GD.PushError($"[GameSession] subscriber {h.Target?.GetType().Name}.{h.Method.Name} failed: {e}"); }
+        }
+    }
 
     private void RealDecide(bool accept)
     {
@@ -344,13 +382,18 @@ public partial class GameSession : Node
 
 	private void Say(string text, bool success = false) => Rpc(MethodName.FeedbackRpc, text, success);
 
-	// ---------- Replies (host -> everyone, including the host itself) ----------
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void SyncStepRpc(int step)
-	{
-		CurrentStep = (TutorialStep)step;
-		StepChanged?.Invoke(CurrentStep);
+    // ---------- Replies (host -> everyone, including the host itself) ----------
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncStepRpc(int step)
+    {
+        GD.Print($"[GS peer {Multiplayer.GetUniqueId()}] id={GetInstanceId()} step={CurrentStep} stepSubscribers={StepSubs}");
+        CurrentStep = (TutorialStep)step;
 
+        // Tutorial finished: queue Level 1 on every peer (runs everywhere, so every machine knows it)
+        if (IsTutorial && CurrentStep == TutorialStep.Done && string.IsNullOrEmpty(PendingLevelId))
+            PendingLevelId = FirstLevelId;
+
+        Fire(StepChanged, CurrentStep);
     }
 
     // Each peer calls this when its title card has finished showing.
@@ -379,8 +422,9 @@ public partial class GameSession : Node
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void SyncCallerRpc(string name, string story, int number, int total)
 	{
-		CallerName = name; CallerStory = story; CallerNumber = number; CallerTotal = total;
-		CallerChanged?.Invoke();
+        GD.Print($"[GS peer {Multiplayer.GetUniqueId()}] caller='{name}' callerSubscribers={CallerChanged?.GetInvocationList().Length ?? 0}");
+        CallerName = name; CallerStory = story; CallerNumber = number; CallerTotal = total;
+		Fire(CallerChanged);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -388,14 +432,14 @@ public partial class GameSession : Node
 	{
 		KeypadLine = line; KeypadLevel = level; KeypadStatic = staticFault;
 		RuleEvenSuffix = evenSuffix; RuleOddSuffix = oddSuffix;
-		KeypadChanged?.Invoke();
+		Fire(KeypadChanged);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void SyncQuotaRpc(int met, int target)
 	{
 		QuotaMet = met; QuotaTarget = target;
-		QuotaChanged?.Invoke();
+		Fire(QuotaChanged);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -420,7 +464,7 @@ public partial class GameSession : Node
     private void SyncAirtimeRpc(int currentQuality)
     {
         AirtimeQuality = currentQuality;
-        AirtimeChanged?.Invoke();
+        Fire(AirtimeChanged);
     }
 
     // ---------- Studio Piano (Module B) ----------
@@ -488,7 +532,7 @@ public partial class GameSession : Node
     private void SyncTopicRpc(int genre)
     {
         Topic = (Genre)genre;
-        TopicChanged?.Invoke();
+        Fire(TopicChanged);
     }
 
     // Replies (host -> everyone, including the host)
@@ -606,7 +650,7 @@ public partial class GameSession : Node
         }
 
         CheckHealthTasks(delta);
-
+        if (ShiftTimeUp) FinishLevel();   // shift over: score whatever was completed
         if (_sabotageTimer > 0)
         {
             _sabotageTimer -= delta;
@@ -655,7 +699,7 @@ public partial class GameSession : Node
     {
         bool gotStrike = strikes > Strikes;
         Strikes = strikes;
-        StrikesChanged?.Invoke();
+        Fire(StrikesChanged);
         if (gotStrike) ShowStrikeFlash();
     }
 
@@ -894,7 +938,7 @@ public partial class GameSession : Node
             t.Progress = data[i * 4]; t.Done = data[i * 4 + 1] == 1;
             t.Failed = data[i * 4 + 2] == 1; t.Mistakes = data[i * 4 + 3];
         }
-        TasksChanged?.Invoke();
+        Fire(TasksChanged);
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -926,6 +970,6 @@ public partial class GameSession : Node
     private void SyncFlipRpc(string module)
     {
         FlippedModule = module;
-        FlipChanged?.Invoke();
+        Fire(FlipChanged);
     }
 }

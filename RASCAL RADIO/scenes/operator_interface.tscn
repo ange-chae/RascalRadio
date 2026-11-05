@@ -519,6 +519,7 @@ polygon = PackedVector2Array(184, 172, 217.39886, 192.9451, 243, 209, 244, 172)
 
 [node name="MenuBtn" type="Button" parent="." unique_id=1074809774]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 21.0
 offset_top = 13.0

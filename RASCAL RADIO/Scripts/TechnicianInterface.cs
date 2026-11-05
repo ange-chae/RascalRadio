@@ -1,8 +1,9 @@
 using Godot;
 using RascalRadio.Core.Models;
-using static StudioPianoData;
-using System.Linq;
+using RascalRadio.Core.Systems;
 using RascalRadio.Modules;
+using System.Linq;
+using static StudioPianoData;
 
 public partial class TechnicianInterface : PopupFrame
 {
@@ -55,9 +56,14 @@ public partial class TechnicianInterface : PopupFrame
         string even = gs?.RuleEvenSuffix ?? "05";
         string odd = gs?.RuleOddSuffix ?? "99";
 
+        bool digitSum = gs?.CurrentLevel?.KeypadRule == LineRuleMode.DigitSum;
+        string rule = digitSum
+            ? "Add up all the digits of the line number. If the total is even,"
+            : "If the line number is even,";
+
         return
             "Ask the Operator for the incoming line number. It is only on their keypad.\n\n" +
-            $"If the line number is even, append {even}.\n" +
+            $"{rule} append {even}.\n" +
             $"Otherwise, append {odd}.\n\n" +
             "Tell the Operator the code. They type it and press ROUTE.\n" +
             "If there is a static fault, the Operator presses CLEAR, enters 0000, then presses ROUTE.\n\n" +
@@ -129,6 +135,18 @@ public partial class TechnicianInterface : PopupFrame
         base._Ready();
         StyleBars();
 
+        var timeLabel = FindChild("TimeLabel", true, false) as Label;
+        if (timeLabel != null)
+        {
+            var clock = new Timer { WaitTime = 0.5, Autostart = true };
+            clock.Timeout += () =>
+            {
+                if (IsInstanceValid(timeLabel) && GameSession.Instance != null)
+                    timeLabel.Text = GameSession.Instance.ClockText();
+            };
+            AddChild(clock);
+        }
+
         var manual = GetNodeOrNull<Control>("%Popup");
         if (manual != null) manual.Visible = false;   // the manual starts closed
 
@@ -186,8 +204,16 @@ public partial class TechnicianInterface : PopupFrame
         int qFloor = d?.QualityFloor ?? 45;
         int sFloor = d?.SignalFloor ?? 30;
 
-        if (GetNodeOrNull<RetroBar>("%QualityBar") is { } q) { q.DangerBelow = qFloor; q.WarnBelow = qFloor + 20; }
-        if (GetNodeOrNull<RetroBar>("%SignalBar") is { } s) { s.DangerBelow = sFloor; s.WarnBelow = sFloor + 36; }
+        if (GetNodeOrNull<RetroBar>("%QualityBar") is { } q)
+        {
+            q.DangerBelow = qFloor;
+            q.WarnBelow = qFloor + (100 - qFloor) / 2;   // floor 85 → yellow below 92
+        }
+        if (GetNodeOrNull<RetroBar>("%SignalBar") is { } s)
+        {
+            s.DangerBelow = sFloor;
+            s.WarnBelow = sFloor + (100 - sFloor) / 2;   // floor 75 → yellow below 87
+        }
     }
 
     private void ToggleManual()
@@ -208,7 +234,20 @@ public partial class TechnicianInterface : PopupFrame
     private void RefreshTasks()
     {
         var gs = GameSession.Instance;
-        if (_taskLabel != null && gs != null && !gs.IsTutorial) _taskLabel.Text = gs.TaskBbcode();
+        if (_taskLabel == null || gs == null) return;
+
+        if (!gs.IsTutorial) { _taskLabel.Text = gs.TaskBbcode(); return; }
+
+        var s = gs.CurrentStep;
+        var items = new (string text, bool done)[]
+        {
+        ("Meet the studio", s > TutorialStep.MeetStudio),
+        ("Open the manual and read the Math Keypad page", s > TutorialStep.KeypadModule),
+        ("Help the Operator fix the keypad", s > TutorialStep.KeypadModule),
+        };
+        _taskLabel.Text = string.Join("\n", items.Select(t => t.done
+            ? $"[color=#7A7A7A][s]- {t.text}[/s][/color]"
+            : $"- {t.text}"));
     }
 
     private void OnHealth()

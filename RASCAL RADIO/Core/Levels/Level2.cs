@@ -21,7 +21,10 @@ public static class Level2
 		HasPiano = true,
 		HasSoundboard = true,
 
-		SegmentTime = 11.0,
+        KeypadMinLine = 100,
+        KeypadMaxLine = 999,
+
+        SegmentTime = 11.0,
 		PrompterLineRest = 10,
 		PrompterParagraphRest = 5,
 
@@ -29,9 +32,9 @@ public static class Level2
 
 		PianoTarget = 3,
 		SoundboardTarget = 2,
-		QualityFloor = 50,
-		SignalFloor = 30,
-		FaultDrain = 1,
+		QualityFloor = 65,
+		SignalFloor = 65,
+		FaultDrain = 2,
 		CalmRecovery = 2,
 		HealthGrace = 10,
 		FlipSabotage = true,
@@ -45,5 +48,9 @@ public static class Level2
 			list.Add(bank.Raccoon(topic));
 			return list.OrderBy(_ => System.Random.Shared.Next()).ToList();
 		},
-	};
+
+        ClockStartMinute = 12 * 60,
+        ClockEndMinute = 15 * 60,
+        ShiftSeconds = 300,
+    };
 }

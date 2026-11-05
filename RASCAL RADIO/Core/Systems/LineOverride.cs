@@ -2,29 +2,38 @@ using System;
 using System.Collections.Generic;
 
 namespace RascalRadio.Core.Systems;
+public enum LineRuleMode { LastDigit, DigitSum }
 public sealed class LineOverrideRule
 {
-	public string EvenSuffix { get; init; } = "05";
-	public string OddSuffix { get; init; } = "99";
+    public string EvenSuffix { get; init; } = "05";
+    public string OddSuffix { get; init; } = "99";
+    public LineRuleMode Mode { get; init; } = LineRuleMode.LastDigit;
 
-	private static readonly string[] SuffixPool = { "05", "99", "17", "42", "63", "28", "71", "36", "84", "50" };
+    private static readonly string[] SuffixPool = { "05", "99", "17", "42", "63", "28", "71", "36", "84", "50" };
 
-	/// <summary>The rule printed in the original manual. Used by the tutorial.</summary>
-	public static LineOverrideRule Default() => new();
+    public static LineOverrideRule Default() => new();
 
-	/// <summary>A fresh rule for a shift: two different suffixes.</summary>
-	public static LineOverrideRule NewRandom(Random rng)
-	{
-		int a = rng.Next(SuffixPool.Length);
-		int b;
-		do { b = rng.Next(SuffixPool.Length); } while (b == a);
-		return new LineOverrideRule { EvenSuffix = SuffixPool[a], OddSuffix = SuffixPool[b] };
-	}
-
-	public string Compute(int line, int level)
-	{
-        return line.ToString() + (line % 2 == 0 ? EvenSuffix : OddSuffix);
+    public static LineOverrideRule NewRandom(Random rng, LineRuleMode mode = LineRuleMode.LastDigit)
+    {
+        int a = rng.Next(SuffixPool.Length);
+        int b;
+        do { b = rng.Next(SuffixPool.Length); } while (b == a);
+        return new LineOverrideRule { EvenSuffix = SuffixPool[a], OddSuffix = SuffixPool[b], Mode = mode };
     }
+
+    public bool IsEvenLine(int line)
+    {
+        if (Mode == LineRuleMode.DigitSum)
+        {
+            int sum = 0;
+            foreach (char c in line.ToString()) sum += c - '0';
+            return sum % 2 == 0;
+        }
+        return line % 2 == 0;
+    }
+
+    public string Compute(int line, int level) =>
+        line.ToString() + (IsEvenLine(line) ? EvenSuffix : OddSuffix);
 }
 
 public sealed class LineOverrideProblem
@@ -48,20 +57,23 @@ public sealed class LineOverrideSession
 
 	private readonly Random _rng;
 	private readonly HashSet<(int, int)> _recent = new();
+    private readonly int _minLine, _maxLine;
 
-	public LineOverrideSession(Random rng, LineOverrideRule rule, bool allowStatic)
-	{
-		_rng = rng; Rule = rule; AllowStatic = allowStatic;
-	}
+    public LineOverrideSession(Random rng, LineOverrideRule rule, bool allowStatic, int minLine = 1, int maxLine = 9)
+    {
+        _rng = rng; Rule = rule; AllowStatic = allowStatic;
+        _minLine = Math.Max(1, minLine);
+        _maxLine = Math.Max(_minLine, maxLine);
+    }
 
-	/// <param name="level">Studio level index (1-3). Null = random each problem.</param>
-	public LineOverrideProblem NewProblem(int? level = null, double staticChance = 0.35)
+    /// <param name="level">Studio level index (1-3). Null = random each problem.</param>
+    public LineOverrideProblem NewProblem(int? level = null, double staticChance = 0.35)
 	{
 		int line, lvl, tries = 0;
 		do
 		{
-			line = _rng.Next(1, 10);
-			lvl = level ?? _rng.Next(1, 4);
+            line = _rng.Next(_minLine, _maxLine + 1);
+            lvl = level ?? _rng.Next(1, 4);
 			tries++;
 		} while (_recent.Contains((line, lvl)) && tries < 20);
 
