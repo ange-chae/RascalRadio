@@ -22,11 +22,11 @@ public static class Level1
 		// ---------- Modules (the Operator's Studio Desk) ----------
 		HasKeypad = true,             // Line Override keypad on or off
 		HasPiano = true,              // Piano module on or off
-        KeypadMinLine = 10,
-        KeypadMaxLine = 99,
+		KeypadMinLine = 10,
+		KeypadMaxLine = 99,
 
-        // ---------- Prompter (the Broadcaster's keys) ----------
-        SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
+		// ---------- Prompter (the Broadcaster's keys) ----------
+		SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
 		PrompterLineRest = 12,         // seconds of quiet after each line. Lower = harder.
 		PrompterParagraphRest = 6,    // longer breather after a whole paragraph. Lower = harder.
 
@@ -53,9 +53,9 @@ public static class Level1
 			return list.OrderBy(_ => System.Random.Shared.Next()).ToList();   // shuffle so the order is different every run
 		},
 
-        ClockStartMinute = 8 * 60,
-        ClockEndMinute = 9 * 60,
-        ShiftSeconds = 240,
-        // seconds below a floor before the task fails. Lower = harder.
-    };
+		ClockStartMinute = 8 * 60,
+		ClockEndMinute = 9 * 60,
+		ShiftSeconds = 240,
+		// seconds below a floor before the task fails. Lower = harder.
+	};
 }

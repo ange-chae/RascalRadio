@@ -22,6 +22,10 @@ public partial class BroadcasterInterface : Control
 
     // key index: 0 = W / Up, 1 = A / Left, 2 = S / Down, 3 = D / Right
     private static readonly string[] Arrows = { "W", "A", "S", "D" };
+    private static readonly char[] QwertyLetters = "QWERTYUIOPASDFGHJKLZXCVBNM".ToCharArray();
+    private const double NormalColorPromptChance = 0.08;
+    private const double PostBlackoutColorPromptChance = 0.75;
+    private const ulong PostBlackoutBoostMs = 20000;
 
     // =====================================================================
     // NODES
@@ -53,6 +57,10 @@ public partial class BroadcasterInterface : Control
     private string[][] _paragraph = Array.Empty<string[]>();
     private string[] _words = Array.Empty<string>();
     private int[] _keys = Array.Empty<int>();
+    private char[] _displayLetters = Array.Empty<char>();
+    private bool _codedPromptActive;
+    private bool _blackoutSequenceActive;
+    private ulong _postBlackoutBoostUntilMsec;
     private int _segIdx;
     private int _idx;                      // words done in the current line
     private double _timeLeft;
@@ -111,6 +119,9 @@ public partial class BroadcasterInterface : Control
             gs.QuotaChanged += OnQuota;
             gs.TasksChanged += RefreshTasks;
             gs.TopicChanged += OnTopic;
+            gs.PrompterColorMapChanged += OnPrompterColorMapChanged;
+            gs.BlackoutSequenceChanged += OnBlackoutSequenceChanged;
+            _blackoutSequenceActive = gs.BlackoutSequenceActive;
             if (_tutorial) gs.StepChanged += OnStep;
         }
 
@@ -134,6 +145,8 @@ public partial class BroadcasterInterface : Control
         gs.StepChanged -= OnStep;
         gs.CallerChanged -= OnCaller;
         gs.QuotaChanged -= OnQuota;
+        gs.PrompterColorMapChanged -= OnPrompterColorMapChanged;
+        gs.BlackoutSequenceChanged -= OnBlackoutSequenceChanged;
         gs.TasksChanged -= RefreshTasks;
         gs.TopicChanged -= OnTopic;
     }
@@ -371,11 +384,17 @@ public partial class BroadcasterInterface : Control
     {
         _words = _paragraph[_segIdx];
         _keys = _words.Select(_ => _rng.Next(4)).ToArray();
+        _codedPromptActive = ShouldUseColorPrompt();
+        _displayLetters = _codedPromptActive
+            ? _keys.Select(_ => QwertyLetters[_rng.Next(QwertyLetters.Length)]).ToArray()
+            : Array.Empty<char>();
         _idx = 0;
         _timeLeft = SegmentTime;
         _running = true;
         _deadAir.Register();   // fresh silence window when a line appears
-        _status.Text = _tutorial ? "Press the key shown next to each word, in order." : "";
+        _status.Text = _codedPromptActive
+            ? "⚡ SIGNAL INTERFERENCE — use the Technician's color code."
+            : _tutorial ? "Press the key shown next to each word, in order." : "";
 
         RenderTarget();
         EnsureTargetVisible();
@@ -399,12 +418,68 @@ public partial class BroadcasterInterface : Control
     {
         var parts = _keys.Select((k, i) =>
         {
+            if (_codedPromptActive && _displayLetters.Length == _keys.Length)
+            {
+                int[] colorToKey = GameSession.Instance?.PrompterColorKeyMap ?? Array.Empty<int>();
+                int color = Array.IndexOf(colorToKey, k);
+                if (color >= 0)
+                {
+                    string letter = _displayLetters[i].ToString();
+                    if (i < _idx) letter = $"[s]{letter}[/s]";
+                    else if (i == _idx) letter = $"[b][u]{letter}[/u][/b]";
+                    return $"[color={GameSession.PrompterColorHex(color)}]{letter}[/color]";
+                }
+            }
+
             string a = Arrows[k];
             if (i < _idx) return $"[color=#7CFC9A]{a}[/color]";          // done
             if (i == _idx) return $"[color=#FFD54F][b]{a}[/b][/color]";  // press this one
             return $"[color=#B0BEC5]{a}[/color]";                        // coming up
         });
         _target.Text = "[center][font_size=32]" + string.Join("  ", parts) + "[/font_size][/center]";
+    }
+
+    private bool ShouldUseColorPrompt()
+    {
+        var gs = GameSession.Instance;
+        if (_tutorial || gs == null || gs.LevelId != "emergency_broadcast") return false;
+        if (_blackoutSequenceActive || gs.BlackoutSequenceActive) return false;
+        if (gs.PrompterColorKeyMap.Length != 4) return false;
+
+        double chance = Time.GetTicksMsec() < _postBlackoutBoostUntilMsec
+            ? PostBlackoutColorPromptChance
+            : NormalColorPromptChance;
+        return _rng.NextDouble() < chance;
+    }
+
+    private void OnPrompterColorMapChanged()
+    {
+        if (_codedPromptActive && GameSession.Instance?.PrompterColorKeyMap.Length != 4)
+        {
+            _codedPromptActive = false;
+            RenderTarget();
+        }
+    }
+
+    private void OnBlackoutSequenceChanged(bool active)
+    {
+        bool wasActive = _blackoutSequenceActive;
+        _blackoutSequenceActive = active;
+
+        if (active)
+        {
+            if (_codedPromptActive)
+            {
+                _codedPromptActive = false;
+                _displayLetters = Array.Empty<char>();
+                RenderTarget();
+                _status.Text = "";
+            }
+        }
+        else if (wasActive)
+        {
+            _postBlackoutBoostUntilMsec = Time.GetTicksMsec() + PostBlackoutBoostMs;
+        }
     }
 
     private void SpawnWord(string word, bool correct)

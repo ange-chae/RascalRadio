@@ -7,6 +7,23 @@ using static StudioPianoData;
 
 public partial class TechnicianInterface : PopupFrame
 {
+    // ===== BLACKOUT SYSTEM =====
+    private ColorRect    _blackoutOverlay;
+    private ProgressBar  _rebootMeter;
+    private Label        _rebootLabel;
+    private Timer        _blackoutRngTimer;
+    private Timer        _flickerTimer;
+
+    private bool  _isBlackout    = false;
+    private bool  _isHolding     = false;
+    private float _rebootProgress = 0f;
+    private int   _flickerCount   = 0;
+
+    private const float RebootDuration  = 6.0f; // minimum hold time to restore power
+    private const float DecayRate       = 0.3f; // progress lost per second when not holding
+    private const float FlickerInterval = 0.08f;
+    private const int   FlickerCycles   = 8;    // number of on/off flickers before full blackout
+
     // ===== MANUAL PAGES =====
     // One entry per tab button (TabA..TabE), in order.
     private static readonly string[] PageTitles =
@@ -15,7 +32,7 @@ public partial class TechnicianInterface : PopupFrame
     "Module B: Piano",
     "Module C: Soundboard",
     "Module D: Simon Says",
-    "Module E:",
+    "Prompter Color Code",
 };
 
     private const int KeypadPageIndex = 0;
@@ -134,6 +151,7 @@ public partial class TechnicianInterface : PopupFrame
 
         base._Ready();
         StyleBars();
+        SetupBlackoutSystem();
 
         var timeLabel = FindChild("TimeLabel", true, false) as Label;
         if (timeLabel != null)
@@ -162,6 +180,10 @@ public partial class TechnicianInterface : PopupFrame
         _taskLabel = GetNodeOrNull<RichTextLabel>("%TaskLabel");
         if (_taskLabel != null) { _taskLabel.BbcodeEnabled = true; _taskLabel.FitContent = true; _taskLabel.ScrollActive = false; }
 
+        // The Prompter Color Code page is specific to Level 3.
+        var prompterTab = GetNodeOrNull<Button>("%TabE");
+        if (prompterTab != null) prompterTab.Visible = gs?.LevelId == "emergency_broadcast";
+
         string[] tabs = { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" };
         for (int i = 0; i < tabs.Length; i++)
         {
@@ -183,6 +205,7 @@ public partial class TechnicianInterface : PopupFrame
         gs.TasksChanged += RefreshTasks;   // NEW
         gs.TopicChanged += RefreshTasks;   // NEW
         gs.FlipChanged += OnHealth;        // NEW
+        gs.PrompterColorMapChanged += OnPrompterColorMapChanged;
         if (gs.Piano != null) gs.Piano.FaultChanged += OnPianoFault;
         OnHealth();
         OnStrikes();
@@ -284,15 +307,22 @@ public partial class TechnicianInterface : PopupFrame
         gs.TasksChanged -= RefreshTasks;   // NEW
         gs.TopicChanged -= RefreshTasks;   // NEW
         gs.FlipChanged -= OnHealth;        // NEW
+        gs.PrompterColorMapChanged -= OnPrompterColorMapChanged;
         if (gs.Piano != null) gs.Piano.FaultChanged -= OnPianoFault;
         gs.StepChanged -= OnStep;
         gs.QuotaChanged -= OnQuota;
         gs.KeypadChanged -= OnKeypadChanged;
+        // Blackout timers are children, freed automatically
     }
 
     private void OnKeypadChanged()
     {
         if (_page == KeypadPageIndex) ShowPage(KeypadPageIndex);
+    }
+
+    private void OnPrompterColorMapChanged()
+    {
+        if (_page == 4) ShowPage(4);
     }
 
     private void OnStep(TutorialStep step)
@@ -330,6 +360,7 @@ public partial class TechnicianInterface : PopupFrame
                       : i == 2 ? SoundboardPage()
                       : i == 2 ? SoundboardPage()
                       : i == 3 ? MemoryManual.PageText()
+                      : i == 4 ? PrompterColorPage()
                       : "";
             text.BbcodeEnabled = true;
         }
@@ -340,6 +371,28 @@ public partial class TechnicianInterface : PopupFrame
         // if (pic != null) pic.Texture = GD.Load<Texture2D>("res://assets/images/your_picture.png");
     }
 
+    private static string PrompterColorPage()
+    {
+        var gs = GameSession.Instance;
+        if (gs?.LevelId != "emergency_broadcast")
+            return "This page is used during signal interference in Level 3.\n\n" +
+                   "During an interruption, the Broadcaster sees random letters in colors. " +
+                   "Tell them which WASD key matches each color.";
+
+        int[] colorToKey = gs.PrompterColorKeyMap;
+        if (colorToKey.Length != 4)
+            return "Level 3 prompter color code is synchronizing...";
+
+        string[] rows = Enumerable.Range(0, 4).Select(color =>
+            $"[color={GameSession.PrompterColorHex(color)}][b]{GameSession.PrompterColorName(color)}[/b][/color]  →  " +
+            $"[b]{GameSession.PrompterKeyName(colorToKey[color])}[/b]").ToArray();
+
+        return "[b]LEVEL 3: PROMPTER SIGNAL INTERFERENCE[/b]\n\n" +
+               "When random colored letters appear on the Broadcaster's monitor, the color tells them which WASD key to press. " +
+               "The letter itself is not the key to press. Read this mapping aloud:\n\n" +
+               string.Join("\n", rows);
+    }
+
     public void SetHealth(int signal, int quality)
     {
         var sb = GetNodeOrNull<ProgressBar>("%SignalBar"); if (sb != null) sb.Value = signal;
@@ -347,6 +400,184 @@ public partial class TechnicianInterface : PopupFrame
         var qb = GetNodeOrNull<ProgressBar>("%QualityBar"); if (qb != null) qb.Value = quality;
         SetText("%QualityLabel", $"Quality {quality}%");
     }
+
+    // ===== BLACKOUT SYSTEM IMPLEMENTATION =====
+
+    private void SetupBlackoutSystem()
+    {
+        // --- Promote the lit HUD nodes above the future overlay ---
+        // Task panel (Hudbar, top-right) and TimePanel stay visible during blackout.
+        foreach (var nodePath in new[] { "Task", "TimePanel" })
+        {
+            var n = GetNodeOrNull<Control>(nodePath);
+            if (n != null) { n.ZAsRelative = false; n.ZIndex = 55; }
+        }
+
+        // --- Full-screen blackout overlay ---
+        _blackoutOverlay = new ColorRect
+        {
+            Color   = new Color(0.02f, 0.02f, 0.03f, 0.97f),
+            ZIndex  = 50,
+            Visible = false,
+        };
+        _blackoutOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        AddChild(_blackoutOverlay);
+
+        // --- Reboot progress bar (grows from bottom of screen) ---
+        _rebootMeter = new ProgressBar
+        {
+            MinValue       = 0,
+            MaxValue       = 100,
+            Value          = 0,
+            ShowPercentage = false,
+            FillMode       = (int)ProgressBar.FillModeEnum.BottomToTop,
+            ZIndex         = 60,
+            Visible        = false,
+        };
+        // Style: emergency green glow
+        var fillStyle = new StyleBoxFlat { BgColor = new Color(0.1f, 0.85f, 0.4f, 0.75f) };
+        var bgStyle   = new StyleBoxFlat { BgColor = new Color(0.0f, 0.0f, 0.0f, 0.0f) };
+        _rebootMeter.AddThemeStyleboxOverride("fill",       fillStyle);
+        _rebootMeter.AddThemeStyleboxOverride("background", bgStyle);
+        _rebootMeter.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+        _rebootMeter.CustomMinimumSize = new Vector2(0, 80);
+        // Offset up by 80 px so it sits flush at the bottom edge
+        _rebootMeter.OffsetTop    = -80;
+        _rebootMeter.OffsetBottom = 0;
+        AddChild(_rebootMeter);
+
+        // --- "HOLD TO REBOOT" label sitting just above the meter ---
+        _rebootLabel = new Label
+        {
+            Text              = "▲  HOLD TO REBOOT  ▲",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            ZIndex            = 61,
+            Visible           = false,
+        };
+        _rebootLabel.AddThemeColorOverride("font_color",        new Color(0.1f, 0.9f, 0.4f, 1f));
+        _rebootLabel.AddThemeColorOverride("font_shadow_color", new Color(0f, 0f, 0f, 1f));
+        _rebootLabel.AddThemeFontSizeOverride("font_size", 20);
+        _rebootLabel.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+        _rebootLabel.OffsetTop    = -112;
+        _rebootLabel.OffsetBottom = -84;
+        AddChild(_rebootLabel);
+
+        // --- Flicker timer ---
+        _flickerTimer = new Timer { WaitTime = FlickerInterval, OneShot = false };
+        _flickerTimer.Timeout += OnFlicker;
+        AddChild(_flickerTimer);
+
+        // --- Random interval timer to schedule blackouts (Level 3 only) ---
+        _blackoutRngTimer = new Timer { WaitTime = GetNextBlackoutDelay(), OneShot = true };
+        _blackoutRngTimer.Timeout += StartFlicker;
+        AddChild(_blackoutRngTimer);
+
+        // Only start the timer on the emergency broadcast (Level 3).
+        // On the tutorial, Level 1, and Level 2 the timer stays stopped.
+        if (GameSession.Instance?.LevelId == "emergency_broadcast")
+            _blackoutRngTimer.Start();
+
+    }
+
+    private static double GetNextBlackoutDelay() =>
+        GD.RandRange(40.0, 90.0);
+
+    // Phase 1: Flicker before full blackout
+    private void StartFlicker()
+    {
+        _flickerCount = 0;
+        GameSession.Instance?.ReportBlackoutSequence(true);
+        _flickerTimer.Start();
+    }
+
+    private void OnFlicker()
+    {
+        _flickerCount++;
+        // Toggle the whole tree's modulate to simulate a fluorescent lamp dying
+        Modulate = _flickerCount % 2 == 0
+            ? Colors.White
+            : new Color(0.15f, 0.15f, 0.15f, 1f);
+
+        if (_flickerCount >= FlickerCycles * 2)
+        {
+            _flickerTimer.Stop();
+            Modulate = Colors.White;
+            TriggerBlackout();
+        }
+    }
+
+    // Phase 2: Full blackout
+    private void TriggerBlackout()
+    {
+        _isBlackout     = true;
+        _rebootProgress = 0f;
+        _rebootMeter.Value = 0;
+
+        _blackoutOverlay.Visible = true;
+        _rebootMeter.Visible     = true;
+        _rebootLabel.Visible     = true;
+    }
+
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+
+        if (!_isBlackout) return;
+
+        // Detect hold: left mouse held AND cursor is NOT over the main blackout overlay area
+        // (allowing the lit bar nodes to receive the hold naturally from anywhere on screen).
+        _isHolding = Input.IsMouseButtonPressed(MouseButton.Left)
+                  || Input.IsActionPressed("ui_accept");   // Spacebar / gamepad A as fallback
+
+        if (_isHolding)
+        {
+            _rebootProgress += (float)delta / RebootDuration;
+            _rebootProgress  = Mathf.Min(_rebootProgress, 1.0f);
+
+            // Animate the label to pulse
+            float pulse = 0.6f + 0.4f * Mathf.Sin((float)Time.GetTicksMsec() / 200f);
+            _rebootLabel.Modulate = new Color(1f, 1f, 1f, pulse);
+        }
+        else
+        {
+            _rebootProgress -= (float)delta * DecayRate;
+            _rebootProgress  = Mathf.Max(_rebootProgress, 0f);
+            _rebootLabel.Modulate = Colors.White;
+        }
+
+        _rebootMeter.Value = _rebootProgress * 100.0;
+
+        if (_rebootProgress >= 1.0f)
+            EndBlackout();
+    }
+
+    // Phase 3: Restore power
+    private void EndBlackout()
+    {
+        _isBlackout     = false;
+        _rebootProgress = 0f;
+        GameSession.Instance?.ReportBlackoutSequence(false);
+
+        // Brief restore flash
+        Modulate = new Color(1.4f, 1.4f, 1.4f, 1f);
+        var tween = CreateTween();
+        tween.TweenProperty(this, "modulate", Colors.White, 0.3)
+             .SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
+
+        _blackoutOverlay.Visible = false;
+        _rebootMeter.Visible     = false;
+        _rebootLabel.Visible     = false;
+        _rebootMeter.Value       = 0;
+
+        // Schedule the next random blackout (Level 3 only — guard in case level changed)
+        if (GameSession.Instance?.LevelId == "emergency_broadcast")
+        {
+            _blackoutRngTimer.WaitTime = GetNextBlackoutDelay();
+            _blackoutRngTimer.Start();
+        }
+    }
+
+
     public override void _Input(InputEvent e)
     {
         if (e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } mb) return;

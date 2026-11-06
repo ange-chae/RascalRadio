@@ -30,10 +30,10 @@ public static class Level3
 		AllowStatic = true,           // Raccoon can cause static on keypad
 		FlipSabotage = true,          // Raccoon can flip modules upside down
 
-        KeypadMinLine = 1000,
-        KeypadMaxLine = 9999,
-        // ---------- Prompter (Broadcaster timing) ----------
-        SegmentTime = 9.5,            // Down from 15.0s in Level 1 (faster prompter)
+		KeypadMinLine = 1000,
+		KeypadMaxLine = 9999,
+		// ---------- Prompter (Broadcaster timing) ----------
+		SegmentTime = 9.5,            // Down from 15.0s in Level 1 (faster prompter)
 		PrompterLineRest = 4.0,       // Down from 12.0s in Level 1
 		PrompterParagraphRest = 4.0,  // Down from 6.0s in Level 1
 
@@ -61,8 +61,8 @@ public static class Level3
 			return list.OrderBy(_ => System.Random.Shared.Next()).ToList();
 		},
 
-        ClockStartMinute = 0,
-        ClockEndMinute = 6 * 60,
-        ShiftSeconds = 360,
-    };
+		ClockStartMinute = 0,
+		ClockEndMinute = 6 * 60,
+		ShiftSeconds = 360,
+	};
 }

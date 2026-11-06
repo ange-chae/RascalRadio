@@ -32,6 +32,17 @@ public partial class GameSession : Node
 	// ---- State every peer can read (copied from the host) ----
 	public string LevelId { get; private set; } = "";
 	public bool IsTutorial => LevelId == "tutorial";
+	public bool BlackoutSequenceActive { get; private set; }
+	private int[] _prompterColorKeyMap = Array.Empty<int>(); // color index -> WASD index
+	public int[] PrompterColorKeyMap => (int[])_prompterColorKeyMap.Clone();
+	public event Action<bool> BlackoutSequenceChanged;
+	public event Action PrompterColorMapChanged;
+	private static readonly string[] PrompterColorNames = { "RED", "GREEN", "BLUE", "YELLOW" };
+	private static readonly string[] PrompterColorHexes = { "#F44336", "#43A047", "#42A5F5", "#FDD835" };
+	private static readonly string[] PrompterKeyNames = { "W", "A", "S", "D" };
+	public static string PrompterColorName(int index) => PrompterColorNames[index];
+	public static string PrompterColorHex(int index) => PrompterColorHexes[index];
+	public static string PrompterKeyName(int index) => PrompterKeyNames[index];
 	public TutorialStep CurrentStep { get; private set; } = TutorialStep.MeetStudio;
 	public int QuotaMet { get; private set; }
 	public int QuotaTarget { get; private set; } = 3;
@@ -132,6 +143,13 @@ public partial class GameSession : Node
     public void BeginLevel(string levelId)
 	{
         LevelId = levelId;
+        _prompterColorKeyMap = Array.Empty<int>();
+        PrompterColorMapChanged?.Invoke();
+        if (BlackoutSequenceActive)
+        {
+            BlackoutSequenceActive = false;
+            BlackoutSequenceChanged?.Invoke(false);
+        }
         CurrentLevel = LevelRegistry.Get(levelId);
         CurrentStep = TutorialStep.MeetStudio;
         QuotaMet = 0; QuotaTarget = CurrentLevel?.QuotaTarget ?? 3;
@@ -187,6 +205,16 @@ public partial class GameSession : Node
     private void SetupRealLevel(LevelDefinition def)
     {
         _rng = new Random();
+        if (LevelId == "emergency_broadcast")
+        {
+            int[] colorToKey = { 0, 1, 2, 3 };
+            for (int i = colorToKey.Length - 1; i > 0; i--)
+            {
+                int j = _rng.Next(i + 1);
+                (colorToKey[i], colorToKey[j]) = (colorToKey[j], colorToKey[i]);
+            }
+            Rpc(MethodName.SyncPrompterColorMapRpc, colorToKey);
+        }
         _callerBank = new CallerBank(_rng);
         _callerIndex = 0;
 
@@ -211,6 +239,14 @@ public partial class GameSession : Node
     public void Report(TutorialAction action) => RpcId(1, MethodName.ReportRpc, (int)action);
 	public void Decide(bool accept) => RpcId(1, MethodName.DecideRpc, accept);
 	public void SubmitKeypad(string entry) => RpcId(1, MethodName.KeypadRpc, entry);
+	public void ReportBlackoutSequence(bool active) => RpcId(1, MethodName.ReportBlackoutSequenceRpc, active);
+
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ReportBlackoutSequenceRpc(bool active)
+	{
+		if (!Multiplayer.IsServer() || LevelId != "emergency_broadcast" || BlackoutSequenceActive == active) return;
+		Rpc(MethodName.SyncBlackoutSequenceRpc, active);
+	}
 
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void ReportRpc(int action)
@@ -528,6 +564,21 @@ public partial class GameSession : Node
 
     private void SetTopic(Genre genre) => Rpc(MethodName.SyncTopicRpc, (int)genre);
 
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void SyncPrompterColorMapRpc(int[] colorToKey)
+	{
+		_prompterColorKeyMap = colorToKey == null ? Array.Empty<int>() : (int[])colorToKey.Clone();
+		PrompterColorMapChanged?.Invoke();
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void SyncBlackoutSequenceRpc(bool active)
+	{
+		if (BlackoutSequenceActive == active) return;
+		BlackoutSequenceActive = active;
+		BlackoutSequenceChanged?.Invoke(active);
+	}
+
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void SyncTopicRpc(int genre)
     {
@@ -741,6 +792,10 @@ public partial class GameSession : Node
         Tasks.Clear(); FlippedModule = ""; LevelFinished = false;
 
         CurrentLevel = null; LevelId = ""; GameOver = false;
+        _prompterColorKeyMap = Array.Empty<int>();
+        PrompterColorMapChanged?.Invoke();
+        BlackoutSequenceActive = false;
+        BlackoutSequenceChanged?.Invoke(false);
         _tutorial = null; _broadcaster = null; _override = null; _callers.Clear(); _endingDone.Clear();
         Strikes = 0; AirtimeQuality = 100; Topic = Genre.Drama;
         _sabotageTimer = -1; _qualityTick = 0;
