@@ -23,7 +23,10 @@ public partial class OperatorInterface : Control
     private ModuleSlot _openSlot;
     private Button _flipBtn;
 
-    public override void _EnterTree() => GD.Print($"[Operator] _EnterTree peer={Multiplayer.GetUniqueId()}");
+    public override void _EnterTree()
+    {
+        GameSession.Instance.TasksChanged += OnTasksChanged;   // use your actual event/field name
+    }
     public override void _Ready()
     {
         var gs = GameSession.Instance;
@@ -48,6 +51,7 @@ public partial class OperatorInterface : Control
             _taskLabel.BbcodeEnabled = true;
             _taskLabel.FitContent = true;
             _taskLabel.ScrollActive = false;
+            GameSession.Instance?.HookTaskToggle(_taskLabel);
         }
         _pauseMenu = GetNodeOrNull<Control>("%PauseMenu");
         var menuBtn = GetNodeOrNull<Button>("%MenuBtn");
@@ -71,13 +75,6 @@ public partial class OperatorInterface : Control
         }
 
         Subscribe();
-        //gs.StepChanged -= OnStep;
-        //gs.CallerChanged -= OnCaller;
-        //gs.QuotaChanged -= OnQuota;
-        //gs.KeypadChanged -= OnKeypadChanged;
-        //gs.TasksChanged -= OnTasksChanged;   
-        //gs.FlipChanged -= ApplyFlip;         
-        //gs.TopicChanged -= RefreshTasks;
 
         GD.Print($"[Operator] after subscribe: gs={gs.GetInstanceId()} step={gs.StepSubs} caller={gs.CallerSubs}");
         GetTree().CreateTimer(1.0).Timeout += () =>
@@ -90,6 +87,8 @@ public partial class OperatorInterface : Control
         if (gs.IsTutorial) OnStep(gs.CurrentStep);
         RefreshTasks();
         Subscribe();
+
+        GameSession.Instance?.ApplyBackground(GetNodeOrNull<TextureRect>("%Background"), "operator");
     }
 
     private void Subscribe()
@@ -164,7 +163,8 @@ public partial class OperatorInterface : Control
 
     public override void _ExitTree()
     {
-        GD.Print($"[Operator] _ExitTree peer={Multiplayer.GetUniqueId()}");
+        if (GameSession.Instance != null)
+            GameSession.Instance.TasksChanged -= OnTasksChanged;
         var gs = GameSession.Instance;
         if (gs == null) return;
         gs.StepChanged -= OnStep;
@@ -193,7 +193,7 @@ public partial class OperatorInterface : Control
     {
         if (_taskLabel == null) return;
         var gs = GameSession.Instance;
-        if (!gs.IsTutorial) { _taskLabel.Text = gs.TaskBbcode(); return; }
+        if (!gs.IsTutorial) { _taskLabel.Text = gs.TaskBbcode("operator"); return; }
         var items = new System.Collections.Generic.List<(string text, bool done)>();
 
         if (gs.IsTutorial)
@@ -209,7 +209,7 @@ public partial class OperatorInterface : Control
             items.Add(($"Accept {gs.QuotaTarget} callers ({gs.QuotaMet}/{gs.QuotaTarget})", gs.QuotaMet >= gs.QuotaTarget));
             var keypadSlot = FindSlot("Keypad");
             if (keypadSlot != null) items.Add(("Fix the keypad", keypadSlot.Solved));
-            if (FindSlot("Piano") != null) items.Add(("Play the jingles with the Technician", false));
+            if (FindSlot("Piano") != null) items.Add(("Play the jingles with the Technician and Broadcaster", false));
         }
 
         _taskLabel.Text = string.Join("\n", items.Select(t => t.done
@@ -237,7 +237,6 @@ public partial class OperatorInterface : Control
 	{
 		GetNode<Label>("%VerdictLabel").Text = accept ? "ACCEPT" : "REJECT";
 	}
-
     private void OnCaller()
     {
         GD.Print("[Operator] OnCaller '" + GameSession.Instance.CallerName + "'");
@@ -389,6 +388,9 @@ public partial class OperatorInterface : Control
         foreach (Node c in _holder.GetChildren())
             if (c is Control ctrl && ctrl != _flipBtn) ctrl.Visible = (ctrl == module.Instance);
 
+        if (module.Instance is KeypadModule keypad)
+            keypad.Refresh(GameSession.Instance.KeypadLine, GameSession.Instance.KeypadStatic);
+
         _openSlot = module;
         _openModule = module.Instance;
         _popup.Visible = true;
@@ -422,10 +424,15 @@ public partial class OperatorInterface : Control
             var btn = GetNodeOrNull<Button>($"%Slot{i + 1}Btn");
             if (btn == null) continue;
             var m = _modules[i];
-            bool flipped = !m.Solved && gs.FlippedModule == m.Title;
-            btn.Text = m.Solved ? $"{m.Title} ✔" : flipped ? $"{m.Title} !!" : $"{m.Title} !";
-            btn.Modulate = m.Solved ? new Color(0.7f, 1f, 0.7f) : flipped ? new Color(1f, 0.7f, 0.7f) : Colors.White;
-            btn.Disabled = m.Solved;
+
+            bool live = gs.IsTutorial || gs.IsModuleLive(KindOf(m.Title));
+            bool flipped = !m.Solved && live && gs.FlippedModule == m.Title;
+
+            btn.Text = m.Solved ? $"{m.Title} " : !live ? m.Title : flipped ? $"{m.Title} !!" : $"{m.Title} !";
+            btn.Modulate = m.Solved ? new Color(0.7f, 1f, 0.7f)
+                         : !live ? new Color(1, 1, 1, 0.45f)
+                         : flipped ? new Color(1f, 0.7f, 0.7f) : Colors.White;
+            btn.Disabled = m.Solved || !live;
         }
     }
 
@@ -453,6 +460,8 @@ public partial class OperatorInterface : Control
 
     private void OnTasksChanged()
     {
+        if (!IsInstanceValid(this) || !IsInsideTree()) return;
+        UpdateSlotButtons();
         var gs = GameSession.Instance;
         if (!gs.IsTutorial)
         {

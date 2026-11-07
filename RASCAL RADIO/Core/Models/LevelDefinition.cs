@@ -43,4 +43,20 @@ public class LevelDefinition
     public int ClockStartMinute = 8 * 60;    // minutes after midnight
     public int ClockEndMinute = 9 * 60;
     public double ShiftSeconds = 240;        // real seconds the whole shift takes
+    public double TaskRevealSeconds = 10;   // full task list shows this long at shift start, then only the main task
+    public string BackgroundId = "";   // picks the background art: "morning", "afternoon", "night"
+    public int MaxSimultaneousModules = 1;   // most modules that can be live at once (1 = never at the same time)
+    public double SimultaneousChance = 0;    // 0..1: chance a new module is allowed to start while another is live
+    public double ModuleSpawnGap = 18;       // average seconds between spawn attempts
+    public double FirstModuleDelay = 6;      // seconds before the first module appears
+    public double ModuleIdleGap = 4;
+
+    // Broadcaster interruptions (set per level)
+    public bool CoffeeSpill = false;
+    public bool StolenKey = false;
+    public bool MicFeedback = false;
+    public bool InvertedPrompter = false;
+    // Technician interruption (on for every level; set false to disable)
+    public bool ScrambledTabs = true;
+    public double InterruptionGap = 30;   // average seconds between interruptions on each screen
 }

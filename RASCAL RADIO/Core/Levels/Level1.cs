@@ -13,9 +13,10 @@ public static class Level1
 		// ---------- Identity ----------
 		Id = "morning_broadcast",     // internal name. Must match the key in LevelRegistry.
 		Title = "LEVEL 1",            // text on the big title card
+        BackgroundId = "morning",
 
-		// ---------- Topic and goal ----------
-		QuotaGenre = Genre.Drama,     // fallback topic, used only if AcceptedGenres is empty
+        // ---------- Topic and goal ----------
+        QuotaGenre = Genre.Drama,     // fallback topic, used only if AcceptedGenres is empty
 		AcceptedGenres = Accepted,    // the topics one of which is picked each run (see above)
 		QuotaTarget = 4,              // callers the players must accept to win. Higher = longer level.
 
@@ -24,9 +25,9 @@ public static class Level1
 		HasPiano = true,              // Piano module on or off
 		KeypadMinLine = 10,
 		KeypadMaxLine = 99,
-
-		// ---------- Prompter (the Broadcaster's keys) ----------
-		SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
+        CoffeeSpill = true,
+        // ---------- Prompter (the Broadcaster's keys) ----------
+        SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
 		PrompterLineRest = 12,         // seconds of quiet after each line. Lower = harder.
 		PrompterParagraphRest = 6,    // longer breather after a whole paragraph. Lower = harder.
 
@@ -56,6 +57,9 @@ public static class Level1
 		ClockStartMinute = 8 * 60,
 		ClockEndMinute = 9 * 60,
 		ShiftSeconds = 240,
-		// seconds below a floor before the task fails. Lower = harder.
-	};
+
+        MaxSimultaneousModules = 1,
+        SimultaneousChance = 0
+        // seconds below a floor before the task fails. Lower = harder.
+    };
 }

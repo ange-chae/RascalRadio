@@ -43,7 +43,8 @@ public partial class PlayerList : Control
     private readonly Dictionary<long, string> _knownPlayers = new Dictionary<long, string>();
     private bool _isInitialLoad = true;
 
-    public Dictionary<long, string> PlayerRoles = new Dictionary<long, string>();
+    private static readonly Dictionary<long, string> _savedRoles = new();
+    public Dictionary<long, string> PlayerRoles = _savedRoles;
     public Dictionary<long, bool> PlayerReady = new Dictionary<long, bool>();
 
     [Export] public Texture2D DefaultAvatarTexture;
@@ -156,7 +157,6 @@ public partial class PlayerList : Control
     private void OnPrevPressed() => ChangeLevel(-1);
     private void OnNextPressed() => ChangeLevel(1);
 
-
     private void ChangeLevel(int direction)
     {
         int newIndex = _currentLevelIndex + direction;
@@ -260,6 +260,7 @@ public partial class PlayerList : Control
             PlayerReady[peerIds[i]] = ready[i] == 1;
         }
         UpdateLevelVisualLocal(levelIndex);
+        RefreshPlayerList();
         GetNodeOrNull<RoleSelection>("RoleSelectionOverlay")?.RefreshFromPlayerList();
     }
 
@@ -370,7 +371,6 @@ public partial class PlayerList : Control
 
                     if (avatarBtn != null)
                     {
-                  
                         avatarBtn.TextureNormal = GetAvatarForRole(pRole);
 
                         bool isLocalPlayer = (peerId == localPeerId);
@@ -397,6 +397,7 @@ public partial class PlayerList : Control
                     }
                     if (avatarBtn != null)
                     {
+                        avatarBtn.TextureNormal = GetAvatarForRole(null);   // NEW: back to the default icon
                         avatarBtn.Disabled = true;
                         avatarBtn.Modulate = new Color(1, 1, 1, 1);
                         if (avatarBtn.IsConnected(BaseButton.SignalName.Pressed, clickCallable))
@@ -507,9 +508,12 @@ public partial class PlayerList : Control
 
     private void ConfirmLeave()
     {
+        _savedRoles.Clear();
         _networkManager?.DisconnectFromRoom();
         GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
     }
+
+   
 
     private void OnLocalAvatarClicked() => OpenRoleSelection();
 
@@ -618,7 +622,11 @@ public partial class PlayerList : Control
         UpdateReadyPrompt();
     }
 
-    private void OnRoomTerminated(string reason) => GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
+    private void OnRoomTerminated(string reason)
+    {
+        _savedRoles.Clear();
+        GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
+    }
 
     private void OnStartGamePressed()
     {

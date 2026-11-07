@@ -21,6 +21,7 @@ public partial class StudioPianoUI : PanelContainer
     public string LabelFontPath { get; set; } = "";
 
     // ===== COLORS (change these to retune the look) =====
+    private static readonly Color NeutralLamp = new("E3B05A");   // the real colors are on the Broadcaster's screen now
     private static readonly Color FrameBg = new("D9BE8F");      // warm tan outer frame
     private static readonly Color FrameEdge = new("5A4128");    // brown outlines
     private static readonly Color Ring = new("262C2A");         // dark ring between frame and faceplate
@@ -305,14 +306,13 @@ public partial class StudioPianoUI : PanelContainer
     private void OnCueChanged(int index, int total, StudioPianoData.Cue cue)
     {
         _nameLabel.Text = _module.SequenceName.ToUpper();
-        var color = StudioPianoData.SwatchColors.TryGetValue(cue.ColorName, out var c) ? c : Colors.Gray;
-        _lamp.TurnOn(color);
+        _lamp.TurnOn(NeutralLamp);
         SetDots(total, index);
 
-        // Letter and octave stay hidden in the game (the Technician reads them out).
-        _noteLabel.Visible = _module.ShowNotes;
-        if (_module.ShowNotes)
-            _noteLabel.Text = _module.UseOctave ? $"{cue.Letter}    OCTAVE {StudioPianoData.OctaveLabel(cue.Octave)}" : cue.Letter;
+        _noteLabel.Visible = true;
+        _noteLabel.Text = _module.ShowNotes
+            ? (_module.UseOctave ? $"{cue.Letter}    OCTAVE {StudioPianoData.OctaveLabel(cue.Octave)}" : cue.Letter)
+            : "Ask the Broadcaster for the color";
     }
 
     private void OnOctaveChanged(int octave)

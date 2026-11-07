@@ -13,9 +13,10 @@ public static class Level3
 		// ---------- Identity ----------
 		Id = "emergency_broadcast",     // Must match LevelRegistry and PlayerList cassette tape 4
 		Title = "LEVEL 3: EMERGENCY BROADCAST",
+        BackgroundId = "night",
 
-		// ---------- Topic and goal ----------
-		QuotaGenre = Genre.Drama,
+        // ---------- Topic and goal ----------
+        QuotaGenre = Genre.Drama,
 		AcceptedGenres = Accepted,
 		QuotaTarget = 5,              // Requires 5 accepted callers to win
 
@@ -29,8 +30,11 @@ public static class Level3
 		HasSoundboard = true,         // Soundboard module active (Slot 3: bottom-left)
 		AllowStatic = true,           // Raccoon can cause static on keypad
 		FlipSabotage = true,          // Raccoon can flip modules upside down
+        CoffeeSpill = true,
+        StolenKey = true,
+        MicFeedback = true,
 
-		KeypadMinLine = 1000,
+        KeypadMinLine = 1000,
 		KeypadMaxLine = 9999,
 		// ---------- Prompter (Broadcaster timing) ----------
 		SegmentTime = 9.5,            // Down from 15.0s in Level 1 (faster prompter)
@@ -39,7 +43,7 @@ public static class Level3
 
 		// ---------- Sabotage & Module Disruption Timers ----------
 		SabotageInterval = 22,        // Attacks every ~22s (down from 40s in Level 1)
-		FaultDrain = 3,               // Quality drops 2 points/sec per fault (up from 1 in Level 1)
+		FaultDrain = 4,               // Quality drops 2 points/sec per fault (up from 1 in Level 1)
 		HealthGrace = 6.0,            // Grace period reduced to 6s (down from 10s in Level 1)
 		QualityFloor = 85,            // Quality threshold raised to 50% (up from 45% in Level 1)
 		SignalFloor = 75,             // Signal threshold
@@ -64,5 +68,8 @@ public static class Level3
 		ClockStartMinute = 0,
 		ClockEndMinute = 6 * 60,
 		ShiftSeconds = 360,
-	};
+
+        MaxSimultaneousModules = 3,
+        SimultaneousChance = 0.6
+    };
 }

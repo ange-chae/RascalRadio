@@ -2,6 +2,7 @@ using Godot;
 using RascalRadio.Core.Models;
 using RascalRadio.Core.Systems;
 using RascalRadio.Modules;
+using System.Collections.Generic;
 using System.Linq;
 using static StudioPianoData;
 
@@ -13,7 +14,7 @@ public partial class TechnicianInterface : PopupFrame
     private Label        _rebootLabel;
     private Timer        _blackoutRngTimer;
     private Timer        _flickerTimer;
-
+    private bool _manualLocked;
     private bool  _isBlackout    = false;
     private bool  _isHolding     = false;
     private float _rebootProgress = 0f;
@@ -39,28 +40,16 @@ public partial class TechnicianInterface : PopupFrame
     private const int PianoPageIndex = 1;
     private int _page;
     private RichTextLabel _taskLabel;
-
+    private Timer _scrambleTimer, _restoreTimer;
+    private bool _tabsScrambled;
+    private readonly Dictionary<Button, string> _tabLabels = new();
+    private static readonly string[] TabPaths = { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" };
+    private readonly int[] _tabToPage = { 0, 1, 2, 3, 4 };   // which page each tab button opens
+    private int _tab;                                          // which tab button is selected
+    private PanelContainer _toast;
+    private Label _toastLabel;
+    private const double ScrambleSeconds = 18;
     private Button _manualBtn;
-
-    // ===== YOUR INSTRUCTIONS GO HERE =====
-    // Old text, kept so you can copy from it. Delete it when you don't need it.
-    /*
-    private static string MathPage()
-    {
-        var gs = GameSession.Instance;
-        string even = gs?.RuleEvenSuffix ?? "05";
-        string odd = gs?.RuleOddSuffix ?? "99";
-
-        return
-            "MATH & KEYPAD: LINE OVERRIDE CODE\n\n" +
-            "1. Ask the Operator for the incoming line number (1-9). It is only on their keypad.\n" +
-            $"2. If the line number is EVEN, append {even}. If it is ODD, append {odd}.\n" +
-            "3. Tell the Operator the code. They type it and press ROUTE.\n\n" +
-            "CLEARING STATIC FAULTS\n" +
-            "Press CLEAR, enter 0000, then press ROUTE.\n\n" +
-            (gs != null && gs.IsTutorial ? "In practice mode a wrong code costs nothing." : "");
-    }
-    */
 
     private const int ModulePageIndex = 4;
 
@@ -89,28 +78,28 @@ public partial class TechnicianInterface : PopupFrame
 
     private static string PianoPage()
     {
+        var gs = GameSession.Instance;
         var sb = new System.Text.StringBuilder();
-        sb.Append("PIANO\n\n");
-        sb.Append("The Operator sees the NAME of a jingle. You have the notes. Ask which jingle, find it below, and read the notes top to bottom, one at a time.\n");
-        sb.Append("Read the first note aloud. When the lamp changes color, read the next note.\n\n");
-
-        //sb.Append("OCTAVE\n");
-        //sb.Append("If the octave is normal, the Operator leaves it alone.\n");
-        //sb.Append("Otherwise, if the octave is -, the Operator presses the [lb]-[rb] button first.\n");
-        //sb.Append("Otherwise, the Operator presses the [lb]+[rb] button first.\n\n");
-
-        sb.Append("JINGLES\n");
-        foreach (var jingle in StudioPianoData.GetJingles())
+        sb.Append("The Operator only sees the jingle name. The BROADCASTER sees the CUE SHEET, a colored light.\n");
+        sb.Append("Ask the Broadcaster for the color, find it below, and tell the Operator which key to press. Then ask for the next color.\n\n");
+        sb.Append("If the keys are flashing red, the cue sheet blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
+        if (gs == null || !gs.HasPianoColorMap)
         {
-            sb.Append($"\n{jingle.Key.ToUpper()}\n");
-            foreach (var cue in jingle.Value)
-            {
-                string hex = StudioPianoData.SwatchColors.TryGetValue(cue.ColorName, out var c) ? "#" + c.ToHtml(false) : "#888888";
-                sb.Append($"  [color={hex}]{cue.ColorName}[/color], {cue.Letter}, {StudioPianoData.OctaveLabel(cue.Octave)}\n");
-            }
+            sb.Append("Waiting for a jingle... the code changes every time one starts.");
+            sb.Append(FlipHelp());
+            return sb.ToString();
         }
 
-        sb.Append("\nIf the keys are flashing red, the Operator plays B A G F E D C. Then the jingle continues.");
+        sb.Append("[b]This jingle's code:[/b]\n");
+        for (int c = 0; c < PianoColorCode.Keys().Count; c++)
+        {
+            string key = gs.PianoKeyFor(c);
+            if (key == "") continue;
+            sb.Append($"  [color={PianoColorCode.HexOf(c)}][b]{PianoColorCode.NameOf(c)}[/b][/color]  →  [b]{key}[/b]\n");
+        }
+
+        sb.Append("\nThe code is reshuffled for every jingle. Check this page, don't trust your memory.\n\n");
+        sb.Append("If the keys are flashing red, the stage light blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
         sb.Append(FlipHelp());
         return sb.ToString();
     }
@@ -153,6 +142,7 @@ public partial class TechnicianInterface : PopupFrame
         StyleBars();
         SetupBlackoutSystem();
 
+        GameSession.Instance?.ApplyBackground(GetNodeOrNull<TextureRect>("%Background"), "technician");
         var timeLabel = FindChild("TimeLabel", true, false) as Label;
         if (timeLabel != null)
         {
@@ -166,7 +156,12 @@ public partial class TechnicianInterface : PopupFrame
         }
 
         var manual = GetNodeOrNull<Control>("%Popup");
-        if (manual != null) manual.Visible = false;   // the manual starts closed
+        if (manual != null)
+        {
+            manual.Visible = true;   // the manual starts open
+            manual.ZIndex = 100;      // always draw above Task, TimePanel, etc.
+            manual.MoveToFront();     // and last in the tree, just in case
+        }
 
         _manualBtn = GetNodeOrNull<Button>("%ManualBtn")
             ?? FindChild("ManualBtn", true, false) as Button
@@ -178,7 +173,7 @@ public partial class TechnicianInterface : PopupFrame
 
         // NEW: task box setup (step 8b)
         _taskLabel = GetNodeOrNull<RichTextLabel>("%TaskLabel");
-        if (_taskLabel != null) { _taskLabel.BbcodeEnabled = true; _taskLabel.FitContent = true; _taskLabel.ScrollActive = false; }
+        if (_taskLabel != null) { _taskLabel.BbcodeEnabled = true; _taskLabel.FitContent = true; _taskLabel.ScrollActive = false; GameSession.Instance?.HookTaskToggle(_taskLabel); }
 
         // The Prompter Color Code page is specific to Level 3.
         var prompterTab = GetNodeOrNull<Button>("%TabE");
@@ -189,10 +184,10 @@ public partial class TechnicianInterface : PopupFrame
         {
             int idx = i;
             var b = GetNodeOrNull<Button>(tabs[i]);
-            if (b != null) b.Pressed += () => ShowPage(idx);
+            if (b != null) b.Pressed += () => SelectTab(idx);
             else GD.PushError($"TechnicianInterface: {tabs[i]} not found.");
         }
-        ShowPage(0);
+        SelectTab(0);
 
         if (gs == null) return;
 
@@ -206,11 +201,13 @@ public partial class TechnicianInterface : PopupFrame
         gs.TopicChanged += RefreshTasks;   // NEW
         gs.FlipChanged += OnHealth;        // NEW
         gs.PrompterColorMapChanged += OnPrompterColorMapChanged;
+        gs.PianoColorMapChanged += OnPianoColorMapChanged;
         if (gs.Piano != null) gs.Piano.FaultChanged += OnPianoFault;
         OnHealth();
         OnStrikes();
         OnQuota();
-        RefreshTasks();                    // NEW
+        RefreshTasks();
+        SetupTechInterruptions();
         if (gs.IsTutorial) OnStep(gs.CurrentStep);
 
         foreach (var path in new[] { "%SignalBar", "%QualityBar" })
@@ -239,8 +236,20 @@ public partial class TechnicianInterface : PopupFrame
         }
     }
 
+    private void SetManualLocked(bool locked)
+    {
+        _manualLocked = locked;
+        if (_manualBtn != null) _manualBtn.Disabled = locked;
+        if (locked)
+        {
+            var popup = GetNodeOrNull<Control>("%Popup");
+            if (popup != null) popup.Visible = false;   // slams shut
+        }
+    }
+
     private void ToggleManual()
     {
+        if (_manualLocked) return;
         var popup = GetNodeOrNull<Control>("%Popup");
         if (popup == null) return;
 
@@ -253,13 +262,17 @@ public partial class TechnicianInterface : PopupFrame
                 .SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
         }
     }
+    private void OnPianoColorMapChanged()
+    {
+        if (_page == PianoPageIndex) ShowPage(PianoPageIndex);   // table updates live
+    }
 
     private void RefreshTasks()
     {
         var gs = GameSession.Instance;
         if (_taskLabel == null || gs == null) return;
 
-        if (!gs.IsTutorial) { _taskLabel.Text = gs.TaskBbcode(); return; }
+        if (!gs.IsTutorial) { _taskLabel.Text = gs.TaskBbcode("technician"); return; }
 
         var s = gs.CurrentStep;
         var items = new (string text, bool done)[]
@@ -300,6 +313,7 @@ public partial class TechnicianInterface : PopupFrame
     public override void _ExitTree()
     {
         var gs = GameSession.Instance;
+        if (gs != null) gs.StolenKeyChanged -= RefreshToast;
         if (gs == null) return;
         gs.AirtimeChanged -= OnHealth;
         gs.KeypadChanged -= OnHealth;
@@ -485,6 +499,7 @@ public partial class TechnicianInterface : PopupFrame
     // Phase 1: Flicker before full blackout
     private void StartFlicker()
     {
+        SetManualLocked(true);
         _flickerCount = 0;
         GameSession.Instance?.ReportBlackoutSequence(true);
         _flickerTimer.Start();
@@ -521,6 +536,7 @@ public partial class TechnicianInterface : PopupFrame
     public override void _Process(double delta)
     {
         base._Process(delta);
+        PlaceToast();
 
         if (!_isBlackout) return;
 
@@ -568,6 +584,7 @@ public partial class TechnicianInterface : PopupFrame
         _rebootMeter.Visible     = false;
         _rebootLabel.Visible     = false;
         _rebootMeter.Value       = 0;
+        SetManualLocked(false);
 
         // Schedule the next random blackout (Level 3 only — guard in case level changed)
         if (GameSession.Instance?.LevelId == "emergency_broadcast")
@@ -577,6 +594,135 @@ public partial class TechnicianInterface : PopupFrame
         }
     }
 
+    private void SetupTechInterruptions()
+    {
+        var gs = GameSession.Instance;
+        if (gs == null) return;
+
+        // notice box (top-left): shows the stolen key and the scramble warning
+        _toast = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Ignore, ZIndex = 200, ZAsRelative = false };
+        var s = new StyleBoxFlat { BgColor = new Color("2A0A0C"), BorderColor = new Color("E5484D") };
+        s.SetBorderWidthAll(3); s.SetCornerRadiusAll(8); s.SetContentMarginAll(10);
+        _toast.AddThemeStyleboxOverride("panel", s);
+        _toastLabel = new Label { MouseFilter = MouseFilterEnum.Ignore };
+        _toastLabel.AddThemeColorOverride("font_color", new Color("FBEFD9"));
+        _toastLabel.AddThemeFontSizeOverride("font_size", 16);
+        _toast.AddChild(_toastLabel);
+        AddChild(_toast);
+        _toast.SetAnchorsPreset(LayoutPreset.TopLeft);
+        _toast.Position = new Vector2(16, 16);
+
+        gs.StolenKeyChanged += RefreshToast;
+        RefreshToast();
+
+        var d = gs.CurrentLevel;
+        if (gs.IsTutorial || d == null || !d.ScrambledTabs) return;
+
+        _restoreTimer = new Timer { OneShot = true, WaitTime = ScrambleSeconds };
+        _restoreTimer.Timeout += EndScramble;
+        AddChild(_restoreTimer);
+
+        _scrambleTimer = new Timer { OneShot = true, WaitTime = NextScrambleGap() };
+        _scrambleTimer.Timeout += StartScramble;
+        AddChild(_scrambleTimer);
+        _scrambleTimer.Start();
+    }
+
+    private void PlaceToast()
+    {
+        if (_toast == null || !_toast.Visible) return;
+        var size = _toast.GetCombinedMinimumSize();
+        var pos = new Vector2(16, 16);
+        var popup = GetNodeOrNull<Control>("%Popup");
+        if (popup != null && popup.Visible)
+        {
+            var r = popup.GetGlobalRect();
+            pos = new Vector2(r.GetCenter().X - size.X / 2, Mathf.Max(8, r.Position.Y - size.Y - 8));
+        }
+        _toast.GlobalPosition = new Vector2(Mathf.Max(8, pos.X), pos.Y);
+    }
+
+    private double NextScrambleGap()
+    {
+        double gap = GameSession.Instance?.CurrentLevel?.InterruptionGap ?? 30;
+        return gap * (0.7 + GD.Randf() * 0.6);
+    }
+
+    private void RetryScrambleSoon() { _scrambleTimer.WaitTime = 4; _scrambleTimer.Start(); }
+
+    private List<Button> VisibleTabs() =>
+        new[] { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" }
+            .Select(p => GetNodeOrNull<Button>(p))
+            .Where(b => b != null && b.Visible).ToList();
+
+    private void SelectTab(int tab)
+    {
+        _tab = tab;
+        ShowPage(_tabToPage[tab]);
+    }
+
+    private List<int> VisibleTabIdx() =>
+        Enumerable.Range(0, TabPaths.Length)
+            .Where(i => GetNodeOrNull<Button>(TabPaths[i]) is { Visible: true }).ToList();
+    private void StartScramble()
+    {
+        var gs = GameSession.Instance;
+        if (gs == null || gs.Ended) return;
+        var tabs = VisibleTabs();
+        if (_tabsScrambled || _isBlackout || tabs.Count < 3) { RetryScrambleSoon(); return; }
+
+        var labels = tabs.Select(t => t.Text).ToList();
+        List<string> shuffled;
+        int tries = 0;
+        do { shuffled = labels.OrderBy(_ => GD.Randi()).ToList(); }
+        while (++tries < 20 && shuffled.Where((l, i) => l == labels[i]).Any());   // make sure every label moved
+
+        _tabLabels.Clear();
+        for (int i = 0; i < tabs.Count; i++)
+        {
+            _tabLabels[tabs[i]] = labels[i];
+            tabs[i].Text = shuffled[i];
+            tabs[i].Modulate = new Color(1f, 0.75f, 0.75f);
+        }
+
+        var idxs = VisibleTabIdx();
+        List<int> pages;
+        tries = 0;
+        do { pages = idxs.OrderBy(_ => GD.Randi()).ToList(); }
+        while (++tries < 20 && pages.Where((p, k) => p == idxs[k]).Any());   // every tab gets a different page
+        for (int k = 0; k < idxs.Count; k++) _tabToPage[idxs[k]] = pages[k];
+        ShowPage(_tabToPage[_tab]);   // the open page changes right now
+
+        _tabsScrambled = true;
+        RefreshToast();
+        _restoreTimer.Start();
+    }
+
+    private void EndScramble()
+    {
+        for (int i = 0; i < _tabToPage.Length; i++) _tabToPage[i] = i;
+        ShowPage(_tabToPage[_tab]);
+        foreach (var kv in _tabLabels)
+            if (IsInstanceValid(kv.Key)) { kv.Key.Text = kv.Value; kv.Key.Modulate = Colors.White; }
+        _tabLabels.Clear();
+        _tabsScrambled = false;
+        RefreshToast();
+        _scrambleTimer.WaitTime = NextScrambleGap();
+        _scrambleTimer.Start();
+    }
+
+    private void RefreshToast()
+    {
+        if (_toast == null) return;
+        var gs = GameSession.Instance;
+        var lines = new List<string>();
+        if (_tabsScrambled) lines.Add("The raccoon scrambled the tabs!\nCheck each page title.");
+        if (gs != null && gs.StolenPos > 0) lines.Add($"STOLEN KEY: position {gs.StolenPos} is {gs.StolenKey}");
+
+        _toast.Visible = lines.Count > 0;
+        _toastLabel.Text = string.Join("\n\n", lines);
+        _toast.CallDeferred(Control.MethodName.ResetSize);
+    }
 
     public override void _Input(InputEvent e)
     {
@@ -607,4 +753,6 @@ public partial class TechnicianInterface : PopupFrame
         var popup = GetNodeOrNull<Control>("%Popup");
         if (popup != null && popup.Visible) popup.Visible = false;
     }
+
+
 }

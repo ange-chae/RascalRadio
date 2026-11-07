@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://duic8x1pcjdmp"]
 
 [ext_resource type="Script" uid="uid://cav1xjiwpc24o" path="res://Scripts/BroadcasterInterface.cs" id="1_img7a"]
+[ext_resource type="Texture2D" uid="uid://da4eg1g7ukj3q" path="res://assets/images/broadcaster_morning.png" id="2_at03s"]
 [ext_resource type="FontFile" uid="uid://cr26f1hy1iksj" path="res://assets/fonts/IBM_Plex_Mono/IBMPlexMono-Medium.ttf" id="2_iin0s"]
-[ext_resource type="Texture2D" uid="uid://guxraxa2ra1d" path="res://assets/images/Cozy On-Air Caller Studio.png" id="2_qyrtx"]
 [ext_resource type="Texture2D" uid="uid://do245gmdpspic" path="res://assets/images/PLAYERS ID.png" id="4_f2kec"]
 [ext_resource type="FontFile" uid="uid://4uhripe2c31v" path="res://assets/fonts/Fredoka/static/Fredoka-Regular.ttf" id="5_at03s"]
 [ext_resource type="FontFile" uid="uid://bebsbm2ovo6y1" path="res://assets/fonts/Fredoka/static/Fredoka_SemiExpanded-Medium.ttf" id="5_j1dfj"]
@@ -24,6 +24,7 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
+shadow_color = Color(0.21568628, 0.101960786, 0.1254902, 0.72156864)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qarm5"]
 bg_color = Color(0.10109229, 0.112483926, 0.1588673, 1)
@@ -97,54 +98,41 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bnacn"]
-content_margin_left = 12.0
-bg_color = Color(0.63, 0.08819999, 0.09722986, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m36wf"]
+bg_color = Color(0.79782045, 0.13904744, 0.13963366, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.3226584, 0.023611998, 0.028877368, 1)
+border_color = Color(0.2, 0.011764706, 0.011764706, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1t40j"]
-bg_color = Color(0.55806714, 0.070662774, 0.081400655, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1f8g2"]
+bg_color = Color(0.7462867, 0.12253336, 0.12756377, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.3226584, 0.023611998, 0.028877368, 1)
+border_color = Color(0.2, 0.011764706, 0.011764706, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_st1gu"]
-bg_color = Color(0.7098941, 0.10428133, 0.11658933, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dna3g"]
+bg_color = Color(0.92413217, 0.1907686, 0.18652427, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.3226584, 0.023611998, 0.028877368, 1)
+border_color = Color(0.2, 0.011764706, 0.011764706, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v8auc"]
-bg_color = Color(0.93333334, 0.93333334, 0.80784315, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.18039216, 0.1254902, 0.07450981, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sggwb"]
 bg_color = Color(0.174824, 0.16032493, 0.17210701, 1)
@@ -158,6 +146,15 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qyrtx"]
+bg_color = Color(0.93333334, 0.93333334, 0.80784315, 1)
+border_width_left = 2
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(0.18001208, 0.12397096, 0.072565176, 1)
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="BroadcasterInterface" type="Control" unique_id=379705305]
 layout_mode = 3
 anchors_preset = 0
@@ -165,14 +162,14 @@ script = ExtResource("1_img7a")
 SegmentTime = null
 LobbyScenePath = null
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=796118169]
-visible = false
-layout_mode = 0
+[node name="Background" type="TextureRect" parent="." unique_id=796118169]
+unique_name_in_owner = true
+layout_mode = 1
 offset_left = 3.0
 offset_top = 4.0
-offset_right = 1136.0
-offset_bottom = 634.0
-texture = ExtResource("2_qyrtx")
+offset_right = 1147.0
+offset_bottom = 642.0
+texture = ExtResource("2_at03s")
 expand_mode = 1
 
 [node name="Prompter" type="Panel" parent="." unique_id=504989402]
@@ -224,18 +221,18 @@ vertical_alignment = 1
 [node name="WordArea" type="Control" parent="." unique_id=893647794]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 358.0
-offset_top = 164.0
-offset_right = 775.0
-offset_bottom = 429.0
+offset_left = 277.0
+offset_top = 230.0
+offset_right = 675.0
+offset_bottom = 529.0
 
 [node name="Caller" type="PanelContainer" parent="." unique_id=1403856318]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 3.0
-offset_top = 152.0
-offset_right = 251.0
-offset_bottom = 503.0
+offset_top = 223.0
+offset_right = 222.0
+offset_bottom = 574.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_cck67")
@@ -257,17 +254,18 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_68ld6")
 [node name="Topic" type="Label" parent="Caller/LeftVBox/CallerRow/TopicPanel" unique_id=2078323200]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 4.0
-offset_top = 11.0
-offset_right = 219.0
-offset_bottom = 60.0
+offset_left = 13.0
+offset_top = 7.0
+offset_right = 183.0
+offset_bottom = 63.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("5_j1dfj")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "Drama and Life
 "
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 3
 
 [node name="avatar" type="TextureRect" parent="Caller/LeftVBox/CallerRow" unique_id=1094283035]
 custom_minimum_size = Vector2(120, 120)
@@ -318,19 +316,16 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_ptyr0")
 theme_override_styles/hover = SubResource("StyleBoxFlat_0l63i")
 text = "ACCEPT"
 
-[node name="RejectBtn" type="Button" parent="Caller/LeftVBox/Buttons" unique_id=1960258121]
+[node name="RejectBtn" type="Button" parent="Caller/LeftVBox/Buttons" unique_id=2102995814]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.9972437, 0.88557506, 0.8722287, 1)
-theme_override_colors/font_pressed_color = Color(0.9972437, 0.88557506, 0.8722287, 1)
-theme_override_colors/font_hover_color = Color(0.9972437, 0.88557506, 0.8722287, 1)
 theme_override_fonts/font = ExtResource("6_j1dfj")
-theme_override_styles/normal = SubResource("StyleBoxFlat_bnacn")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_1t40j")
-theme_override_styles/hover = SubResource("StyleBoxFlat_st1gu")
-text = "REJECT   "
+theme_override_styles/normal = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_1f8g2")
+theme_override_styles/hover = SubResource("StyleBoxFlat_dna3g")
+text = "REJECT"
 
 [node name="Polygon2D" type="Polygon2D" parent="Caller" unique_id=2108267939]
 position = Vector2(4, 8)
@@ -341,29 +336,6 @@ polygon = PackedVector2Array(210, -22, 249, -107, 295, -87)
 position = Vector2(45, 10)
 color = Color(1, 0.81960785, 0.42352942, 1)
 polygon = PackedVector2Array(186, -30, 264, -76, 278, -29)
-
-[node name="Task" type="PanelContainer" parent="." unique_id=1134159282]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 0
-offset_left = 853.0
-offset_top = 2.0
-offset_right = 1136.0
-offset_bottom = 159.0
-theme_type_variation = &"Hudbar"
-theme_override_styles/panel = SubResource("StyleBoxFlat_v8auc")
-
-[node name="TaskPad" type="MarginContainer" parent="Task" unique_id=37547178]
-layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
-
-[node name="TaskLabel" type="RichTextLabel" parent="Task/TaskPad" unique_id=1063064827]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/default_color = Color(0, 0, 0, 1)
-text = "Task"
 
 [node name="TimePanel" type="PanelContainer" parent="." unique_id=1990197674]
 layout_mode = 0
@@ -396,3 +368,26 @@ theme_override_styles/normal = ExtResource("8_n1df5")
 theme_override_styles/pressed = ExtResource("9_1dplo")
 theme_override_styles/hover = ExtResource("10_ewm5s")
 text = "MENU"
+
+[node name="Task" type="PanelContainer" parent="." unique_id=839547532]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 0
+offset_left = 853.0
+offset_top = -1.0
+offset_right = 1136.0
+offset_bottom = 121.0
+theme_type_variation = &"Hudbar"
+theme_override_styles/panel = SubResource("StyleBoxFlat_qyrtx")
+
+[node name="TaskPad" type="MarginContainer" parent="Task" unique_id=1314813397]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="TaskLabel" type="RichTextLabel" parent="Task/TaskPad" unique_id=1095375333]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+text = "Task"

@@ -14,7 +14,11 @@ public partial class GameSession : Node
     public int CallerSubs => CallerChanged?.GetInvocationList().Length ?? 0;
     public static GameSession Instance { get; private set; }
     public const string PartyScenePath = "res://scenes/player_lists.tscn";
-
+    private int _liveMask;          // bit per TaskKind that is currently live (same on every peer)
+    private double _spawnTimer = -1;
+    private static readonly TaskKind[] ModuleKinds = { TaskKind.Keypad, TaskKind.Piano, TaskKind.Soundboard, TaskKind.Memory };
+    public bool IsModuleLive(TaskKind k) => (_liveMask & (1 << (int)k)) != 0;
+    private int LiveCount() => System.Numerics.BitOperations.PopCount((uint)_liveMask);
     public readonly List<LevelTask> Tasks = new();
     public bool LevelFinished { get; private set; }
     public bool Ended => GameOver || LevelFinished;
@@ -29,8 +33,8 @@ public partial class GameSession : Node
     // Keypad feedback lines start with this tag so the keypad can pick them out of the Feedback event.
     public const string KeypadTag = "🔢 ";
 
-	// ---- State every peer can read (copied from the host) ----
-	public string LevelId { get; private set; } = "";
+    // ---- State every peer can read (copied from the host) ----
+    public string LevelId { get; private set; } = "";
 	public bool IsTutorial => LevelId == "tutorial";
 	public bool BlackoutSequenceActive { get; private set; }
 	private int[] _prompterColorKeyMap = Array.Empty<int>(); // color index -> WASD index
@@ -78,6 +82,24 @@ public partial class GameSession : Node
     public StudioPianoModule Piano { get; private set; }
     public SoundboardModule Soundboard { get; private set; }
     private static readonly string[] PianoSequences = { "Morning Jingle", "Night Jingle", "Breaking News Alert" };
+    private int[] _pianoColorMap = Array.Empty<int>();   // key position -> color index
+    public bool HasPianoColorMap => _pianoColorMap.Length > 0;
+    public event Action PianoColorMapChanged;
+    private const int PianoNotesPerJingle = 5;
+
+    public int PianoColorOf(string letter)
+    {
+        int i = PianoColorCode.Keys().IndexOf(letter);
+        return i >= 0 && i < _pianoColorMap.Length ? _pianoColorMap[i] : -1;
+    }
+
+    public string PianoKeyFor(int color)
+    {
+        var keys = PianoColorCode.Keys();
+        for (int i = 0; i < _pianoColorMap.Length && i < keys.Count; i++)
+            if (_pianoColorMap[i] == color) return keys[i];
+        return "";
+    }
 
     // Plain C# events. Subscribers MUST unsubscribe in _ExitTree.
     public event Action<TutorialStep> StepChanged;
@@ -102,11 +124,101 @@ public partial class GameSession : Node
 
     private const ulong ModuleStrikeCooldownMs = 1200;   // wrong presses closer together than this give ONE strike. 0 = every wrong press is a strike.
     private ulong _lastModuleStrikeMs;
+    public int StolenPos { get; private set; } = -1;   // 1-based position in the Broadcaster's line, -1 = none
+    public string StolenKey { get; private set; } = "";
+    public event Action StolenKeyChanged;
+    public void ReportStolenKey(int pos, string key) => RpcId(1, MethodName.ReportStolenKeyRpc, pos, key);
 
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReportStolenKeyRpc(int pos, string key)
+    {
+        if (!Multiplayer.IsServer()) return;
+        Rpc(MethodName.SyncStolenKeyRpc, pos, key);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncStolenKeyRpc(int pos, string key)
+    {
+        StolenPos = pos; StolenKey = key;
+        Fire(StolenKeyChanged);
+    }
     private ulong _levelStartMs;
 
     public bool ShiftTimeUp =>
         CurrentLevel != null && (Time.GetTicksMsec() - _levelStartMs) / 1000.0 >= CurrentLevel.ShiftSeconds;
+    private bool LevelHas(TaskKind k) => k switch
+    {
+        TaskKind.Keypad => CurrentLevel.HasKeypad,
+        TaskKind.Piano => CurrentLevel.HasPiano,
+        TaskKind.Soundboard => CurrentLevel.HasSoundboard,
+        TaskKind.Memory => CurrentLevel.HasMemory,
+        _ => false
+    };
+
+    private void SetLiveMask(int mask)   // host
+    {
+        _liveMask = mask;
+        Rpc(MethodName.SyncLiveModulesRpc, mask);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncLiveModulesRpc(int mask)
+    {
+        _liveMask = mask;
+        Fire(TasksChanged);   // the Operator's slot buttons refresh from this
+    }
+
+    private void ScheduleModuleSpawn(double delay = -1)
+    {
+        var d = CurrentLevel;
+        _spawnTimer = delay > 0 ? delay : d.ModuleSpawnGap * (0.6 + _rng.NextDouble() * 0.8);
+    }
+
+    private void UpdateModuleSpawns(double delta)   // host, every frame
+    {
+        var d = CurrentLevel;
+
+        // finished modules stop being live
+        int mask = _liveMask;
+        foreach (var k in ModuleKinds) if (IsDone(k)) mask &= ~(1 << (int)k);
+        if (mask != _liveMask) SetLiveMask(mask);
+
+        // nothing live? don't leave the Operator waiting long
+        if (LiveCount() == 0 && _spawnTimer > d.ModuleIdleGap) _spawnTimer = d.ModuleIdleGap;
+
+        _spawnTimer -= delta;
+        if (_spawnTimer > 0) return;
+        ScheduleModuleSpawn();
+
+        int live = LiveCount();
+        if (live >= d.MaxSimultaneousModules) return;
+        if (live > 0 && _rng.NextDouble() > d.SimultaneousChance) return;   // overlap is a gamble
+
+        var pool = new List<TaskKind>();
+        foreach (var k in ModuleKinds)
+            if (LevelHas(k) && TaskOf(k) is { Done: false } && !IsModuleLive(k)) pool.Add(k);
+        if (pool.Count == 0) return;
+
+        var pick = pool[_rng.Next(pool.Count)];
+        SetLiveMask(_liveMask | (1 << (int)pick));
+        StartModule(pick);
+    }
+
+    private void StartModule(TaskKind k)
+    {
+        switch (k)
+        {
+            case TaskKind.Keypad:
+                if (_override == null) { GD.PushWarning("Keypad went live but _override is null, so no line was sent"); break; }
+                SendKeypadProblem(0);
+                GD.Print($"[Spawn] keypad line = {_override.Problem?.Line}");
+                break;
+            case TaskKind.Piano: StartRandomPiano(); break;
+            case TaskKind.Soundboard: StartRandomSoundboard(); break;
+            case TaskKind.Memory: break;   // starts when the Operator opens it
+        }
+        Say($"The {k} module needs attention!");
+    }
 
     public string ClockText()
     {
@@ -145,6 +257,8 @@ public partial class GameSession : Node
         LevelId = levelId;
         _prompterColorKeyMap = Array.Empty<int>();
         PrompterColorMapChanged?.Invoke();
+        _pianoColorMap = Array.Empty<int>(); Fire(PianoColorMapChanged);
+
         if (BlackoutSequenceActive)
         {
             BlackoutSequenceActive = false;
@@ -153,11 +267,14 @@ public partial class GameSession : Node
         CurrentLevel = LevelRegistry.Get(levelId);
         CurrentStep = TutorialStep.MeetStudio;
         QuotaMet = 0; QuotaTarget = CurrentLevel?.QuotaTarget ?? 3;
+        TasksExpanded = true;
         CallerName = ""; CallerStory = ""; CallerNumber = 0; CallerTotal = 0;
         KeypadLine = 0; KeypadLevel = 0; KeypadStatic = false;
+        StolenPos = -1; StolenKey = "";
         RuleEvenSuffix = "05"; RuleOddSuffix = "99";
         _tutorial = null; _broadcaster = null; _callers.Clear(); _override = null;
         AirtimeQuality = 100;
+        _liveMask = 0; _spawnTimer = -1;
         Strikes = 0; GameOver = false; _qualityTick = 0; _sabotageTimer = -1;
         LevelFinished = false; FlippedModule = ""; BuildTasks();
         Topic = Genre.Drama;
@@ -172,6 +289,14 @@ public partial class GameSession : Node
         Soundboard?.Reset();
 
         _session++; _callerOnLine = false;
+
+        int revealSession = _session;
+        GetTree().CreateTimer(CurrentLevel?.TaskRevealSeconds ?? 10).Timeout += () =>
+        {
+            if (revealSession != _session) return;   // a different level started
+            TasksExpanded = false;                   // collapse to the main task
+            Fire(TasksChanged);
+        };
 
         if (!Multiplayer.IsServer()) return;
         if (!IsTutorial)
@@ -229,10 +354,9 @@ public partial class GameSession : Node
         if (def.HasKeypad)
             _override = new LineOverrideSession(_rng, LineOverrideRule.NewRandom(_rng, def.KeypadRule), def.AllowStatic, def.KeypadMinLine, def.KeypadMaxLine);
 
-        if (def.HasPiano) StartRandomPiano();
-        if (def.HasSoundboard) StartRandomSoundboard();
-        if (_callers.Count > 0) ScheduleNextCaller(0, 5.0);   // first caller rings after 5 seconds
-        if (_override != null) SendKeypadProblem(0);   // first problem is always clean
+        SetLiveMask(0);
+        ScheduleModuleSpawn(def.FirstModuleDelay);
+        if (_callers.Count > 0) ScheduleNextCaller(0, 5.0);
     }
 
     // ---------- Requests (any peer -> host) ----------
@@ -337,6 +461,29 @@ public partial class GameSession : Node
             try { h(arg); }
             catch (Exception e) { GD.PushError($"[GameSession] subscriber {h.Target?.GetType().Name}.{h.Method.Name} failed: {e}"); }
         }
+    }
+
+    // Swaps a scene's background for this level's version.
+    // No level (tutorial) or no matching file = the scene keeps the background it already has.
+    public void ApplyBackground(TextureRect rect, string role)
+    {
+        if (rect == null) { GD.PushWarning($"ApplyBackground({role}): %Background not found."); return; }
+
+        // The tutorial has no level definition, so it uses the morning art
+        string id = CurrentLevel?.BackgroundId;
+        if (string.IsNullOrEmpty(id)) id = IsTutorial ? "morning" : "";
+        if (id == "") return;
+
+        foreach (string ext in new[] { "png", "jpg", "webp" })
+        {
+            string path = $"res://assets/images/{role}_{id}.{ext}";
+            if (ResourceLoader.Exists(path))
+            {
+                rect.Texture = GD.Load<Texture2D>(path);
+                return;
+            }
+        }
+        GD.PushWarning($"ApplyBackground({role}): no file for '{id}' in res://assets/images/");
     }
 
     private void RealDecide(bool accept)
@@ -492,6 +639,7 @@ public partial class GameSession : Node
 
     private void ApplyAirtime(int delta)   // host only
     {
+        if (delta > 0 && TaskOf(TaskKind.Quality)?.Failed == true) return;
         int q = Mathf.Clamp(AirtimeQuality + delta, 0, 100);
         if (q != AirtimeQuality) Rpc(MethodName.SyncAirtimeRpc, q);
     }
@@ -528,10 +676,17 @@ public partial class GameSession : Node
         if (!Multiplayer.IsServer()) return;
         _rng ??= new Random();
         string name = PianoSequences[_rng.Next(PianoSequences.Length)];
-        // showNotes=false: Operator sees only the jingle NAME, the Technician reads the notes from the manual.
-        Rpc(MethodName.PianoConfigureRpc, name, true, timeLimit, showNotes);
-    }
 
+        // fresh note order + fresh color code every time, so nothing can be memorized
+        int total = new List<StudioPianoData.Cue>(StudioPianoData.GetJingles()[name]).Count;
+        int[] order = new int[total];
+        for (int i = 0; i < total; i++) order[i] = i;
+        for (int i = total - 1; i > 0; i--) { int j = _rng.Next(i + 1); (order[i], order[j]) = (order[j], order[i]); }
+        Array.Resize(ref order, Math.Min(total, PianoNotesPerJingle));
+
+        // useOctave = false: the chain is now Broadcaster color -> Technician key -> Operator press
+        Rpc(MethodName.PianoConfigureRpc, name, false, timeLimit, showNotes, order, PianoColorCode.NewMap(_rng));
+    }
     // Call this from your sabotage logic when you want "keys flash red".
     public void TriggerPianoFault()
     {
@@ -588,16 +743,22 @@ public partial class GameSession : Node
 
     // Replies (host -> everyone, including the host)
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void PianoConfigureRpc(string sequence, bool useOctave, float timeLimit, bool showNotes)
+    private void PianoConfigureRpc(string sequence, bool useOctave, float timeLimit, bool showNotes, int[] order, int[] colorMap)
     {
-        var cues = sequence == StudioPianoData.RecalibrationName
-            ? StudioPianoData.GetRecalibration()
-            : StudioPianoData.GetJingles()[sequence];
+        _pianoColorMap = colorMap == null ? Array.Empty<int>() : (int[])colorMap.Clone();
+
+        var all = sequence == StudioPianoData.RecalibrationName
+            ? new List<StudioPianoData.Cue>(StudioPianoData.GetRecalibration())
+            : new List<StudioPianoData.Cue>(StudioPianoData.GetJingles()[sequence]);
+        var cues = new List<StudioPianoData.Cue>();
+        if (order == null || order.Length == 0) cues = all;
+        else foreach (int i in order) if (i >= 0 && i < all.Count) cues.Add(all[i]);
+
+        Fire(PianoColorMapChanged);   // before Start(), so the Technician's table is ready first
         Piano.Configure(sequence, cues, useOctave, timeLimit, showNotes);
         Piano.SetActive(true);
         Piano.Start();
     }
-
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void PianoApplyKeyRpc(string letter) => Piano.RequestKey(letter);
 
@@ -650,11 +811,19 @@ public partial class GameSession : Node
     private void OnSoundboardCompleted()
     {
         if (!Multiplayer.IsServer() || CurrentLevel == null || Ended) return;
+
         var t = TaskOf(TaskKind.Soundboard);
         if (t != null && !t.Done)
         {
             t.Progress++;
-            if (t.Progress >= t.Target) t.Done = true;
+            if (t.Progress >= t.Target)
+            {
+                t.Done = true;
+                Soundboard.SetActive(false);
+                Say("📻 Soundboard finished!", true);
+                SyncTasks(); CheckLevelDone();
+                return;
+            }
             SyncTasks();
         }
         Say("📻 Sound cue played!", true);
@@ -701,6 +870,7 @@ public partial class GameSession : Node
         }
 
         CheckHealthTasks(delta);
+        UpdateModuleSpawns(delta);
         if (ShiftTimeUp) FinishLevel();   // shift over: score whatever was completed
         if (_sabotageTimer > 0)
         {
@@ -715,13 +885,15 @@ public partial class GameSession : Node
         _sabotageTimer = interval <= 0 ? -1 : interval * (0.7 + _rng.NextDouble() * 0.6);   // a little random
     }
 
+
+
     public void TriggerSabotage()
     {
         if (!Multiplayer.IsServer() || Ended) return;
 
         var options = new List<Action>();
-        bool pianoLive = CurrentLevel?.HasPiano == true && !IsDone(TaskKind.Piano);
-        bool keypadLive = _override?.Problem != null && !IsDone(TaskKind.Keypad);
+        bool pianoLive = CurrentLevel?.HasPiano == true && !IsDone(TaskKind.Piano) && IsModuleLive(TaskKind.Piano);
+        bool keypadLive = _override?.Problem != null && !IsDone(TaskKind.Keypad) && IsModuleLive(TaskKind.Keypad);
 
         if (pianoLive && Piano.Active && !Piano.InFault && Piano.Status == StudioPianoModule.PianoStatus.Working)
             options.Add(() => { Say("🦝 The raccoon is chewing the piano wires! Keys flashing red."); TriggerPianoFault(); });
@@ -794,11 +966,14 @@ public partial class GameSession : Node
         CurrentLevel = null; LevelId = ""; GameOver = false;
         _prompterColorKeyMap = Array.Empty<int>();
         PrompterColorMapChanged?.Invoke();
+        _pianoColorMap = Array.Empty<int>(); Fire(PianoColorMapChanged);
+
         BlackoutSequenceActive = false;
         BlackoutSequenceChanged?.Invoke(false);
         _tutorial = null; _broadcaster = null; _override = null; _callers.Clear(); _endingDone.Clear();
         Strikes = 0; AirtimeQuality = 100; Topic = Genre.Drama;
         _sabotageTimer = -1; _qualityTick = 0;
+        StolenPos = -1; StolenKey = "";
         Piano.SetActive(false);
         Piano.Reset();
         Soundboard?.SetActive(false);
@@ -836,19 +1011,72 @@ public partial class GameSession : Node
         TaskKind.Signal => $"Keep Signal above {CurrentLevel?.SignalFloor}%",
         _ => t.Kind.ToString()   // safety net so a new TaskKind never crashes the game
     };
+    // Per-player UI state (not networked): is the Task box showing the full list?
+    public bool TasksExpanded { get; private set; } = true;
+
+    public void ToggleTasks()
+    {
+        TasksExpanded = !TasksExpanded;
+        Fire(TasksChanged);
+    }
+
+    // Makes the Task box clickable. Call once from each screen after the label is set up.
+    public void HookTaskToggle(RichTextLabel label)
+    {
+        if (label == null) return;
+
+        void OnGui(InputEvent e)
+        {
+            if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) ToggleTasks();
+        }
+
+        label.MouseFilter = Control.MouseFilterEnum.Stop;
+        label.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
+        label.GuiInput += OnGui;
+
+        // also make the whole card clickable, not just the text
+        Node n = label.GetParent();
+        while (n != null && n.Name != "Task") n = n.GetParent();
+        if (n is Control panel)
+        {
+            panel.MouseFilter = Control.MouseFilterEnum.Stop;
+            panel.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
+            panel.GuiInput += OnGui;
+        }
+    }
 
     // The same text on every role's Task box.
-    public string TaskBbcode()
+    // Which tasks are "main" for each screen.
+    private static bool BelongsTo(string role, TaskKind k) => role switch
     {
+        "broadcaster" => k == TaskKind.Callers,
+        "technician" => k == TaskKind.Quality || k == TaskKind.Signal,
+        "operator" => k is TaskKind.Keypad or TaskKind.Piano or TaskKind.Soundboard or TaskKind.Memory,
+        _ => true
+    };
+
+    public string TaskBbcode(string role = "")
+    {
+        bool full = TasksExpanded || CurrentLevel == null;
         var sb = new StringBuilder();
         foreach (var t in Tasks)
         {
+            // collapsed: only this role's tasks, and finished ones drop off
+            if (!full && (t.Done || !BelongsTo(role, t.Kind))) continue;
+
             string text = TaskText(t);
             if (t.Failed) sb.Append($"[color=#B3261E]- {text} (FAILED)[/color]\n");
             else if (t.Done) sb.Append($"[color=#7A7A7A][s]- {text}[/s][/color]\n");
             else sb.Append($"- {text}\n");
         }
-        return sb.ToString().TrimEnd('\n');
+
+        string body = sb.ToString().TrimEnd('\n');
+        if (!full)
+        {
+            if (body == "") body = "[color=#7A7A7A]All done![/color]";
+            body += "\n[color=#7A7A7A][i]click for all tasks[/i][/color]";
+        }
+        return body;
     }
 
     public static (string Rank, string Title) Rating(int score) =>

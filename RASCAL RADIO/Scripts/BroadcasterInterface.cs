@@ -1,9 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using RascalRadio.Core.Models;
 using RascalRadio.Core.Systems;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using static StudioPianoModule;
 
 public partial class BroadcasterInterface : Control
 {
@@ -42,6 +43,8 @@ public partial class BroadcasterInterface : Control
     private ProgressBar _listenerBar;
     private Control _airStatus, _pauseMenu;
 
+    private static Font _wordFont;
+
     // =====================================================================
     // STATE
     // =====================================================================
@@ -67,12 +70,38 @@ public partial class BroadcasterInterface : Control
 
     // ON AIR meter (not in the scene yet, see the bottom of the file)
     private int _typedTotal, _totalWords;
-
+    private int _cueSig;
     private Tween _fade, _callerTween;
-
+    private void PlaceStagePanel() { if (_stagePanel != null) PlaceDeskPanel(_stagePanel, false); }
     private readonly PhraseBank _phrases = new(new Random());
     private readonly DeadAirMonitor _deadAir = new();
     private readonly Random _rng = new();
+    private Timer _interruptTimer;
+    private bool _interruptionActive;
+    private readonly List<Action> _interruptions = new();
+    private readonly List<Panel> _blobs = new();
+    private readonly Dictionary<Panel, float> _blobHp = new();
+    private bool _spillActive;
+    private int _spillId;
+    private const double FeedbackSeconds = 4.0;
+    private bool _feedbackActive;
+    private int _feedbackClicks;
+    private Control _feedbackOverlay;
+    private Button _feedbackBtn;
+    private PanelContainer _stagePanel;
+    private PianoLamp _stageLamp;
+    private Label _stageName, _stageHint;
+    private ProgressBar _cueBar;
+    private Label _feedbackTitle;
+    private readonly List<Panel> _feedbackPips = new();
+    private Tween _feedbackTween;
+    private bool _prompterFlipped;
+    private Button _flipBackBtn;
+    private Tween _flipTween;
+    private int _flipId;
+    private Vector2 _shakeOrigin;
+    private int _stolenIdx = -1;
+    private ulong _stolenRevealMs;
 
     // =====================================================================
     // SETUP
@@ -136,6 +165,12 @@ public partial class BroadcasterInterface : Control
         OnQuota();
         if (_tutorial) BeginParagraph();
         else { _status.Text = "Get ready..."; FadeOutThen(BeginParagraph, 2.0); }
+        GameSession.Instance?.ApplyBackground(GetNodeOrNull<TextureRect>("%Background"), "broadcaster");
+        SetupInterruptions();
+        SetupCueDesk();
+
+        var bg = GetNodeOrNull<TextureRect>("%Background");
+        GD.Print($"[BG] node={bg != null} tex={bg?.Texture?.ResourcePath} size={bg?.Size} visible={bg?.IsVisibleInTree()}");
     }
 
     public override void _ExitTree()
@@ -149,6 +184,15 @@ public partial class BroadcasterInterface : Control
         gs.BlackoutSequenceChanged -= OnBlackoutSequenceChanged;
         gs.TasksChanged -= RefreshTasks;
         gs.TopicChanged -= OnTopic;
+        gs.PianoColorMapChanged -= RefreshStageLight;
+        if (gs.Piano != null)
+        {
+            gs.Piano.Configured -= RefreshStageLight;
+            gs.Piano.CueChanged -= OnPianoCue;
+            gs.Piano.StatusChanged -= OnPianoStatus;
+            gs.Piano.FaultChanged -= OnPianoFault;
+            gs.Piano.FaultProgressChanged -= OnPianoFaultProgress;
+        }
     }
 
     private void FindNodes()
@@ -177,6 +221,7 @@ public partial class BroadcasterInterface : Control
             _taskLabel.BbcodeEnabled = true;
             _taskLabel.FitContent = true;
             _taskLabel.ScrollActive = false;
+            GameSession.Instance?.HookTaskToggle(_taskLabel);
         }
 
         if (_target != null)
@@ -186,6 +231,7 @@ public partial class BroadcasterInterface : Control
             _target.MouseFilter = MouseFilterEnum.Ignore;
         }
     }
+
 
     private void WireButtons()
     {
@@ -252,7 +298,7 @@ public partial class BroadcasterInterface : Control
         if (_taskLabel == null) return;
 
         var gs = GameSession.Instance;
-        if (!_tutorial && gs != null) { _taskLabel.Text = gs.TaskBbcode(); return; }
+        if (!_tutorial && gs != null) { _taskLabel.Text = gs.TaskBbcode("broadcaster"); return; }
         var items = new List<(string text, bool done)>();
 
         if (_tutorial && gs != null)
@@ -337,6 +383,100 @@ public partial class BroadcasterInterface : Control
         if (!_tutorial) ShowCaller(false);   // real shift: clear the card right away
     }
 
+    // ===== STAGE LIGHT (piano colors) + CUE CARD =====
+    private void SetupCueDesk()
+    {
+        GD.Print($"[CUE] SetupCueDesk reached. tutorial={_tutorial} level={GameSession.Instance?.CurrentLevel?.Id} hasPiano={GameSession.Instance?.CurrentLevel?.HasPiano} piano={GameSession.Instance?.Piano != null}");
+        var gs = GameSession.Instance;
+        var d = gs?.CurrentLevel;
+        if (gs == null || _tutorial || d == null) return;
+
+        if (d.HasPiano && gs.Piano != null)
+        {
+            _stagePanel = MakeDeskPanel(false, out var box);   // false = left side
+
+            var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+            row.AddThemeConstantOverride("separation", 10);
+            box.AddChild(row);
+
+            _stageLamp = new PianoLamp { SizeFlagsVertical = SizeFlags.ShrinkCenter, CustomMinimumSize = new Vector2(64, 64) };
+            row.AddChild(_stageLamp);
+
+            var col = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+            col.AddThemeConstantOverride("separation", 0);
+            row.AddChild(col);
+
+            col.AddChild(DeskLabel("CUE SHEET", 13, new Color("FBEFD9")));
+            _stageName = DeskLabel("", 22, Colors.White);
+            col.AddChild(_stageName);
+            _stageHint = DeskLabel("", 12, new Color("F2D9B8"));
+            col.AddChild(_stageHint);
+        }
+    }
+
+    private PanelContainer MakeDeskPanel(bool rightSide, out VBoxContainer box)
+    {
+        var p = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Ignore, ZIndex = 5 };
+        var s = new StyleBoxFlat { BgColor = new Color("#7A3036"), BorderColor = new Color("#301E2E") };
+        s.SetBorderWidthAll(3); s.BorderWidthBottom = 5; s.SetCornerRadiusAll(10); s.SetContentMarginAll(8);
+        p.AddThemeStyleboxOverride("panel", s);
+        AddChild(p);
+        p.AnchorLeft = p.AnchorRight = p.AnchorTop = p.AnchorBottom = 0f;
+        p.GrowHorizontal = GrowDirection.End;
+        p.GrowVertical = GrowDirection.End;
+        p.Resized += () => PlaceDeskPanel(p, rightSide);
+        box = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        box.AddThemeConstantOverride("separation", 6);
+        p.AddChild(box);
+        return p;
+    }
+    private void PlaceDeskPanel(Control p, bool rightSide)
+    {
+        var vp = GetViewportRect().Size;
+        p.GlobalPosition = new Vector2(rightSide ? vp.X - p.Size.X - 12f : 12f, 12f);
+    }
+    private static Label DeskLabel(string text, int size, Color color)
+    {
+        var l = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        l.AddThemeFontSizeOverride("font_size", size);
+        l.AddThemeColorOverride("font_color", color);
+        return l;
+    }
+
+    private void OnPianoCue(int i, int n, StudioPianoData.Cue c) => RefreshStageLight();
+    private void OnPianoStatus(StudioPianoModule.PianoStatus s) => RefreshStageLight();
+    private void OnPianoFault(bool f) => RefreshStageLight();
+    private void OnPianoFaultProgress(int done, int total) => RefreshStageLight();
+
+    private void RefreshStageLight()
+    {
+        var gs = GameSession.Instance;
+        if (_stagePanel == null || gs?.Piano == null) return;
+        var p = gs.Piano;
+
+        bool live = p.Active && p.Cues.Count > 0 && p.Status != StudioPianoModule.PianoStatus.Complete;
+        _stagePanel.Visible = live;
+        if (live) CallDeferred(nameof(PlaceStagePanel));
+        if (!live) { _stageLamp.TurnOff(); return; }
+
+        // during a fault the light walks through the recalibration notes, one color at a time
+        string letter;
+        if (p.InFault)
+        {
+            var seq = StudioPianoData.GetRecalibration();
+            letter = seq[Mathf.Clamp(p.FaultIndex, 0, seq.Length - 1)].Letter;
+        }
+        else letter = p.Cues[Mathf.Clamp(p.CueIndex, 0, p.Cues.Count - 1)].Letter;
+
+        int c = gs.PianoColorOf(letter);
+        if (c < 0) { _stageLamp.TurnOff(); _stageName.Text = "..."; return; }
+
+        _stageLamp.TurnOn(PianoColorCode.ColorOf(c), p.InFault);   // blinking = recalibrating
+        _stageName.Text = PianoColorCode.NameOf(c);
+        _stageName.AddThemeColorOverride("font_color", PianoColorCode.ColorOf(c));
+        _stageHint.Text = p.InFault ? "RECALIBRATING" : $"Note {p.CueIndex + 1} of {p.Cues.Count}";
+    }
+
     // =====================================================================
     // MENU
     // =====================================================================
@@ -359,6 +499,7 @@ public partial class BroadcasterInterface : Control
     private void BeginParagraph()
     {
         if (_target == null) return;   // TargetLabel missing: already reported in FindNodes
+        ClearStolenKey();
 
         Log($"BeginParagraph. micLocked={_micLocked}");
         _fade?.Kill();
@@ -382,6 +523,7 @@ public partial class BroadcasterInterface : Control
 
     private void ShowSegment()
     {
+        ClearStolenKey();
         _words = _paragraph[_segIdx];
         _keys = _words.Select(_ => _rng.Next(4)).ToArray();
         _codedPromptActive = ShouldUseColorPrompt();
@@ -418,6 +560,7 @@ public partial class BroadcasterInterface : Control
     {
         var parts = _keys.Select((k, i) =>
         {
+            if (i == _stolenIdx && i >= _idx) return "[color=#E5484D][b]?[/b][/color]";
             if (_codedPromptActive && _displayLetters.Length == _keys.Length)
             {
                 int[] colorToKey = GameSession.Instance?.PrompterColorKeyMap ?? Array.Empty<int>();
@@ -486,9 +629,24 @@ public partial class BroadcasterInterface : Control
     {
         if (_wordArea == null) return;
 
+        // load once, reuse after that
+        _wordFont ??= GD.Load<Font>("res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf");
+
         var l = new Label { Text = word, MouseFilter = MouseFilterEnum.Ignore };
+        if (_wordFont != null) l.AddThemeFontOverride("font", _wordFont);
         l.AddThemeFontSizeOverride("font_size", 28);
         l.AddThemeColorOverride("font_color", correct ? Colors.White : new Color("#F44336"));
+
+        // border around the letters
+        l.AddThemeColorOverride("font_outline_color", new Color("#2B1B12"));
+        l.AddThemeConstantOverride("outline_size", 8);
+
+        // soft drop shadow underneath
+        l.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, 0.55f));
+        l.AddThemeConstantOverride("shadow_offset_x", 2);
+        l.AddThemeConstantOverride("shadow_offset_y", 3);
+        l.AddThemeConstantOverride("shadow_outline_size", 8);   // makes the shadow follow the outline shape
+
         _wordArea.AddChild(l);
 
         var size = l.GetMinimumSize();
@@ -550,6 +708,8 @@ public partial class BroadcasterInterface : Control
     // =====================================================================
     public override void _Input(InputEvent e)
     {
+        if (_spillActive && e is InputEventMouseMotion mm) ScrubSpill(mm.GlobalPosition);
+        if (_feedbackActive && e is InputEventKey) { GetViewport().SetInputAsHandled(); return; }
         if (!_running || _menuOpen) return;
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
 
@@ -570,6 +730,7 @@ public partial class BroadcasterInterface : Control
         {
             SpawnWord(_words[_idx], true);   // white: right key
             _idx++; _typedTotal++;
+            if (_stolenIdx >= 0 && _idx > _stolenIdx) ClearStolenKey();
             RenderTarget();
             if (_idx == _keys.Length) SegmentDone();
         }
@@ -593,7 +754,20 @@ public partial class BroadcasterInterface : Control
     // =====================================================================
     public override void _Process(double delta)
     {
+        if (_stagePanel != null && GameSession.Instance is { } gsx && gsx.Piano is { } pp)
+        {
+            int sig = HashCode.Combine(pp.Active, pp.Cues?.Count ?? 0, pp.CueIndex, pp.Status, pp.InFault, pp.FaultIndex, gsx.HasPianoColorMap);
+            if (sig != _cueSig) { _cueSig = sig; RefreshStageLight(); }
+        }
+
+        if (_feedbackActive)
+        {
+            Position = _shakeOrigin + new Vector2((float)GD.RandRange(-6.0, 6.0), (float)GD.RandRange(-6.0, 6.0));   // screen shake
+            if (_running && !_tutorial) { _deadAir.Register(); _timeLeft += delta; }   // the lock isn't punished as dead air
+        }
+
         if (!_running || _tutorial) return;   // tutorial: no countdown, no dead air
+        if (_stolenIdx >= 0 && Time.GetTicksMsec() >= _stolenRevealMs) ClearStolenKey();   // raccoon drops the key
 
         _deadAir.Tick((float)delta);
         UpdateDeadAirUi();
@@ -621,6 +795,341 @@ public partial class BroadcasterInterface : Control
         _deadAirLabel.Visible = _deadAir.IsDeadAir;
         if (_deadAir.IsDeadAir)   // flash: the text itself is the warning, not just the color
             _deadAirLabel.Modulate = new Color(1, 1, 1, 0.45f + 0.55f * Mathf.Abs(Mathf.Sin((float)Time.GetTicksMsec() / 1000f * 10f)));
+    }
+
+    private void SetupInterruptions()
+    {
+        var d = GameSession.Instance?.CurrentLevel;
+        if (_tutorial || d == null) return;
+        if (d.CoffeeSpill) _interruptions.Add(StartCoffeeSpill);
+        if (d.StolenKey) _interruptions.Add(StartStolenKey);
+        if (d.MicFeedback) _interruptions.Add(StartMicFeedback);
+        if (_interruptions.Count == 0) return;
+        if (d.InvertedPrompter) _interruptions.Add(StartInvertedPrompter);
+
+        _interruptTimer = new Timer { OneShot = true, WaitTime = NextInterruptionGap() };
+        _interruptTimer.Timeout += TriggerInterruption;
+        AddChild(_interruptTimer);
+        _interruptTimer.Start();
+    }
+
+    private double NextInterruptionGap()
+    {
+        double gap = GameSession.Instance?.CurrentLevel?.InterruptionGap ?? 30;
+        return gap * (0.7 + _rng.NextDouble() * 0.6);
+    }
+
+    private void RetryInterruptionSoon() { _interruptTimer.WaitTime = 3; _interruptTimer.Start(); }
+
+    private void TriggerInterruption()
+    {
+        var gs = GameSession.Instance;
+        if (gs == null || gs.Ended) return;
+        // wait for a calm moment: a live line, nothing else going on
+        if (_interruptionActive || !_running || _micLocked) { RetryInterruptionSoon(); return; }
+        _interruptions[_rng.Next(_interruptions.Count)]();
+    }
+
+    private void EndInterruption()
+    {
+        _interruptionActive = false;
+        if (_interruptTimer != null && IsInstanceValid(_interruptTimer))
+        {
+            _interruptTimer.WaitTime = NextInterruptionGap();
+            _interruptTimer.Start();
+        }
+    }
+
+    private void StartCoffeeSpill()
+    {
+        if (_target == null) { RetryInterruptionSoon(); return; }
+        _interruptionActive = true;
+        _spillActive = true;
+        int id = ++_spillId;
+
+        var area = _target.GetGlobalRect();
+        const int n = 7;
+        for (int i = 0; i < n; i++)
+        {
+            float size = 80 + (float)_rng.NextDouble() * 50;
+            var blob = new Panel
+            {
+                MouseFilter = MouseFilterEnum.Ignore,
+                ZIndex = 20,
+                CustomMinimumSize = new Vector2(size, size),
+                Size = new Vector2(size, size),
+                PivotOffset = new Vector2(size / 2, size / 2),
+            };
+            var style = new StyleBoxFlat { BgColor = new Color(0.30f, 0.17f, 0.08f, 0.95f) };
+            style.SetCornerRadiusAll((int)(size / 2));
+            blob.AddThemeStyleboxOverride("panel", style);
+            AddChild(blob);
+
+            float x = area.Position.X + area.Size.X * (i + 0.5f) / n - size / 2 + (float)(_rng.NextDouble() - 0.5) * 30;
+            float y = area.GetCenter().Y - size / 2 + (float)(_rng.NextDouble() - 0.5) * 30;
+            blob.GlobalPosition = new Vector2(x, y);
+
+            blob.Scale = new Vector2(0.3f, 0.3f);
+            CreateTween().TweenProperty(blob, "scale", Vector2.One, 0.2).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+            _blobs.Add(blob);
+            _blobHp[blob] = 1f;
+        }
+        _status.Text = "Coffee spill! Wipe the prompter with your mouse.";
+
+        // failsafe: it dries up on its own after 20 seconds
+        GetTree().CreateTimer(20).Timeout += () => { if (_spillActive && id == _spillId) EndCoffeeSpill(); };
+    }
+
+    private void ScrubSpill(Vector2 p)
+    {
+        for (int i = _blobs.Count - 1; i >= 0; i--)
+        {
+            var b = _blobs[i];
+            if (!b.GetGlobalRect().Grow(8).HasPoint(p)) continue;
+            float hp = _blobHp[b] - 0.07f;
+            if (hp <= 0.05f) { b.QueueFree(); _blobs.RemoveAt(i); _blobHp.Remove(b); }
+            else { _blobHp[b] = hp; b.Modulate = new Color(1, 1, 1, hp); }
+        }
+        if (_blobs.Count == 0) EndCoffeeSpill();
+    }
+
+    private void EndCoffeeSpill()
+    {
+        if (!_spillActive) return;
+        _spillActive = false;
+        foreach (var b in _blobs) if (IsInstanceValid(b)) b.QueueFree();
+        _blobs.Clear(); _blobHp.Clear();
+        if (_status.Text.StartsWith("Coffee")) _status.Text = "";
+        EndInterruption();
+    }
+
+    private void StartStolenKey()
+    {
+        // needs a live line with at least one key still to come, and no color-code prompt
+        if (!_running || _codedPromptActive || _keys.Length - 1 <= _idx) { RetryInterruptionSoon(); return; }
+        _interruptionActive = true;
+        _stolenIdx = _rng.Next(_idx + 1, _keys.Length);
+        _stolenRevealMs = Time.GetTicksMsec() + 8000;   // after 8s the raccoon drops it (so it can't soft-lock)
+        GameSession.Instance?.ReportStolenKey(_stolenIdx + 1, Arrows[_keys[_stolenIdx]]);
+        _status.Text = $"The raccoon stole key #{_stolenIdx + 1}! Ask the Technician what it is.";
+        RenderTarget();
+    }
+
+    private void ClearStolenKey()
+    {
+        if (_stolenIdx < 0) return;
+        _stolenIdx = -1;
+        GameSession.Instance?.ReportStolenKey(-1, "");
+        if (_status.Text.StartsWith("The raccoon stole")) _status.Text = "";
+        RenderTarget();
+        EndInterruption();
+    }
+
+    private void StartMicFeedback()
+    {
+        _interruptionActive = true;
+        _feedbackActive = true;
+        _feedbackClicks = 0;
+        _shakeOrigin = Position;
+        _feedbackPips.Clear();
+
+        _feedbackOverlay = new Control { MouseFilter = MouseFilterEnum.Ignore, ZIndex = 80 };
+        AddChild(_feedbackOverlay);
+        _feedbackOverlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var overlay = _feedbackOverlay;
+
+        // pulsing red wash (tween belongs to the overlay, so it dies with it)
+        var tint = new ColorRect { Color = new Color(0.9f, 0.1f, 0.1f, 0.22f), MouseFilter = MouseFilterEnum.Ignore };
+        overlay.AddChild(tint);
+        tint.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var pulse = tint.CreateTween().SetLoops();
+        pulse.TweenProperty(tint, "modulate:a", 0.35f, 0.25);
+        pulse.TweenProperty(tint, "modulate:a", 1.0f, 0.25);
+
+        var center = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
+        overlay.AddChild(center);
+        center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+
+        // card (same look as the Operator module popup)
+        var card = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
+        var cardStyle = new StyleBoxFlat { BgColor = new Color("#7A3036"), BorderColor = new Color("#301E2E") };
+        cardStyle.SetBorderWidthAll(4);
+        cardStyle.BorderWidthBottom = 8;
+        cardStyle.SetCornerRadiusAll(14);
+        cardStyle.ShadowColor = new Color(0, 0, 0, 0.5f);
+        cardStyle.ShadowSize = 12;
+        card.AddThemeStyleboxOverride("panel", cardStyle);
+        center.AddChild(card);
+
+        var margin = new MarginContainer { MouseFilter = MouseFilterEnum.Ignore };
+        margin.AddThemeConstantOverride("margin_left", 28);
+        margin.AddThemeConstantOverride("margin_right", 28);
+        margin.AddThemeConstantOverride("margin_top", 20);
+        margin.AddThemeConstantOverride("margin_bottom", 24);
+        card.AddChild(margin);
+
+        var box = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+        box.AddThemeConstantOverride("separation", 12);
+        margin.AddChild(box);
+
+        var title = new Label { Text = "MIC FEEDBACK!", HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        title.AddThemeFontSizeOverride("font_size", 38);
+        title.AddThemeColorOverride("font_color", new Color("FBEFD9"));
+        title.AddThemeColorOverride("font_outline_color", new Color("4A0D12"));
+        title.AddThemeConstantOverride("outline_size", 12);
+        box.AddChild(title);
+        _feedbackTitle = title;
+
+        var sub = new Label { Text = "Hit MUTE 3 times before time runs out!", HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        sub.AddThemeFontSizeOverride("font_size", 18);
+        sub.AddThemeColorOverride("font_color", new Color("F2D9B8"));
+        box.AddChild(sub);
+
+        // 3 lamps: one lights up per click
+        var pips = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+        pips.AddThemeConstantOverride("separation", 14);
+        for (int i = 0; i < 3; i++)
+        {
+            var pip = new Panel { CustomMinimumSize = new Vector2(30, 30), MouseFilter = MouseFilterEnum.Ignore };
+            pip.AddThemeStyleboxOverride("panel", PipStyle(false));
+            pips.AddChild(pip);
+            _feedbackPips.Add(pip);
+        }
+        box.AddChild(pips);
+
+        // timer bar: drains and turns red
+        var bar = new ProgressBar { MinValue = 0, MaxValue = 100, Value = 100, ShowPercentage = false, CustomMinimumSize = new Vector2(360, 22), MouseFilter = MouseFilterEnum.Ignore };
+        var fill = new StyleBoxFlat { BgColor = new Color("#FFD54F") };
+        fill.SetCornerRadiusAll(8);
+        var back = new StyleBoxFlat { BgColor = new Color("#301E2E") };
+        back.SetCornerRadiusAll(8);
+        bar.AddThemeStyleboxOverride("fill", fill);
+        bar.AddThemeStyleboxOverride("background", back);
+        box.AddChild(bar);
+
+        _feedbackBtn = new Button { Text = "MUTE", CustomMinimumSize = new Vector2(260, 68), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
+        UiStyle.StyleButton(_feedbackBtn, UiStyle.Yellow);
+        _feedbackBtn.AddThemeFontSizeOverride("font_size", 28);
+        _feedbackBtn.Pressed += OnMutePressed;
+        box.AddChild(_feedbackBtn);
+
+        // pop-in + title wobble (needs the layout size, so run next frame)
+        Callable.From(() =>
+        {
+            if (!IsInstanceValid(card) || !IsInstanceValid(title)) return;
+            card.PivotOffset = card.Size / 2;
+            card.Scale = new Vector2(0.6f, 0.6f);
+            card.CreateTween().TweenProperty(card, "scale", Vector2.One, 0.25)
+                .SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+
+            title.PivotOffset = title.Size / 2;
+            var wob = title.CreateTween().SetLoops();
+            wob.TweenProperty(title, "rotation", 0.04f, 0.06);
+            wob.TweenProperty(title, "rotation", -0.04f, 0.06);
+        }).CallDeferred();
+
+        _status.Text = "";
+        _feedbackTween = CreateTween().SetParallel();
+        _feedbackTween.TweenProperty(bar, "value", 0.0, FeedbackSeconds);
+        _feedbackTween.TweenProperty(fill, "bg_color", new Color("#E5484D"), FeedbackSeconds);
+        _feedbackTween.Chain().TweenCallback(Callable.From(() => EndMicFeedback(false)));
+    }
+
+    private void OnMutePressed()
+    {
+        if (!_feedbackActive) return;
+        if (_feedbackClicks < _feedbackPips.Count)
+            _feedbackPips[_feedbackClicks].AddThemeStyleboxOverride("panel", PipStyle(true));
+        _feedbackClicks++;
+
+        _feedbackBtn.PivotOffset = _feedbackBtn.Size / 2;   // little button punch
+        _feedbackBtn.Scale = new Vector2(0.92f, 0.92f);
+        _feedbackBtn.CreateTween().TweenProperty(_feedbackBtn, "scale", Vector2.One, 0.12)
+            .SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+
+        if (_feedbackClicks >= 3) EndMicFeedback(true);
+    }
+
+    private static StyleBoxFlat PipStyle(bool lit)
+    {
+        var s = new StyleBoxFlat { BgColor = lit ? new Color("#7CFC9A") : new Color("#301E2E"), BorderColor = new Color("FBEFD9") };
+        s.SetBorderWidthAll(3);
+        s.SetCornerRadiusAll(15);
+        return s;
+    }
+
+    private void EndMicFeedback(bool success)
+    {
+        if (!_feedbackActive) return;
+        _feedbackActive = false;
+        _feedbackTween?.Kill();
+        Position = _shakeOrigin;
+
+        var overlay = _feedbackOverlay;
+        _feedbackOverlay = null;
+        if (overlay != null && IsInstanceValid(overlay))
+        {
+            if (success && _feedbackTitle != null && IsInstanceValid(_feedbackTitle))
+            {
+                _feedbackTitle.Text = "MUTED!";
+                _feedbackTitle.AddThemeColorOverride("font_color", new Color("#7CFC9A"));
+                if (_feedbackBtn != null && IsInstanceValid(_feedbackBtn)) _feedbackBtn.Disabled = true;
+
+                var t = overlay.CreateTween();   // brief "MUTED!" then fade out
+                t.TweenInterval(0.25);
+                t.TweenProperty(overlay, "modulate:a", 0.0f, 0.2);
+                t.TweenCallback(Callable.From(overlay.QueueFree));
+            }
+            else overlay.QueueFree();
+        }
+
+        if (!success)
+        {
+            GameSession.Instance?.ReportAirtime(-10);
+            _status.Text = "Feedback ruined the broadcast! Quality dropped.";
+        }
+        EndInterruption();
+    }
+    private void StartInvertedPrompter()
+    {
+        if (_target == null) { RetryInterruptionSoon(); return; }
+        _interruptionActive = true;
+        _prompterFlipped = true;
+        int id = ++_flipId;
+
+        SpinPrompter(Mathf.Pi);
+
+        _flipBackBtn = new Button { Text = "FLIP BACK", ZIndex = 30, CustomMinimumSize = new Vector2(200, 52) };
+        GameOverScreen.StyleBackButton(_flipBackBtn);
+        _flipBackBtn.Pressed += EndInvertedPrompter;
+        AddChild(_flipBackBtn);
+        var r = _target.GetGlobalRect();
+        _flipBackBtn.GlobalPosition = new Vector2(r.GetCenter().X - 100, r.End.Y + 12);   // adjust if it overlaps something
+
+        _status.Text = "The raccoon flipped the prompter! Read it upside down or click FLIP BACK.";
+
+        // failsafe so it can't soft-lock
+        GetTree().CreateTimer(12).Timeout += () => { if (_prompterFlipped && id == _flipId) EndInvertedPrompter(); };
+    }
+
+    private void EndInvertedPrompter()
+    {
+        if (!_prompterFlipped) return;
+        _prompterFlipped = false;
+        if (_target != null) SpinPrompter(0f);
+        if (_flipBackBtn != null && IsInstanceValid(_flipBackBtn)) _flipBackBtn.QueueFree();
+        _flipBackBtn = null;
+        if (_status.Text.StartsWith("The raccoon flipped")) _status.Text = "";
+        EndInterruption();
+    }
+
+    private void SpinPrompter(float radians)
+    {
+        _flipTween?.Kill();
+        _target.PivotOffset = _target.Size / 2;
+        _flipTween = CreateTween();
+        _flipTween.TweenProperty(_target, "rotation", radians, 0.35)
+            .SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
     }
 
     // =====================================================================

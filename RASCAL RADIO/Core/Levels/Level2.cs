@@ -12,14 +12,17 @@ public static class Level2
 	{
 		Id = "afternoon_broadcast",
 		Title = "LEVEL 2",
+        BackgroundId = "afternoon",
 
-		QuotaGenre = Genre.Drama,
+        QuotaGenre = Genre.Drama,
 		AcceptedGenres = Accepted,
 		QuotaTarget = 4,
 
-		HasKeypad = false,
+		HasMemory = true,
 		HasPiano = true,
 		HasSoundboard = true,
+        CoffeeSpill = true,
+        StolenKey = true,
 
         KeypadMinLine = 100,
         KeypadMaxLine = 999,
@@ -52,5 +55,8 @@ public static class Level2
         ClockStartMinute = 12 * 60,
         ClockEndMinute = 15 * 60,
         ShiftSeconds = 300,
+
+        MaxSimultaneousModules = 2,
+        SimultaneousChance = 0.5
     };
 }

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cnkbwr25ylla3"]
 
 [ext_resource type="Script" uid="uid://r6chythj27hx" path="res://Scripts/OperatorInterface.cs" id="1_0gnke"]
+[ext_resource type="FontFile" uid="uid://hd4bvqjo0egh" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_b7mkc"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="3_tyn63"]
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="4_b7mkc"]
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="4_qctdg"]
@@ -20,6 +21,9 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
+shadow_color = Color(0.21568628, 0.101960786, 0.1254902, 0.72156864)
+shadow_size = 10
+shadow_offset = Vector2(-10, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ptyr0"]
 bg_color = Color(0.3367624, 0.1047376, 0.11235956, 1)
@@ -94,6 +98,9 @@ corner_radius_top_left = 20
 corner_radius_top_right = 20
 corner_radius_bottom_right = 20
 corner_radius_bottom_left = 20
+shadow_color = Color(0.21568628, 0.101960786, 0.1254902, 0.72156864)
+shadow_size = 10
+shadow_offset = Vector2(-10, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sggwb"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -193,10 +200,12 @@ anchors_preset = 0
 script = ExtResource("1_0gnke")
 LobbyScenePath = null
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=901204624]
+[node name="Background" type="TextureRect" parent="." unique_id=901204624]
+unique_name_in_owner = true
 layout_mode = 0
 offset_right = 1151.0
 offset_bottom = 648.0
+expand_mode = 1
 
 [node name="PhoneBox" type="Panel" parent="." unique_id=287036377]
 layout_mode = 0
@@ -312,15 +321,14 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_esp36")
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.14117648, 0.22352941, 0.3254902, 1)
-theme_override_fonts/font = ExtResource("4_b7mkc")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("2_b7mkc")
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
 [node name="CallerNumLabel" type="Label" parent="PhoneBox/callerscreen/PanelContainer/NameLabel" unique_id=1854698295]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 offset_left = 27.0
 offset_top = 35.0
@@ -330,7 +338,7 @@ theme_override_colors/font_color = Color(0.14117648, 0.22352941, 0.3254902, 1)
 theme_override_constants/line_spacing = 7
 theme_override_constants/paragraph_spacing = 2
 theme_override_fonts/font = ExtResource("4_b7mkc")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -454,9 +462,9 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 0
 offset_left = 853.0
-offset_top = 2.0
+offset_top = -1.0
 offset_right = 1136.0
-offset_bottom = 159.0
+offset_bottom = 132.0
 theme_type_variation = &"Hudbar"
 theme_override_styles/panel = SubResource("StyleBoxFlat_ncg58")
 
@@ -500,7 +508,7 @@ size_flags_vertical = 1
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_constants/line_spacing = -6
 theme_override_fonts/font = ExtResource("5_qctdg")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxTexture_0aagu")
 text = "hello"
 autowrap_mode = 3
