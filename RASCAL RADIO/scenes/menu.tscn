@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://ed77vo1usk0j" path="res://assets/images/MAINMENU_BG.png" id="2_con2f"]
 [ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="2_ouk20"]
 [ext_resource type="StyleBox" uid="uid://cpkmick0xyjgm" path="res://assets/textures/MainPressed.tres" id="4_mhnvy"]
+[ext_resource type="AudioStream" uid="uid://c8e5gqunodvbi" path="res://assets/sfx/start_sfx.mp3" id="5_4ytvr"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -37,7 +38,7 @@ border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 corner_radius_top_left = 20
 corner_radius_bottom_right = 20
 
-[node name="Menu" type="Control" unique_id=519871903 node_paths=PackedStringArray("PlayButton", "QuitButton", "Fade")]
+[node name="Menu" type="Control" unique_id=519871903 node_paths=PackedStringArray("PlayButton", "QuitButton", "Fade", "StartSfx")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -52,6 +53,7 @@ script = ExtResource("1_con2f")
 PlayButton = NodePath("VBoxContainer/PlayHolder/PlayButton")
 QuitButton = NodePath("VBoxContainer/PlayHolder2/QuitButton")
 Fade = NodePath("Fade")
+StartSfx = NodePath("StartSfx")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=863903393]
 layout_mode = 1
@@ -148,3 +150,11 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
+
+[node name="StartSfx" type="AudioStreamPlayer" parent="." unique_id=2061397488]
+stream = ExtResource("5_4ytvr")
+volume_db = -6.0
+
+[node name="MenuBGM" type="AudioStreamPlayer" parent="." unique_id=32080819]
+volume_db = -14.0
+autoplay = true

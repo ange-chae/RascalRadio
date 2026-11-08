@@ -6,6 +6,7 @@ public partial class Menu : Control
 	[Export] public Button PlayButton { get; set; }
 	[Export] public Button QuitButton { get; set; }
 	[Export] public ColorRect Fade { get; set; }
+	[Export] public AudioStreamPlayer StartSfx { get; set; }
 
 	private bool _isTransitioning = false;
 
@@ -14,7 +15,7 @@ public partial class Menu : Control
 		if (PlayButton == null || QuitButton == null || Fade == null)
 		{
 			GD.PrintErr(
-                "Backend Error: Assign PlayButton, QuitButton, and Fade in the Inspector!"
+				"Backend Error: Assign PlayButton, QuitButton, and Fade in the Inspector!"
 			);
 			return;
 		}
@@ -34,13 +35,15 @@ public partial class Menu : Control
 		_isTransitioning = true;
 		PlayButton.Disabled = true;
 
+		StartSfx?.Play();
+
 		Tween tween = CreateTween();
-		tween.TweenProperty(Fade, "color:a", 1.0f, 0.7f);
+		tween.TweenProperty(Fade, "color:a", 1.0f, 1.5f);
 
 		await ToSignal(tween, Tween.SignalName.Finished);
 
 		Error result = GetTree().ChangeSceneToFile(
-            "res://scenes/lobby.tscn"
+			"res://scenes/lobby.tscn"
 		);
 
 		if (result != Error.Ok)

@@ -17,6 +17,7 @@
 [ext_resource type="StyleBox" uid="uid://cbl51u0ito6nv" path="res://assets/textures/focus_input.tres" id="9_yad6j"]
 [ext_resource type="Texture2D" uid="uid://8vecrc78v8kg" path="res://assets/images/Join.png" id="11_m1sns"]
 [ext_resource type="Texture2D" uid="uid://c8gtt45cqvv7v" path="res://assets/images/Host.png" id="12_dyhay"]
+[ext_resource type="AudioStream" uid="uid://b5240ixt4jjb1" path="res://assets/sfx/BGM/LOBBY.mp3" id="18_o2i1r"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -571,3 +572,8 @@ offset_bottom = 92.0
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_styles/normal = ExtResource("8_oipnb")
 theme_override_styles/focus = ExtResource("9_yad6j")
+
+[node name="LobbyBgm" type="AudioStreamPlayer" parent="." unique_id=296655055]
+stream = ExtResource("18_o2i1r")
+volume_db = -16.0
+autoplay = true
