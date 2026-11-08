@@ -39,6 +39,12 @@ public partial class BroadcasterInterface : Control
     // optional (skipped if they aren't in the scene)
     private Label _status;   // falls back to a hidden dummy label so the code never crashes
     private Label _nameLabel, _callerNumLabel, _deadAirLabel, _listenerLabel;
+    private TextureRect _avatar;                       // caller picture on the caller card
+    private string[] _avatarPaths;                     // every picture found in AvatarFolder
+    private string _avatarKey = "";                    // which caller the current picture belongs to
+    private int _lastAvatar = -1;
+    private readonly Random _avatarRng = new();
+    private const string AvatarFolder = "res://assets/images/callers";
     private Label _topicLabel;
     private ProgressBar _listenerBar;
     private Control _airStatus, _pauseMenu;
@@ -209,6 +215,7 @@ public partial class BroadcasterInterface : Control
         _status = GetNodeOrNull<Label>("%StatusLabel") ?? new Label();
         _nameLabel = GetNodeOrNull<Label>("%NameLabel");
         _callerNumLabel = GetNodeOrNull<Label>("%CallerNumLabel");
+        _avatar = GetNodeOrNull<TextureRect>("%avatar") ?? FindChild("avatar", true, false) as TextureRect;
         _airStatus = GetNodeOrNull<Control>("%AirStatus");
         _deadAirLabel = GetNodeOrNull<Label>("%DeadAirLabel");
         _listenerLabel = GetNodeOrNull<Label>("%ListenerLabel");
@@ -265,7 +272,7 @@ public partial class BroadcasterInterface : Control
     // TUTORIAL: steps + tasks
     // =====================================================================
     private static bool MicShouldRun(TutorialStep step) =>
-        step == TutorialStep.GoLive || step == TutorialStep.KeypadModule || step == TutorialStep.Done;
+        step == TutorialStep.GoLive || step == TutorialStep.KeypadModule || step == TutorialStep.PianoModule || step == TutorialStep.Done;
 
     private static bool IsCallerStep(TutorialStep step) =>
         step == TutorialStep.PracticeCaller || step == TutorialStep.SuspiciousCaller;
@@ -308,6 +315,7 @@ public partial class BroadcasterInterface : Control
             items.Add(($"Accept {AcceptGoal} callers ({Mathf.Min(gs.QuotaMet, AcceptGoal)}/{AcceptGoal})", s > TutorialStep.PracticeCaller));
             items.Add(("Talk to the mic", s > TutorialStep.GoLive));
             items.Add(("Keep talking while the keypad is fixed", s > TutorialStep.KeypadModule));
+            items.Add(("Read the cue sheet colors to the Technician", s > TutorialStep.PianoModule));
             items.Add(("Reject the suspicious caller", s > TutorialStep.SuspiciousCaller));
         }
         else if (gs != null)
@@ -344,10 +352,55 @@ public partial class BroadcasterInterface : Control
             // The Broadcaster NEVER sees the story. Only name and number.
             if (_nameLabel != null) _nameLabel.Text = gs.CallerName;
             if (_callerNumLabel != null) _callerNumLabel.Text = $"Caller {gs.CallerNumber} of {gs.CallerTotal}";
+            SetCallerAvatar(gs);
         }
 
         if (has && _caller != null && _caller.Visible) _caller.Visible = false;   // new caller: card clears and pops in again
         ShowCaller(has);
+    }
+
+    // ===== caller picture: a random one from AvatarFolder, one per caller =====
+    private void SetCallerAvatar(GameSession gs)
+    {
+        if (_avatar == null) return;
+
+        // OnCaller fires more than once per caller, so only pick again for a NEW caller
+        string key = $"{gs.CallerNumber}:{gs.CallerName}";
+        if (key == _avatarKey) return;
+        _avatarKey = key;
+
+        _avatarPaths ??= ListCallerPictures();
+        if (_avatarPaths.Length == 0) return;   // nothing found: the picture already in the scene stays
+
+        int i = _avatarRng.Next(_avatarPaths.Length);
+        if (_avatarPaths.Length > 1 && i == _lastAvatar)   // never the same face twice in a row
+            i = (i + 1 + _avatarRng.Next(_avatarPaths.Length - 1)) % _avatarPaths.Length;
+        _lastAvatar = i;
+
+        var tex = GD.Load<Texture2D>(_avatarPaths[i]);
+        if (tex == null) return;
+
+        // big pictures must shrink to the card, not stretch it
+        _avatar.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
+        _avatar.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+        if (_avatar.CustomMinimumSize.X <= 0) _avatar.CustomMinimumSize = new Vector2(110, 110);
+        _avatar.Texture = tex;
+    }
+
+    private static string[] ListCallerPictures()
+    {
+        var found = new List<string>();
+        foreach (var f in DirAccess.GetFilesAt(AvatarFolder))
+        {
+            // exported games list "1.png.import" instead of "1.png"; both load as "1.png"
+            string name = f.EndsWith(".import") ? f.Substring(0, f.Length - 7) : f;
+            string ext = name.GetExtension().ToLower();
+            if (ext != "png" && ext != "jpg" && ext != "jpeg" && ext != "webp") continue;
+            string path = $"{AvatarFolder}/{name}";
+            if (!found.Contains(path)) found.Add(path);
+        }
+        if (found.Count == 0) GD.PushWarning($"Broadcaster: no caller pictures found in {AvatarFolder}");
+        return found.ToArray();
     }
 
     private void ShowCaller(bool show)
@@ -388,10 +441,10 @@ public partial class BroadcasterInterface : Control
     {
         GD.Print($"[CUE] SetupCueDesk reached. tutorial={_tutorial} level={GameSession.Instance?.CurrentLevel?.Id} hasPiano={GameSession.Instance?.CurrentLevel?.HasPiano} piano={GameSession.Instance?.Piano != null}");
         var gs = GameSession.Instance;
-        var d = gs?.CurrentLevel;
-        if (gs == null || _tutorial || d == null) return;
+        bool hasPiano = _tutorial || gs?.CurrentLevel?.HasPiano == true;   // the tutorial has a cue sheet too
+        if (gs == null) return;
 
-        if (d.HasPiano && gs.Piano != null)
+        if (hasPiano && gs.Piano != null)
         {
             _stagePanel = MakeDeskPanel(false, out var box);   // false = left side
 

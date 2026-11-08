@@ -9,21 +9,21 @@ using static StudioPianoData;
 public partial class TechnicianInterface : PopupFrame
 {
     // ===== BLACKOUT SYSTEM =====
-    private ColorRect    _blackoutOverlay;
-    private ProgressBar  _rebootMeter;
-    private Label        _rebootLabel;
-    private Timer        _blackoutRngTimer;
-    private Timer        _flickerTimer;
+    private ColorRect _blackoutOverlay;
+    private ProgressBar _rebootMeter;
+    private Label _rebootLabel;
+    private Timer _blackoutRngTimer;
+    private Timer _flickerTimer;
     private bool _manualLocked;
-    private bool  _isBlackout    = false;
-    private bool  _isHolding     = false;
+    private bool _isBlackout = false;
+    private bool _isHolding = false;
     private float _rebootProgress = 0f;
-    private int   _flickerCount   = 0;
+    private int _flickerCount = 0;
 
-    private const float RebootDuration  = 6.0f; // minimum hold time to restore power
-    private const float DecayRate       = 0.3f; // progress lost per second when not holding
+    private const float RebootDuration = 6.0f; // minimum hold time to restore power
+    private const float DecayRate = 0.3f; // progress lost per second when not holding
     private const float FlickerInterval = 0.08f;
-    private const int   FlickerCycles   = 8;    // number of on/off flickers before full blackout
+    private const int FlickerCycles = 8;    // number of on/off flickers before full blackout
 
     // ===== MANUAL PAGES =====
     // One entry per tab button (TabA..TabE), in order.
@@ -82,7 +82,7 @@ public partial class TechnicianInterface : PopupFrame
         var sb = new System.Text.StringBuilder();
         sb.Append("The Operator only sees the jingle name. The BROADCASTER sees the CUE SHEET, a colored light.\n");
         sb.Append("Ask the Broadcaster for the color, find it below, and tell the Operator which key to press. Then ask for the next color.\n\n");
-        sb.Append("If the keys are flashing red, the cue sheet blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
+        if (gs == null || !gs.IsTutorial) sb.Append("If the keys are flashing red, the cue sheet blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
         if (gs == null || !gs.HasPianoColorMap)
         {
             sb.Append("Waiting for a jingle... the code changes every time one starts.");
@@ -99,7 +99,7 @@ public partial class TechnicianInterface : PopupFrame
         }
 
         sb.Append("\nThe code is reshuffled for every jingle. Check this page, don't trust your memory.\n\n");
-        sb.Append("If the keys are flashing red, the stage light blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
+        if (gs == null || !gs.IsTutorial) sb.Append("If the keys are flashing red, the stage light blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
         sb.Append(FlipHelp());
         return sb.ToString();
     }
@@ -280,6 +280,8 @@ public partial class TechnicianInterface : PopupFrame
         ("Meet the studio", s > TutorialStep.MeetStudio),
         ("Open the manual and read the Math Keypad page", s > TutorialStep.KeypadModule),
         ("Help the Operator fix the keypad", s > TutorialStep.KeypadModule),
+        ("Read the Piano page of the manual", s > TutorialStep.PianoModule),
+        ("Tell the Operator which key to press for each color", s > TutorialStep.PianoModule),
         };
         _taskLabel.Text = string.Join("\n", items.Select(t => t.done
             ? $"[color=#7A7A7A][s]- {t.text}[/s][/color]"
@@ -342,16 +344,17 @@ public partial class TechnicianInterface : PopupFrame
     private void OnStep(TutorialStep step)
     {
         if (step == TutorialStep.KeypadModule) ShowPage(KeypadPageIndex);   // open the keypad page automatically
+        if (step == TutorialStep.PianoModule) ShowPage(PianoPageIndex);     // and the piano page at the piano step
     }
 
-	private void OnQuota() =>
-		SetText("%QuotaCount", $"{GameSession.Instance.QuotaMet}/{GameSession.Instance.QuotaTarget}");
+    private void OnQuota() =>
+        SetText("%QuotaCount", $"{GameSession.Instance.QuotaMet}/{GameSession.Instance.QuotaTarget}");
 
-	private void SetText(string path, string text)
-	{
-		var l = GetNodeOrNull<Label>(path);
-		if (l != null) l.Text = text;
-	}
+    private void SetText(string path, string text)
+    {
+        var l = GetNodeOrNull<Label>(path);
+        if (l != null) l.Text = text;
+    }
 
     private static string FlipHelp() =>
     "\n\nMODULE UPSIDE DOWN?\n" +
@@ -430,8 +433,8 @@ public partial class TechnicianInterface : PopupFrame
         // --- Full-screen blackout overlay ---
         _blackoutOverlay = new ColorRect
         {
-            Color   = new Color(0.02f, 0.02f, 0.03f, 0.97f),
-            ZIndex  = 50,
+            Color = new Color(0.02f, 0.02f, 0.03f, 0.97f),
+            ZIndex = 50,
             Visible = false,
         };
         _blackoutOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -440,39 +443,39 @@ public partial class TechnicianInterface : PopupFrame
         // --- Reboot progress bar (grows from bottom of screen) ---
         _rebootMeter = new ProgressBar
         {
-            MinValue       = 0,
-            MaxValue       = 100,
-            Value          = 0,
+            MinValue = 0,
+            MaxValue = 100,
+            Value = 0,
             ShowPercentage = false,
-            FillMode       = (int)ProgressBar.FillModeEnum.BottomToTop,
-            ZIndex         = 60,
-            Visible        = false,
+            FillMode = (int)ProgressBar.FillModeEnum.BottomToTop,
+            ZIndex = 60,
+            Visible = false,
         };
         // Style: emergency green glow
         var fillStyle = new StyleBoxFlat { BgColor = new Color(0.1f, 0.85f, 0.4f, 0.75f) };
-        var bgStyle   = new StyleBoxFlat { BgColor = new Color(0.0f, 0.0f, 0.0f, 0.0f) };
-        _rebootMeter.AddThemeStyleboxOverride("fill",       fillStyle);
+        var bgStyle = new StyleBoxFlat { BgColor = new Color(0.0f, 0.0f, 0.0f, 0.0f) };
+        _rebootMeter.AddThemeStyleboxOverride("fill", fillStyle);
         _rebootMeter.AddThemeStyleboxOverride("background", bgStyle);
         _rebootMeter.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
         _rebootMeter.CustomMinimumSize = new Vector2(0, 80);
         // Offset up by 80 px so it sits flush at the bottom edge
-        _rebootMeter.OffsetTop    = -80;
+        _rebootMeter.OffsetTop = -80;
         _rebootMeter.OffsetBottom = 0;
         AddChild(_rebootMeter);
 
         // --- "HOLD TO REBOOT" label sitting just above the meter ---
         _rebootLabel = new Label
         {
-            Text              = "▲  HOLD TO REBOOT  ▲",
+            Text = "▲  HOLD TO REBOOT  ▲",
             HorizontalAlignment = HorizontalAlignment.Center,
-            ZIndex            = 61,
-            Visible           = false,
+            ZIndex = 61,
+            Visible = false,
         };
-        _rebootLabel.AddThemeColorOverride("font_color",        new Color(0.1f, 0.9f, 0.4f, 1f));
+        _rebootLabel.AddThemeColorOverride("font_color", new Color(0.1f, 0.9f, 0.4f, 1f));
         _rebootLabel.AddThemeColorOverride("font_shadow_color", new Color(0f, 0f, 0f, 1f));
         _rebootLabel.AddThemeFontSizeOverride("font_size", 20);
         _rebootLabel.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
-        _rebootLabel.OffsetTop    = -112;
+        _rebootLabel.OffsetTop = -112;
         _rebootLabel.OffsetBottom = -84;
         AddChild(_rebootLabel);
 
@@ -524,13 +527,13 @@ public partial class TechnicianInterface : PopupFrame
     // Phase 2: Full blackout
     private void TriggerBlackout()
     {
-        _isBlackout     = true;
+        _isBlackout = true;
         _rebootProgress = 0f;
         _rebootMeter.Value = 0;
 
         _blackoutOverlay.Visible = true;
-        _rebootMeter.Visible     = true;
-        _rebootLabel.Visible     = true;
+        _rebootMeter.Visible = true;
+        _rebootLabel.Visible = true;
     }
 
     public override void _Process(double delta)
@@ -548,7 +551,7 @@ public partial class TechnicianInterface : PopupFrame
         if (_isHolding)
         {
             _rebootProgress += (float)delta / RebootDuration;
-            _rebootProgress  = Mathf.Min(_rebootProgress, 1.0f);
+            _rebootProgress = Mathf.Min(_rebootProgress, 1.0f);
 
             // Animate the label to pulse
             float pulse = 0.6f + 0.4f * Mathf.Sin((float)Time.GetTicksMsec() / 200f);
@@ -557,7 +560,7 @@ public partial class TechnicianInterface : PopupFrame
         else
         {
             _rebootProgress -= (float)delta * DecayRate;
-            _rebootProgress  = Mathf.Max(_rebootProgress, 0f);
+            _rebootProgress = Mathf.Max(_rebootProgress, 0f);
             _rebootLabel.Modulate = Colors.White;
         }
 
@@ -570,7 +573,7 @@ public partial class TechnicianInterface : PopupFrame
     // Phase 3: Restore power
     private void EndBlackout()
     {
-        _isBlackout     = false;
+        _isBlackout = false;
         _rebootProgress = 0f;
         GameSession.Instance?.ReportBlackoutSequence(false);
 
@@ -581,9 +584,9 @@ public partial class TechnicianInterface : PopupFrame
              .SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
 
         _blackoutOverlay.Visible = false;
-        _rebootMeter.Visible     = false;
-        _rebootLabel.Visible     = false;
-        _rebootMeter.Value       = 0;
+        _rebootMeter.Visible = false;
+        _rebootLabel.Visible = false;
+        _rebootMeter.Value = 0;
         SetManualLocked(false);
 
         // Schedule the next random blackout (Level 3 only — guard in case level changed)

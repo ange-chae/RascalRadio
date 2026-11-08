@@ -18,7 +18,7 @@ public static class Level1
         // ---------- Topic and goal ----------
         QuotaGenre = Genre.Drama,     // fallback topic, used only if AcceptedGenres is empty
 		AcceptedGenres = Accepted,    // the topics one of which is picked each run (see above)
-		QuotaTarget = 4,              // callers the players must accept to win. Higher = longer level.
+		QuotaTarget = 3,              // callers the players must accept to win. Higher = longer level.
 
 		// ---------- Modules (the Operator's Studio Desk) ----------
 		HasKeypad = true,             // Line Override keypad on or off

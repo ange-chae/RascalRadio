@@ -10,12 +10,12 @@ size_flags_vertical = 3
 script = ExtResource("1_lmpi3")
 
 [node name="LblLevelName" type="Label" parent="." unique_id=1679138338]
+visible = false
 layout_mode = 2
 text = "Tutorial"
 horizontal_alignment = 1
 
 [node name="TexCassette" type="TextureRect" parent="." unique_id=69938080]
-visible = false
 layout_mode = 2
 texture = ExtResource("2_oxbgq")
 expand_mode = 5
