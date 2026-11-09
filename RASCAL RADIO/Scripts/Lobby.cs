@@ -45,6 +45,37 @@ public partial class Lobby : Control
 	private int _foundPlayerCount = 0;
 	private int _foundMaxPlayers = NetworkManager.MaxPlayers;
 	private bool _isConnecting = false;
+	private const float ConfirmDb = -6f;
+	private const float CancelDb = -8f;
+
+	private AudioStream _confirmStream;
+	private AudioStream _cancelStream;
+
+	private static AudioStream LoadSfx(string baseName)
+	{
+		foreach (string extension in new[] { "ogg", "wav", "mp3" })
+		{
+			string path = $"res://assets/sfx/{baseName}.{extension}";
+			if (ResourceLoader.Exists(path))
+			{
+				return GD.Load<AudioStream>(path);
+			}
+		}
+		GD.PushWarning($"[Lobby] Missing sound: {baseName}");
+		return null;
+	}
+
+private void PlaySfx(AudioStream stream, float volumeDb)
+{
+	if (stream == null)
+	{
+		return;
+	}
+	var player = new AudioStreamPlayer { Stream = stream, VolumeDb = volumeDb };
+	GetTree().Root.AddChild(player);
+	player.Finished += player.QueueFree;
+	player.Play();
+}
 
 	public override void _Ready()
 	{
@@ -72,6 +103,9 @@ public partial class Lobby : Control
 			GD.PrintErr("Lobby: A required node is missing. Check scene tree paths.");
 			return;
 		}
+		
+		_confirmStream = LoadSfx("confirm_sfx");
+		_cancelStream = LoadSfx("cancel_sfx");
 
 		// Room search result node
 		_roomResultControl = _joinContent.FindChild("playerRoom", true, false) as Control;
@@ -201,7 +235,7 @@ public partial class Lobby : Control
 
 		if (_networkManager != null && !string.IsNullOrEmpty(_networkManager.DisconnectReason))
 		{
-            ShowPopupMessage("Studio Closed", _networkManager.DisconnectReason);
+			ShowPopupMessage("Studio Closed", _networkManager.DisconnectReason);
 			_networkManager.DisconnectReason = "";
 		}
 
@@ -223,15 +257,15 @@ public partial class Lobby : Control
 		tween.TweenCallback(Callable.From(fadeLayer.QueueFree));
 	}
 
-    // ---------------------------------------------------------
-    // HELPER FUNCTIONS
-    // ---------------------------------------------------------
-    private void ShowPopupMessage(string title, string message)
-    {
-        ConfirmPopup.Notice(this, title, message);
-    }
+	// ---------------------------------------------------------
+	// HELPER FUNCTIONS
+	// ---------------------------------------------------------
+	private void ShowPopupMessage(string title, string message)
+	{
+		ConfirmPopup.Notice(this, title, message);
+	}
 
-    private void FindAndRegisterNameInputs(Control root)
+	private void FindAndRegisterNameInputs(Control root)
 	{
 		if (root == null) return;
 
@@ -448,6 +482,7 @@ public partial class Lobby : Control
 
 	private void OnBackButtonPressed()
 	{
+		PlaySfx(_cancelStream, CancelDb);
 		GetTree().ChangeSceneToFile("res://scenes/menu.tscn");
 	}
 
@@ -457,6 +492,7 @@ public partial class Lobby : Control
 
 	private void OnCancelPopup()
 	{
+		PlaySfx(_cancelStream, CancelDb);
 		if (_searchDebounceTimer != null)
 			_searchDebounceTimer.Stop();
 
@@ -542,6 +578,7 @@ public partial class Lobby : Control
 		}
 
 		GD.Print($"Room created: {_networkManager.RoomName}, code: {_networkManager.RoomCode}");
+		PlaySfx(_confirmStream, ConfirmDb);
 
 		// Transition directly to the player list scene
 		TransitionToScene("res://scenes/player_lists.tscn");
@@ -652,6 +689,7 @@ public partial class Lobby : Control
 		}
 
 		_isConnecting = true;
+		PlaySfx(_confirmStream, ConfirmDb);
 		_playerName = playerName;
 		SetRoomDisplay("Connecting to host...");
 
