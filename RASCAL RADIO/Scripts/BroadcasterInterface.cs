@@ -129,6 +129,7 @@ public partial class BroadcasterInterface : Control
 
         FindNodes();
         WireButtons();
+        AddChild(new GameMusic());
 
         var timeLabel = FindChild("TimeLabel", true, false) as Label;
         if (timeLabel != null)
@@ -412,6 +413,7 @@ public partial class BroadcasterInterface : Control
         {
             if (!_caller.Visible)
             {
+                Sfx.Play(this, "phone_sfx", -8f);
                 _caller.Modulate = new Color(1, 1, 1, 0);
                 _caller.Scale = new Vector2(0.8f, 0.8f);
             }
@@ -432,6 +434,7 @@ public partial class BroadcasterInterface : Control
 
     private void OnDecision(bool accept)
     {
+        Sfx.Play(this, accept ? "confirm_sfx" : "cancel_sfx", -6f);
         GameSession.Instance.Decide(accept);
         if (!_tutorial) ShowCaller(false);   // real shift: clear the card right away
     }
@@ -782,6 +785,7 @@ public partial class BroadcasterInterface : Control
         if (key == _keys[_idx])
         {
             SpawnWord(_words[_idx], true);   // white: right key
+            Sfx.Play(this, "key_sfx", -14f);
             _idx++; _typedTotal++;
             if (_stolenIdx >= 0 && _idx > _stolenIdx) ClearStolenKey();
             RenderTarget();
@@ -790,6 +794,7 @@ public partial class BroadcasterInterface : Control
         else
         {
             SpawnWord(_words[_idx], false);  // red: wrong key, same word, no advance
+            Sfx.Play(this, "wrong_sfx", -10f);
             if (_tutorial)
             {
                 _status.Text = "Wrong key. Press the one shown in yellow. No penalty.";
@@ -881,6 +886,7 @@ public partial class BroadcasterInterface : Control
         // wait for a calm moment: a live line, nothing else going on
         if (_interruptionActive || !_running || _micLocked) { RetryInterruptionSoon(); return; }
         _interruptions[_rng.Next(_interruptions.Count)]();
+        if (_interruptionActive) Sfx.Play(this, "sabotage_sfx", -6f);
     }
 
     private void EndInterruption()
@@ -1117,6 +1123,7 @@ public partial class BroadcasterInterface : Control
         _feedbackActive = false;
         _feedbackTween?.Kill();
         Position = _shakeOrigin;
+        Sfx.Play(this, success ? "confirm_sfx" : "wrong_sfx", -6f);
 
         var overlay = _feedbackOverlay;
         _feedbackOverlay = null;

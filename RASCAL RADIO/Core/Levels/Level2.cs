@@ -12,22 +12,22 @@ public static class Level2
 	{
 		Id = "afternoon_broadcast",
 		Title = "LEVEL 2",
-        BackgroundId = "afternoon",
+		BackgroundId = "afternoon",
 
-        QuotaGenre = Genre.Drama,
+		QuotaGenre = Genre.Drama,
 		AcceptedGenres = Accepted,
 		QuotaTarget = 4,
 
 		HasMemory = true,
 		HasPiano = true,
 		HasSoundboard = true,
-        CoffeeSpill = true,
-        StolenKey = true,
+		CoffeeSpill = true,
+		StolenKey = true,
 
-        KeypadMinLine = 100,
-        KeypadMaxLine = 999,
+		KeypadMinLine = 100,
+		KeypadMaxLine = 999,
 
-        SegmentTime = 11.0,
+		SegmentTime = 11.0,
 		PrompterLineRest = 10,
 		PrompterParagraphRest = 5,
 
@@ -52,11 +52,11 @@ public static class Level2
 			return list.OrderBy(_ => System.Random.Shared.Next()).ToList();
 		},
 
-        ClockStartMinute = 12 * 60,
-        ClockEndMinute = 15 * 60,
-        ShiftSeconds = 300,
+		ClockStartMinute = 12 * 60,
+		ClockEndMinute = 15 * 60,
+		ShiftSeconds = 300,
 
-        MaxSimultaneousModules = 2,
-        SimultaneousChance = 0.5
-    };
+		MaxSimultaneousModules = 2,
+		SimultaneousChance = 0.5
+	};
 }
