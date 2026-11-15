@@ -26,6 +26,19 @@ public partial class LevelResultScreen : CanvasLayer
     private string _rank = "";
     private bool _leaving;
 
+    // Font: assets/fonts/ShortStack-Regular (falls back to the default font if missing)
+    private static Font _font;
+    private static bool _fontTried;
+    private static Font ShortStack()
+    {
+        if (_fontTried) return _font;
+        _fontTried = true;
+        foreach (var path in new[] { "res://assets/fonts/ShortStack-Regular.ttf", "res://assets/fonts/ShortStack-Regular.otf" })
+            if (ResourceLoader.Exists(path)) { _font = GD.Load<Font>(path); break; }
+        if (_font == null) GD.PushWarning("LevelResultScreen: ShortStack-Regular not found in res://assets/fonts/");
+        return _font;
+    }
+
     public override void _Ready()
     {
         Layer = 100;
@@ -139,6 +152,7 @@ public partial class LevelResultScreen : CanvasLayer
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
         };
         UiStyle.StyleButton(_btn, UiStyle.Yellow);
+        if (ShortStack() != null) _btn.AddThemeFontOverride("font", ShortStack());
         _btn.Pressed += Leave;
         col.AddChild(_btn);
 
@@ -375,6 +389,7 @@ public partial class LevelResultScreen : CanvasLayer
     private static Label Lbl(string text, int size, Color color, HorizontalAlignment align = HorizontalAlignment.Center)
     {
         var l = new Label { Text = text, HorizontalAlignment = align };
+        if (ShortStack() != null) l.AddThemeFontOverride("font", ShortStack());
         l.AddThemeFontSizeOverride("font_size", size);
         l.AddThemeColorOverride("font_color", color);
         return l;

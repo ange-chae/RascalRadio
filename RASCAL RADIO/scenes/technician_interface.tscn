@@ -319,10 +319,10 @@ text = "Strikes"
 [node name="ManualBtn" type="Button" parent="." unique_id=1273922493]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 434.0
-offset_top = 485.0
-offset_right = 687.0
-offset_bottom = 577.0
+offset_left = 44.0
+offset_top = 236.0
+offset_right = 297.0
+offset_bottom = 328.0
 text = "Open Manual "
 
 [node name="Task" type="PanelContainer" parent="." unique_id=1523631857]

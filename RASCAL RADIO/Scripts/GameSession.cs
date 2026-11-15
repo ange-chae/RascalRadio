@@ -35,28 +35,28 @@ public partial class GameSession : Node
 
     // ---- State every peer can read (copied from the host) ----
     public string LevelId { get; private set; } = "";
-	public bool IsTutorial => LevelId == "tutorial";
-	public bool BlackoutSequenceActive { get; private set; }
-	private int[] _prompterColorKeyMap = Array.Empty<int>(); // color index -> WASD index
-	public int[] PrompterColorKeyMap => (int[])_prompterColorKeyMap.Clone();
-	public event Action<bool> BlackoutSequenceChanged;
-	public event Action PrompterColorMapChanged;
-	private static readonly string[] PrompterColorNames = { "RED", "GREEN", "BLUE", "YELLOW" };
-	private static readonly string[] PrompterColorHexes = { "#F44336", "#43A047", "#42A5F5", "#FDD835" };
-	private static readonly string[] PrompterKeyNames = { "W", "A", "S", "D" };
-	public static string PrompterColorName(int index) => PrompterColorNames[index];
-	public static string PrompterColorHex(int index) => PrompterColorHexes[index];
-	public static string PrompterKeyName(int index) => PrompterKeyNames[index];
-	public TutorialStep CurrentStep { get; private set; } = TutorialStep.MeetStudio;
-	public int QuotaMet { get; private set; }
-	public int QuotaTarget { get; private set; } = 3;
-	public string CallerName { get; private set; } = "";
+    public bool IsTutorial => LevelId == "tutorial";
+    public bool BlackoutSequenceActive { get; private set; }
+    private int[] _prompterColorKeyMap = Array.Empty<int>(); // color index -> WASD index
+    public int[] PrompterColorKeyMap => (int[])_prompterColorKeyMap.Clone();
+    public event Action<bool> BlackoutSequenceChanged;
+    public event Action PrompterColorMapChanged;
+    private static readonly string[] PrompterColorNames = { "RED", "GREEN", "BLUE", "YELLOW" };
+    private static readonly string[] PrompterColorHexes = { "#F44336", "#43A047", "#42A5F5", "#FDD835" };
+    private static readonly string[] PrompterKeyNames = { "W", "A", "S", "D" };
+    public static string PrompterColorName(int index) => PrompterColorNames[index];
+    public static string PrompterColorHex(int index) => PrompterColorHexes[index];
+    public static string PrompterKeyName(int index) => PrompterKeyNames[index];
+    public TutorialStep CurrentStep { get; private set; } = TutorialStep.MeetStudio;
+    public int QuotaMet { get; private set; }
+    public int QuotaTarget { get; private set; } = 3;
+    public string CallerName { get; private set; } = "";
     public Genre Topic { get; private set; } = Genre.Drama;
     public event Action TopicChanged;
     private static readonly Genre[] TutorialTopics = { Genre.Drama, Genre.Comedy, Genre.Music };
     public string CallerStory { get; private set; } = "";
-	public int CallerNumber { get; private set; }
-	public int CallerTotal { get; private set; }
+    public int CallerNumber { get; private set; }
+    public int CallerTotal { get; private set; }
     public int Strikes { get; private set; }
     public bool GameOver { get; private set; }
     public static int MaxStrikes => Instance?._broadcaster?.MaxStrikes ?? Instance?.CurrentLevel?.MaxStrikes ?? BroadcasterLogic.DefaultMaxStrikes;
@@ -72,11 +72,11 @@ public partial class GameSession : Node
     // Line Override problem. The Operator UI shows ONLY KeypadLine (+ the static fault).
     // The Technician UI shows ONLY the level and the rule. Neither can solve it alone.
     public int KeypadLine { get; private set; }
-	public int KeypadLevel { get; private set; }
-	public bool KeypadStatic { get; private set; }
-	public string RuleEvenSuffix { get; private set; } = "05";
-	public string RuleOddSuffix { get; private set; } = "99";
-	public bool HasKeypadProblem => KeypadLine > 0;
+    public int KeypadLevel { get; private set; }
+    public bool KeypadStatic { get; private set; }
+    public string RuleEvenSuffix { get; private set; } = "05";
+    public string RuleOddSuffix { get; private set; } = "99";
+    public bool HasKeypadProblem => KeypadLine > 0;
     public int AirtimeQuality { get; private set; } = 100;
     public event Action AirtimeChanged;
     public StudioPianoModule Piano { get; private set; }
@@ -103,19 +103,19 @@ public partial class GameSession : Node
 
     // Plain C# events. Subscribers MUST unsubscribe in _ExitTree.
     public event Action<TutorialStep> StepChanged;
-	public event Action<string, bool> Feedback;
-	public event Action CallerChanged;
-	public event Action QuotaChanged;
-	public event Action KeypadChanged;
+    public event Action<string, bool> Feedback;
+    public event Action CallerChanged;
+    public event Action QuotaChanged;
+    public event Action KeypadChanged;
 
-	// ---- Host-only objects ----
-	private TutorialLogic _tutorial;
-	private BroadcasterLogic _broadcaster;
-	private readonly List<Caller> _callers = new();
-	private int _callerIndex;
-	private Random _rng;
-	private CallerBank _callerBank;
-	private LineOverrideSession _override;
+    // ---- Host-only objects ----
+    private TutorialLogic _tutorial;
+    private BroadcasterLogic _broadcaster;
+    private readonly List<Caller> _callers = new();
+    private int _callerIndex;
+    private Random _rng;
+    private CallerBank _callerBank;
+    private LineOverrideSession _override;
     public string PendingLevelId { get; set; } = "";
     public LevelDefinition CurrentLevel { get; private set; }   // null during the tutorial
     public event Action LevelStarted;
@@ -253,7 +253,7 @@ public partial class GameSession : Node
 
     // Called on EVERY peer from PlayerList.StartGameRpc.
     public void BeginLevel(string levelId)
-	{
+    {
         LevelId = levelId;
         _prompterColorKeyMap = Array.Empty<int>();
         PrompterColorMapChanged?.Invoke();
@@ -306,10 +306,10 @@ public partial class GameSession : Node
         }
 
         int players = GetNode<NetworkManager>("/root/NetworkManager").Players.Count;
-		_tutorial = new TutorialLogic(players);
-		_tutorial.StepChanged += OnHostStepChanged;
+        _tutorial = new TutorialLogic(players);
+        _tutorial.StepChanged += OnHostStepChanged;
 
-		_broadcaster = new BroadcasterLogic { PenaltiesEnabled = false };
+        _broadcaster = new BroadcasterLogic { PenaltiesEnabled = false };
         // Every run picks a different topic.
         _rng = new Random();
         Genre topic = TutorialTopics[_rng.Next(TutorialTopics.Length)];
@@ -324,7 +324,7 @@ public partial class GameSession : Node
         // Tutorial keeps the manual's printed rule (05 / 99) and no static faults.
         // A real shift should use LineOverrideRule.NewRandom(_rng) and allowStatic: true.
         _override = new LineOverrideSession(_rng, LineOverrideRule.Default(), allowStatic: false);
-	}
+    }
 
     // Host only. Level coders fill this in: callers, quota, keypad for their level.
     private void SetupRealLevel(LevelDefinition def)
@@ -361,25 +361,25 @@ public partial class GameSession : Node
 
     // ---------- Requests (any peer -> host) ----------
     public void Report(TutorialAction action) => RpcId(1, MethodName.ReportRpc, (int)action);
-	public void Decide(bool accept) => RpcId(1, MethodName.DecideRpc, accept);
-	public void SubmitKeypad(string entry) => RpcId(1, MethodName.KeypadRpc, entry);
-	public void ReportBlackoutSequence(bool active) => RpcId(1, MethodName.ReportBlackoutSequenceRpc, active);
+    public void Decide(bool accept) => RpcId(1, MethodName.DecideRpc, accept);
+    public void SubmitKeypad(string entry) => RpcId(1, MethodName.KeypadRpc, entry);
+    public void ReportBlackoutSequence(bool active) => RpcId(1, MethodName.ReportBlackoutSequenceRpc, active);
 
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void ReportBlackoutSequenceRpc(bool active)
-	{
-		if (!Multiplayer.IsServer() || LevelId != "emergency_broadcast" || BlackoutSequenceActive == active) return;
-		Rpc(MethodName.SyncBlackoutSequenceRpc, active);
-	}
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReportBlackoutSequenceRpc(bool active)
+    {
+        if (!Multiplayer.IsServer() || LevelId != "emergency_broadcast" || BlackoutSequenceActive == active) return;
+        Rpc(MethodName.SyncBlackoutSequenceRpc, active);
+    }
 
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void ReportRpc(int action)
-	{
-		if (!Multiplayer.IsServer() || _tutorial == null) return;
-		Resolve((TutorialAction)action);
-	}
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReportRpc(int action)
+    {
+        if (!Multiplayer.IsServer() || _tutorial == null) return;
+        Resolve((TutorialAction)action);
+    }
 
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void DecideRpc(bool accept)
     {
         if (!Multiplayer.IsServer()) return;
@@ -418,8 +418,8 @@ public partial class GameSession : Node
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void KeypadRpc(string entry)
-	{
+    private void KeypadRpc(string entry)
+    {
         if (!Multiplayer.IsServer() || _override == null) return;
         if (_tutorial != null && _tutorial.Step != TutorialStep.KeypadModule) return;
 
@@ -430,19 +430,19 @@ public partial class GameSession : Node
                 else OnKeypadRouted();
                 break;
             case KeypadResult.StaticCleared:
-				Rpc(MethodName.SyncKeypadRpc, _override.Problem.Line, _override.Problem.Level,
-					_override.Rule.EvenSuffix, _override.Rule.OddSuffix, false);
-				Say(KeypadTag + "Static cleared. Now enter the override code.", true);
-				break;
-			case KeypadResult.StaticBlocked:
-				Say(KeypadTag + "⚡ Static on the line. Ask the Technician how to clear it.");
-				break;
+                Rpc(MethodName.SyncKeypadRpc, _override.Problem.Line, _override.Problem.Level,
+                    _override.Rule.EvenSuffix, _override.Rule.OddSuffix, false);
+                Say(KeypadTag + "Static cleared. Now enter the override code.", true);
+                break;
+            case KeypadResult.StaticBlocked:
+                Say(KeypadTag + "⚡ Static on the line. Ask the Technician how to clear it.");
+                break;
             default:
                 if (_tutorial != null) Say(KeypadTag + "Wrong code. Read the line number to the Technician and try again. No penalty.");
                 else ModuleStrike(TaskKind.Keypad, KeypadTag + "Wrong code. That's a strike.");
                 break;
         }
-	}
+    }
     private static void Fire(Action a)
     {
         if (a == null) return;
@@ -529,22 +529,23 @@ public partial class GameSession : Node
 
     // ---------- Host logic ----------
     private long SenderId()
-	{
-		long id = Multiplayer.GetRemoteSenderId();
-		return id == 0 ? 1 : id;   // 0 means "called locally on the host"
-	}
+    {
+        long id = Multiplayer.GetRemoteSenderId();
+        return id == 0 ? 1 : id;   // 0 means "called locally on the host"
+    }
 
-	private void Resolve(TutorialAction action)
-	{
-		bool advanced = _tutorial.Report(action, SenderId());
+    private void Resolve(TutorialAction action)
+    {
+        bool advanced = _tutorial.Report(action, SenderId());
         if (!advanced && action == TutorialAction.Acknowledged)
             Say($"✔ {_tutorial.AckCount}/{_tutorial.PlayersNeeded} ready. Waiting for the others...", true);
-	}
+    }
 
-	private void OnHostStepChanged(TutorialStep step)
-	{
-		if (step == TutorialStep.KeypadModule) SendKeypadProblem();   // data first, then the step
-		Rpc(MethodName.SyncStepRpc, (int)step);
+    private void OnHostStepChanged(TutorialStep step)
+    {
+        if (step == TutorialStep.KeypadModule) SendKeypadProblem();   // data first, then the step
+        else if (step == TutorialStep.PianoModule) StartTutorialPiano();   // configure first, then the step
+        Rpc(MethodName.SyncStepRpc, (int)step);
         if (step == TutorialStep.PracticeCaller) SendCaller(0);
         else if (step == TutorialStep.SuspiciousCaller) SendCaller(2);   // the raccoon is caller 3
     }
@@ -556,14 +557,14 @@ public partial class GameSession : Node
     }
 
     private void SendCaller(int index)
-	{
+    {
         _callerOnLine = true;
         _callerIndex = index;
-		Caller c = _callers[index];
-		Rpc(MethodName.SyncCallerRpc, c.Name, c.Story, index + 1, _callers.Count);
-	}
+        Caller c = _callers[index];
+        Rpc(MethodName.SyncCallerRpc, c.Name, c.Story, index + 1, _callers.Count);
+    }
 
-	private void Say(string text, bool success = false) => Rpc(MethodName.FeedbackRpc, text, success);
+    private void Say(string text, bool success = false) => Rpc(MethodName.FeedbackRpc, text, success);
 
     // ---------- Replies (host -> everyone, including the host itself) ----------
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -603,30 +604,30 @@ public partial class GameSession : Node
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void SyncCallerRpc(string name, string story, int number, int total)
-	{
+    private void SyncCallerRpc(string name, string story, int number, int total)
+    {
         GD.Print($"[GS peer {Multiplayer.GetUniqueId()}] caller='{name}' callerSubscribers={CallerChanged?.GetInvocationList().Length ?? 0}");
         CallerName = name; CallerStory = story; CallerNumber = number; CallerTotal = total;
-		Fire(CallerChanged);
-	}
+        Fire(CallerChanged);
+    }
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void SyncKeypadRpc(int line, int level, string evenSuffix, string oddSuffix, bool staticFault)
-	{
-		KeypadLine = line; KeypadLevel = level; KeypadStatic = staticFault;
-		RuleEvenSuffix = evenSuffix; RuleOddSuffix = oddSuffix;
-		Fire(KeypadChanged);
-	}
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncKeypadRpc(int line, int level, string evenSuffix, string oddSuffix, bool staticFault)
+    {
+        KeypadLine = line; KeypadLevel = level; KeypadStatic = staticFault;
+        RuleEvenSuffix = evenSuffix; RuleOddSuffix = oddSuffix;
+        Fire(KeypadChanged);
+    }
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void SyncQuotaRpc(int met, int target)
-	{
-		QuotaMet = met; QuotaTarget = target;
-		Fire(QuotaChanged);
-	}
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncQuotaRpc(int met, int target)
+    {
+        QuotaMet = met; QuotaTarget = target;
+        Fire(QuotaChanged);
+    }
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void FeedbackRpc(string text, bool success) => Feedback?.Invoke(text, success);
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void FeedbackRpc(string text, bool success) => Feedback?.Invoke(text, success);
 
     public void ReportAirtime(int delta) => RpcId(1, MethodName.ReportAirtimeRpc, delta);
 
@@ -687,6 +688,16 @@ public partial class GameSession : Node
         // useOctave = false: the chain is now Broadcaster color -> Technician key -> Operator press
         Rpc(MethodName.PianoConfigureRpc, name, false, timeLimit, showNotes, order, PianoColorCode.NewMap(_rng));
     }
+    // Tutorial only: one fixed jingle (Morning Jingle: C E G), no fault, no timer.
+    // The Operator sees only the name, the Broadcaster reads the colors, the Technician maps color -> key.
+    private void StartTutorialPiano()
+    {
+        if (!Multiplayer.IsServer()) return;
+        _rng ??= new Random();
+        int[] order = { 0, 1, 2 };
+        Rpc(MethodName.PianoConfigureRpc, "Morning Jingle", false, 0f, false, order, PianoColorCode.NewMap(_rng));
+    }
+
     // Call this from your sabotage logic when you want "keys flash red".
     public void TriggerPianoFault()
     {
@@ -696,6 +707,15 @@ public partial class GameSession : Node
 
     private void OnPianoCompleted()
     {
+        // Tutorial: the jingle being played finishes the step (no level, no strikes)
+        if (Multiplayer.IsServer() && _tutorial != null)
+        {
+            if (_tutorial.Step != TutorialStep.PianoModule) return;
+            Piano.SetActive(false);
+            Say("🎹 Jingle played!", true);
+            Resolve(TutorialAction.PianoPlayed);
+            return;
+        }
         if (!Multiplayer.IsServer() || CurrentLevel == null || Ended) return;
 
         var t = TaskOf(TaskKind.Piano);
@@ -719,20 +739,20 @@ public partial class GameSession : Node
 
     private void SetTopic(Genre genre) => Rpc(MethodName.SyncTopicRpc, (int)genre);
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void SyncPrompterColorMapRpc(int[] colorToKey)
-	{
-		_prompterColorKeyMap = colorToKey == null ? Array.Empty<int>() : (int[])colorToKey.Clone();
-		PrompterColorMapChanged?.Invoke();
-	}
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncPrompterColorMapRpc(int[] colorToKey)
+    {
+        _prompterColorKeyMap = colorToKey == null ? Array.Empty<int>() : (int[])colorToKey.Clone();
+        PrompterColorMapChanged?.Invoke();
+    }
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void SyncBlackoutSequenceRpc(bool active)
-	{
-		if (BlackoutSequenceActive == active) return;
-		BlackoutSequenceActive = active;
-		BlackoutSequenceChanged?.Invoke(active);
-	}
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncBlackoutSequenceRpc(bool active)
+    {
+        if (BlackoutSequenceActive == active) return;
+        BlackoutSequenceActive = active;
+        BlackoutSequenceChanged?.Invoke(active);
+    }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void SyncTopicRpc(int genre)

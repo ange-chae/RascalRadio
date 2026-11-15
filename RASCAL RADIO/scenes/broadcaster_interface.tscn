@@ -166,9 +166,9 @@ LobbyScenePath = null
 unique_name_in_owner = true
 layout_mode = 1
 offset_left = 3.0
-offset_top = 4.0
-offset_right = 1147.0
-offset_bottom = 642.0
+offset_top = -1.0
+offset_right = 1153.0
+offset_bottom = 650.0
 texture = ExtResource("2_at03s")
 expand_mode = 1
 
@@ -230,7 +230,7 @@ offset_bottom = 529.0
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 3.0
-offset_top = 223.0
+offset_top = 228.0
 offset_right = 222.0
 offset_bottom = 574.0
 size_flags_horizontal = 3
@@ -326,16 +326,6 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_m36wf")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_1f8g2")
 theme_override_styles/hover = SubResource("StyleBoxFlat_dna3g")
 text = "REJECT"
-
-[node name="Polygon2D" type="Polygon2D" parent="Caller" unique_id=2108267939]
-position = Vector2(4, 8)
-color = Color(1, 0.81960785, 0.42352942, 1)
-polygon = PackedVector2Array(210, -22, 249, -107, 295, -87)
-
-[node name="Polygon2D2" type="Polygon2D" parent="Caller/Polygon2D" unique_id=1841071151]
-position = Vector2(45, 10)
-color = Color(1, 0.81960785, 0.42352942, 1)
-polygon = PackedVector2Array(186, -30, 264, -76, 278, -29)
 
 [node name="TimePanel" type="PanelContainer" parent="." unique_id=1990197674]
 layout_mode = 0

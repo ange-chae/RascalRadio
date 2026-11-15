@@ -202,6 +202,7 @@ public partial class OperatorInterface : Control
             items.Add(("Meet the studio", s > TutorialStep.MeetStudio));
             items.Add(($"Handle all {gs.CallerTotal} callers: accept 2, reject the suspicious one", s > TutorialStep.SuspiciousCaller));
             items.Add(("Fix the keypad", s > TutorialStep.KeypadModule || (_modules.Count > 0 && _modules[0].Solved)));
+            items.Add(("Play the jingle with the Technician and Broadcaster", s > TutorialStep.PianoModule));
         }
         else
         {
@@ -227,16 +228,16 @@ public partial class OperatorInterface : Control
     }
 
     public void SetCaller(string name, int number, int total, string quote)
-	{
-		GetNode<Label>("%NameLabel").Text = name;
-		GetNode<Label>("%CallerNumLabel").Text = $"Caller {number} of {total}";
-		GetNode<Label>("%QuoteLabel").Text = quote;
-	}
+    {
+        GetNode<Label>("%NameLabel").Text = name;
+        GetNode<Label>("%CallerNumLabel").Text = $"Caller {number} of {total}";
+        GetNode<Label>("%QuoteLabel").Text = quote;
+    }
 
-	public void SetVerdict(bool accept)
-	{
-		GetNode<Label>("%VerdictLabel").Text = accept ? "ACCEPT" : "REJECT";
-	}
+    public void SetVerdict(bool accept)
+    {
+        GetNode<Label>("%VerdictLabel").Text = accept ? "ACCEPT" : "REJECT";
+    }
     private void OnCaller()
     {
         GD.Print("[Operator] OnCaller '" + GameSession.Instance.CallerName + "'");
@@ -301,7 +302,7 @@ public partial class OperatorInterface : Control
             });
         }
 
-        if (!gs.IsTutorial && gs.CurrentLevel?.HasPiano == true)
+        if (gs.IsTutorial || gs.CurrentLevel?.HasPiano == true)
         {
             _modules.Add(new ModuleSlot
             {
@@ -356,10 +357,11 @@ public partial class OperatorInterface : Control
             foreach (var c in btn.GetSignalConnectionList(Button.SignalName.Pressed))
                 btn.Disconnect(Button.SignalName.Pressed, (Callable)c["callable"]);
 
+            btn.Icon = null;   // reset before the slot is (re)filled
             if (i < _modules.Count)
             {
                 var module = _modules[i];
-                btn.Text = module.Title;
+                ApplyIcon(btn, module.Title);
                 btn.Disabled = false;
                 btn.Pressed += () => OpenModule(module);
             }
@@ -370,7 +372,7 @@ public partial class OperatorInterface : Control
             }
         }
 
-      
+
         OnTasksChanged();
     }
 
@@ -425,10 +427,14 @@ public partial class OperatorInterface : Control
             if (btn == null) continue;
             var m = _modules[i];
 
-            bool live = gs.IsTutorial || gs.IsModuleLive(KindOf(m.Title));
+            bool live = gs.IsTutorial ? TutorialLive(m.Title, gs.CurrentStep) : gs.IsModuleLive(KindOf(m.Title));
             bool flipped = !m.Solved && live && gs.FlippedModule == m.Title;
 
-            btn.Text = m.Solved ? $"{m.Title} " : !live ? m.Title : flipped ? $"{m.Title} !!" : $"{m.Title} !";
+            if (btn.Icon == null)   // no picture found: fall back to the old words
+                btn.Text = m.Solved ? $"{m.Title} " : !live ? m.Title : flipped ? $"{m.Title} !!" : $"{m.Title} !";
+            else
+                SetBadge(btn, m.Solved ? "✔" : !live ? "" : flipped ? "!!" : "!",
+                         m.Solved ? new Color("7DE08F") : flipped ? new Color("FF7B7B") : new Color("FFD25A"));
             btn.Modulate = m.Solved ? new Color(0.7f, 1f, 0.7f)
                          : !live ? new Color(1, 1, 1, 0.45f)
                          : flipped ? new Color(1f, 0.7f, 0.7f) : Colors.White;
@@ -436,14 +442,88 @@ public partial class OperatorInterface : Control
         }
     }
 
+    // ===== module pictures on the studio desk =====
+    // Slot title -> picture. Change a path here if you rename or move a file.
+    private static readonly System.Collections.Generic.Dictionary<string, string> SlotIcons = new()
+    {
+        ["Keypad"] = "res://assets/images/MATH_KEYPAD.png",
+        ["Piano"] = "res://assets/images/PIANO.png",
+        ["Memory"] = "res://assets/images/SIMON_SAYS.png",
+        ["Soundboard"] = "res://assets/images/SOUNDBOARD.png",
+    };
+
+    private static Texture2D LoadSlotIcon(string title)
+    {
+        if (!SlotIcons.TryGetValue(title, out var path)) return null;
+        if (!ResourceLoader.Exists(path)) { GD.PushWarning($"Operator: module picture not found: {path}"); return null; }
+        return GD.Load<Texture2D>(path);
+    }
+
+    // Picture instead of words. If the picture is missing, the button keeps its word.
+    private static void ApplyIcon(Button btn, string title)
+    {
+        btn.TooltipText = title;   // hover shows the name
+        var tex = LoadSlotIcon(title);
+        if (tex == null) { btn.Icon = null; btn.Text = title; return; }
+        btn.Icon = tex;
+        btn.ExpandIcon = true;
+        btn.IconAlignment = HorizontalAlignment.Center;
+        btn.VerticalIconAlignment = VerticalAlignment.Center;
+        btn.Text = "";
+    }
+
+    // Small mark in the corner of a picture button: ! = needs attention, !! = flipped, check = solved.
+    // (A mark, not just a color, so the state is never shown by color alone.)
+    private static void SetBadge(Button btn, string mark, Color color)
+    {
+        var badge = btn.GetNodeOrNull<Label>("Badge");
+        if (badge == null)
+        {
+            badge = new Label { Name = "Badge", MouseFilter = Control.MouseFilterEnum.Ignore };
+            badge.AddThemeFontSizeOverride("font_size", 26);
+            badge.AddThemeColorOverride("font_outline_color", new Color("2B1B2E"));
+            badge.AddThemeConstantOverride("outline_size", 6);
+            btn.AddChild(badge);
+            badge.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+            badge.GrowHorizontal = Control.GrowDirection.Begin;
+            badge.OffsetRight = -8;
+            badge.OffsetTop = 2;
+        }
+        badge.Text = mark;
+        badge.Visible = mark != "";
+        badge.AddThemeColorOverride("font_color", color);
+    }
+
+    // Tutorial: the piano only goes live at its own step
+    private static bool TutorialLive(string title, TutorialStep s) => title switch
+    {
+        "Piano" => s >= TutorialStep.PianoModule,
+        _ => true,
+    };
+
     private void OnStep(TutorialStep step)
     {
         GD.Print("[Operator] OnStep " + step);
         // Tutorial: keypad button only becomes usable at the keypad step
+        UpdateSlotButtons();   // refresh looks first, then apply the tutorial gating below
         var btn = GetNodeOrNull<Button>("%Slot1Btn");
-        if (btn != null) btn.Disabled = step < TutorialStep.KeypadModule;
+        if (btn != null) btn.Disabled = step < TutorialStep.KeypadModule || (_modules.Count > 0 && _modules[0].Solved);
 
         if (step > TutorialStep.KeypadModule) _keypad?.SetSolved();
+
+        // Piano: only usable at its step; once the jingle is played it is solved and closes
+        var pianoSlot = FindSlot("Piano");
+        if (pianoSlot != null)
+        {
+            if (step > TutorialStep.PianoModule)
+            {
+                pianoSlot.Solved = true;
+                if (_openSlot == pianoSlot) CloseModule();
+            }
+            UpdateSlotButtons();
+            var pianoBtn = GetNodeOrNull<Button>("%Slot2Btn");
+            if (pianoBtn != null) pianoBtn.Disabled = step < TutorialStep.PianoModule || pianoSlot.Solved;
+        }
         RefreshTasks();
     }
 
@@ -493,8 +573,8 @@ public partial class OperatorInterface : Control
     };
 
     private void SetText(string path, string text)
-	{
-		var l = GetNodeOrNull<Label>(path);
-		if (l != null) l.Text = text;
-	}
+    {
+        var l = GetNodeOrNull<Label>(path);
+        if (l != null) l.Text = text;
+    }
 }

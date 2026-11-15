@@ -173,14 +173,27 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_qarm5")
 
 [node name="Label" type="Label" parent="casettePanel" unique_id=859040504]
 layout_mode = 0
-offset_left = 127.0
-offset_top = 287.0
-offset_right = 229.0
-offset_bottom = 312.0
+offset_left = 134.0
+offset_top = 292.0
+offset_right = 236.0
+offset_bottom = 317.0
 theme_override_colors/font_color = Color(0.13908914, 0.17889464, 0.20873994, 1)
 theme_override_fonts/font = ExtResource("3_w676s")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 text = "Room Code"
+
+[node name="Label2" type="Label" parent="casettePanel" unique_id=1905528763]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 231.0
+offset_right = 313.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.13725491, 0.18039216, 0.20784314, 0.8156863)
+theme_override_fonts/font = ExtResource("3_w676s")
+theme_override_font_sizes/font_size = 16
+text = "* Pick levels using the casette tape (for hosts only)"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="txtRoomCode" type="LineEdit" parent="casettePanel" unique_id=1500426469]
 layout_mode = 0
@@ -231,37 +244,6 @@ theme_override_styles/hover = ExtResource("6_80ye2")
 theme_override_styles/disabled = ExtResource("6_80ye2")
 text = "Start Game"
 
-[node name="levelBtn" type="BoxContainer" parent="casettePanel" unique_id=1240605746]
-layout_mode = 0
-offset_left = 50.0
-offset_top = 234.0
-offset_right = 300.0
-offset_bottom = 268.0
-theme_override_constants/separation = 10
-alignment = 2
-
-[node name="btnPrev" type="Button" parent="casettePanel/levelBtn" unique_id=1903295969]
-custom_minimum_size = Vector2(120, 0)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_lqo1b")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_0gjkf")
-theme_override_styles/hover = SubResource("StyleBoxFlat_o2i1r")
-text = "Prev"
-
-[node name="btnNext" type="Button" parent="casettePanel/levelBtn" unique_id=549216995]
-custom_minimum_size = Vector2(120, 0)
-custom_maximum_size = Vector2(300, -1)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_wl1yt")
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_sggwb")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_m36wf")
-theme_override_styles/hover = SubResource("StyleBoxFlat_1f8g2")
-theme_override_styles/disabled = ExtResource("6_80ye2")
-text = "Next"
-
 [node name="Line2D" type="Line2D" parent="casettePanel" unique_id=1489136782]
 position = Vector2(11.939535, 9.323168)
 scale = Vector2(0.9394811, 0.92239696)
@@ -276,6 +258,43 @@ offset_left = 24.0
 offset_top = 30.0
 offset_right = 324.0
 offset_bottom = 218.0
+
+[node name="levelBtn" type="BoxContainer" parent="casettePanel" unique_id=1240605746]
+layout_mode = 0
+offset_left = -45.0
+offset_top = 106.0
+offset_right = 375.0
+offset_bottom = 156.0
+theme_override_constants/separation = 10
+alignment = 2
+
+[node name="btnPrev" type="Button" parent="casettePanel/levelBtn" unique_id=1903295969]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_lqo1b")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_0gjkf")
+theme_override_styles/hover = SubResource("StyleBoxFlat_o2i1r")
+text = "<"
+
+[node name="HSeparator" type="HSeparator" parent="casettePanel/levelBtn" unique_id=1774444261]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="btnNext" type="Button" parent="casettePanel/levelBtn" unique_id=549216995]
+custom_minimum_size = Vector2(60, 0)
+custom_maximum_size = Vector2(300, -1)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_wl1yt")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_sggwb")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_m36wf")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1f8g2")
+theme_override_styles/disabled = ExtResource("6_80ye2")
+text = ">
+"
 
 [node name="FolderShape" type="Polygon2D" parent="." unique_id=346384612]
 position = Vector2(-1.1399612, 0)
