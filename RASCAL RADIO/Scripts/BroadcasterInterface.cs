@@ -175,6 +175,7 @@ public partial class BroadcasterInterface : Control
         GameSession.Instance?.ApplyBackground(GetNodeOrNull<TextureRect>("%Background"), "broadcaster");
         SetupInterruptions();
         SetupCueDesk();
+        GameSession.Instance?.ApplyUiTint(this);
 
         var bg = GetNodeOrNull<TextureRect>("%Background");
         GD.Print($"[BG] node={bg != null} tex={bg?.Texture?.ResourcePath} size={bg?.Size} visible={bg?.IsVisibleInTree()}");

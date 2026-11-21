@@ -143,6 +143,7 @@ public partial class TechnicianInterface : PopupFrame
         SetupBlackoutSystem();
 
         GameSession.Instance?.ApplyBackground(GetNodeOrNull<TextureRect>("%Background"), "technician");
+        GameSession.Instance?.ApplyUiTint(this);
         var timeLabel = FindChild("TimeLabel", true, false) as Label;
         if (timeLabel != null)
         {

@@ -43,7 +43,8 @@ public partial class NetworkManager : Node
 		Multiplayer.ConnectionFailed += OnConnectionFailed;
 		Multiplayer.ServerDisconnected += OnServerDisconnected;
 		Multiplayer.PeerDisconnected += OnPeerDisconnected;
-	}
+        Multiplayer.ConnectedToServer += SendRegistrationOnConnected;
+    }
 
 	public override void _Process(double delta)
 	{
@@ -144,83 +145,109 @@ public partial class NetworkManager : Node
 		Multiplayer.MultiplayerPeer = peer;
 		GD.Print($"Connecting to room at {hostIP}:{port}...");
 
-		Multiplayer.ConnectedToServer += SendRegistrationOnConnected;
-
 		return Error.Ok;
 	}
 	private void SendRegistrationOnConnected()
 	{
-		Multiplayer.ConnectedToServer -= SendRegistrationOnConnected;
 		RpcId(1, MethodName.RegisterPlayer, LocalPlayerName);
 	}
 
-	public async void SearchForRoom(string code)
-	{
-		code = code.Trim().ToUpperInvariant();
+    public async void SearchForRoom(string code)
+    {
+        code = code.Trim().ToUpperInvariant();
 
-		if (code.Length != 6)
-		{
-			RoomSearchFailed?.Invoke("Enter a valid 6-character room code.");
-			return;
-		}
+        if (code.Length != 6)
+        {
+            RoomSearchFailed?.Invoke("Enter a valid 6-character room code.");
+            return;
+        }
 
-		var searcher = new PacketPeerUdp();
-		Error bindError = searcher.Bind(0, "*");
+        var searcher = new PacketPeerUdp();
+        Error bindError = searcher.Bind(0, "*");
 
-		if (bindError != Error.Ok)
-		{
-			searcher.Close();
-			RoomSearchFailed?.Invoke("Could not start room search.");
-			return;
-		}
+        if (bindError != Error.Ok)
+        {
+            searcher.Close();
+            RoomSearchFailed?.Invoke("Could not start room search.");
+            return;
+        }
 
-		searcher.SetBroadcastEnabled(true);
-		string request = "FIND|" + code;
-		byte[] packet = Encoding.UTF8.GetBytes(request);
+        searcher.SetBroadcastEnabled(true);
+        byte[] packet = Encoding.UTF8.GetBytes("FIND|" + code);
+        var targets = GetBroadcastTargets();
 
-		searcher.SetDestAddress("127.0.0.1", DiscoveryPort);
-		searcher.PutPacket(packet);
-		searcher.SetDestAddress("255.255.255.255", DiscoveryPort);
-		searcher.PutPacket(packet);
+        double elapsed = 0.0;
+        double nextSend = 0.0;
+        while (elapsed < 5.0)
+        {
+            // Resend every second to every target
+            if (elapsed >= nextSend)
+            {
+                foreach (string target in targets)
+                {
+                    searcher.SetDestAddress(target, DiscoveryPort);
+                    searcher.PutPacket(packet);
+                }
+                nextSend += 1.0;
+            }
 
-		double elapsed = 0.0;
-		while (elapsed < 5.0)
-		{
-			while (searcher.GetAvailablePacketCount() > 0)
-			{
-				string response = Encoding.UTF8.GetString(searcher.GetPacket());
-				string hostIP = searcher.GetPacketIP();
-				string[] parts = response.Split('|');
+            while (searcher.GetAvailablePacketCount() > 0)
+            {
+                string response = Encoding.UTF8.GetString(searcher.GetPacket());
+                string hostIP = searcher.GetPacketIP();
+                string[] parts = response.Split('|');
 
-				if (parts.Length >= 7 &&
-					parts[0] == "ROOM" &&
-					parts[1] == code &&
-					int.TryParse(parts[2], out int roomPort) &&
-					int.TryParse(parts[5], out int playerCount) &&
-					int.TryParse(parts[6], out int maxPlayers))
-				{
-					try
-					{
-						string foundRoomName = Encoding.UTF8.GetString(Convert.FromBase64String(parts[3]));
-						string foundHostName = Encoding.UTF8.GetString(Convert.FromBase64String(parts[4]));
+                if (parts.Length >= 7 &&
+                    parts[0] == "ROOM" &&
+                    parts[1] == code &&
+                    int.TryParse(parts[2], out int roomPort) &&
+                    int.TryParse(parts[5], out int playerCount) &&
+                    int.TryParse(parts[6], out int maxPlayers))
+                {
+                    try
+                    {
+                        string foundRoomName = Encoding.UTF8.GetString(Convert.FromBase64String(parts[3]));
+                        string foundHostName = Encoding.UTF8.GetString(Convert.FromBase64String(parts[4]));
 
-						searcher.Close();
-						RoomFound?.Invoke(foundRoomName, foundHostName, hostIP, roomPort, playerCount, maxPlayers);
-						return;
-					}
-					catch (FormatException) { }
-				}
-			}
+                        searcher.Close();
+                        RoomFound?.Invoke(foundRoomName, foundHostName, hostIP, roomPort, playerCount, maxPlayers);
+                        return;
+                    }
+                    catch (FormatException) { }
+                }
+            }
 
-			await ToSignal(GetTree().CreateTimer(0.1), SceneTreeTimer.SignalName.Timeout);
-			elapsed += 0.1;
-		}
+            await ToSignal(GetTree().CreateTimer(0.1), SceneTreeTimer.SignalName.Timeout);
+            elapsed += 0.1;
+        }
 
-		searcher.Close();
-		RoomSearchFailed?.Invoke("Room not found. Check the code and try again.");
-	}
+        searcher.Close();
+        RoomSearchFailed?.Invoke("Room not found. Check the code and try again.");
+    }
 
-	private string GenerateRoomCode()
+    private List<string> GetBroadcastTargets()
+    {
+        var targets = new List<string> { "127.0.0.1", "255.255.255.255" };
+
+        foreach (var iface in IP.GetLocalInterfaces())
+        {
+            foreach (var addr in iface["addresses"].AsGodotArray())
+            {
+                string ip = addr.AsString();
+                string[] octets = ip.Split('.');
+
+                // IPv4 only, skip loopback and link-local
+                if (octets.Length == 4 && octets[0] != "127" && octets[0] != "169")
+                {
+                    targets.Add($"{octets[0]}.{octets[1]}.{octets[2]}.255");
+                }
+            }
+        }
+
+        return targets.Distinct().ToList();
+    }
+
+    private string GenerateRoomCode()
 	{
 		const string characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 		string code = "";
@@ -296,9 +323,9 @@ public partial class NetworkManager : Node
 
 		if (Multiplayer.IsServer())
 		{
-			// Reject client if room limit is reached
-			if (Players.Count >= MaxPlayers)
-			{
+            // Reject client if room limit is reached
+            if (!Players.ContainsKey(senderId) && Players.Count >= MaxPlayers)
+            {
 				GD.PrintErr($"Connection rejected for {newPlayerName}: Room is full.");
 				RpcId(senderId, MethodName.RejectJoin, "Can't connect: Room is full.");
 				return;

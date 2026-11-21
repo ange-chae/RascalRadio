@@ -89,6 +89,7 @@ public partial class OperatorInterface : Control
         Subscribe();
 
         GameSession.Instance?.ApplyBackground(GetNodeOrNull<TextureRect>("%Background"), "operator");
+        GameSession.Instance?.ApplyUiTint(this);
     }
 
     private void Subscribe()

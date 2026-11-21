@@ -463,6 +463,41 @@ public partial class GameSession : Node
         }
     }
 
+    public void ApplyUiTint(Node root)
+    {
+        if (root == null) return;
+
+        string phase = CurrentLevel?.BackgroundId;
+        if (string.IsNullOrEmpty(phase)) phase = IsTutorial ? "morning" : "";
+
+        Color tint = phase switch
+        {
+            "morning" => new Color(1f, 0.97f, 0.92f),
+            "afternoon" => new Color(1f, 0.99f, 0.96f),
+            "night" => new Color(0.90f, 0.93f, 1f),
+            _ => Colors.White
+        };
+
+        ApplyUiTintToChildren(root, tint);
+        root.ChildEnteredTree += child => ApplyUiTintToChildren(child, tint);
+    }
+
+    private static void ApplyUiTintToChildren(Node parent, Color tint)
+    {
+        foreach (Node child in parent.GetChildren())
+        {
+            if (child.Name.ToString() == "Background") continue;
+
+            if (child is CanvasItem item)
+            {
+                item.Modulate *= tint;
+                continue;
+            }
+
+            ApplyUiTintToChildren(child, tint);
+        }
+    }
+
     // Swaps a scene's background for this level's version.
     // No level (tutorial) or no matching file = the scene keeps the background it already has.
     public void ApplyBackground(TextureRect rect, string role)
