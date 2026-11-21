@@ -159,8 +159,6 @@ corner_radius_bottom_left = 8
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_img7a")
-SegmentTime = null
-LobbyScenePath = null
 
 [node name="Background" type="TextureRect" parent="." unique_id=796118169]
 unique_name_in_owner = true

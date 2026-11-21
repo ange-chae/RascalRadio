@@ -32,6 +32,8 @@ public partial class GameSession : Node
 
     // Keypad feedback lines start with this tag so the keypad can pick them out of the Feedback event.
     public const string KeypadTag = "🔢 ";
+    private const double Level3PianoRecalibrationCooldownSeconds = 90.0;
+    private const double Level3PianoRecalibrationChance = 0.20;
 
     // ---- State every peer can read (copied from the host) ----
     public string LevelId { get; private set; } = "";
@@ -124,6 +126,7 @@ public partial class GameSession : Node
 
     private const ulong ModuleStrikeCooldownMs = 1200;   // wrong presses closer together than this give ONE strike. 0 = every wrong press is a strike.
     private ulong _lastModuleStrikeMs;
+    private ulong _lastLevel3PianoRecalibrationMs;
     public int StolenPos { get; private set; } = -1;   // 1-based position in the Broadcaster's line, -1 = none
     public string StolenKey { get; private set; } = "";
     public event Action StolenKeyChanged;
@@ -280,6 +283,7 @@ public partial class GameSession : Node
         Topic = Genre.Drama;
         _qualityLow = 0; _signalLow = 0;
         _lastModuleStrikeMs = 0;
+        _lastLevel3PianoRecalibrationMs = 0;
         _levelStartMs = Time.GetTicksMsec();
 
 
@@ -472,30 +476,36 @@ public partial class GameSession : Node
 
         Color tint = phase switch
         {
-            "morning" => new Color(1f, 0.97f, 0.92f),
-            "afternoon" => new Color(1f, 0.99f, 0.96f),
-            "night" => new Color(0.90f, 0.93f, 1f),
+            "morning" => new Color(1f, 0.84f, 0.66f),
+            "afternoon" => new Color(1f, 0.90f, 0.72f),
+            "night" => new Color(0.68f, 0.78f, 1f),
             _ => Colors.White
         };
 
         ApplyUiTintToChildren(root, tint);
-        root.ChildEnteredTree += child => ApplyUiTintToChildren(child, tint);
     }
 
     private static void ApplyUiTintToChildren(Node parent, Color tint)
     {
+        parent.ChildEnteredTree += child => ApplyUiTintToNode(child, tint);
+
         foreach (Node child in parent.GetChildren())
         {
-            if (child.Name.ToString() == "Background") continue;
-
-            if (child is CanvasItem item)
-            {
-                item.Modulate *= tint;
-                continue;
-            }
-
-            ApplyUiTintToChildren(child, tint);
+            ApplyUiTintToNode(child, tint);
         }
+    }
+
+    private static void ApplyUiTintToNode(Node node, Color tint)
+    {
+        if (node.Name.ToString() == "Background") return;
+
+        if (node is CanvasItem item)
+        {
+            item.Modulate *= tint;
+            return;
+        }
+
+        ApplyUiTintToChildren(node, tint);
     }
 
     // Swaps a scene's background for this level's version.
@@ -828,21 +838,18 @@ public partial class GameSession : Node
     {
         if (!Multiplayer.IsServer()) return;
         _rng ??= new Random();
-        var seqs = SoundboardData.GetSequences();
-        var list = new List<string>(seqs.Keys);
-        string name = list[_rng.Next(list.Count)];
-        Rpc(MethodName.SoundboardConfigureRpc, name, timeLimit, showSequence);
+        string[] sequence = SoundboardData.RandomSequence(_rng);
+        string[] padSoundMap = SoundboardData.RandomSoundMap(_rng);
+        string[] pressMap = SoundboardData.RandomPressMap(_rng);
+        Rpc(MethodName.SoundboardConfigureRpc, sequence, padSoundMap, pressMap, timeLimit, showSequence);
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void SoundboardConfigureRpc(string sequenceName, float timeLimit, bool showSequence)
+    private void SoundboardConfigureRpc(string[] sequence, string[] padSoundMap, string[] pressMap, float timeLimit, bool showSequence)
     {
-        if (SoundboardData.GetSequences().TryGetValue(sequenceName, out var seq))
-        {
-            Soundboard.Configure(seq, timeLimit, showSequence);
-            Soundboard.SetActive(true);
-            Soundboard.Start();
-        }
+        Soundboard.Configure(sequence, padSoundMap, pressMap, timeLimit, showSequence);
+        Soundboard.SetActive(true);
+        Soundboard.Start();
     }
 
     public void SoundboardPad(string padId)
@@ -950,8 +957,21 @@ public partial class GameSession : Node
         bool pianoLive = CurrentLevel?.HasPiano == true && !IsDone(TaskKind.Piano) && IsModuleLive(TaskKind.Piano);
         bool keypadLive = _override?.Problem != null && !IsDone(TaskKind.Keypad) && IsModuleLive(TaskKind.Keypad);
 
-        if (pianoLive && Piano.Active && !Piano.InFault && Piano.Status == StudioPianoModule.PianoStatus.Working)
-            options.Add(() => { Say("🦝 The raccoon is chewing the piano wires! Keys flashing red."); TriggerPianoFault(); });
+        bool level3PianoCooldownReady = _lastLevel3PianoRecalibrationMs == 0
+            || Time.GetTicksMsec() - _lastLevel3PianoRecalibrationMs >= Level3PianoRecalibrationCooldownSeconds * 1000;
+        bool pianoCanFault = pianoLive && Piano.Active && !Piano.InFault
+            && Piano.Status == StudioPianoModule.PianoStatus.Working;
+        if (pianoCanFault && (LevelId != "emergency_broadcast"
+            || (level3PianoCooldownReady && _rng.NextDouble() < Level3PianoRecalibrationChance)))
+        {
+            options.Add(() =>
+            {
+                if (LevelId == "emergency_broadcast")
+                    _lastLevel3PianoRecalibrationMs = Time.GetTicksMsec();
+                Say("🦝 The raccoon is chewing the piano wires! Keys flashing red.");
+                TriggerPianoFault();
+            });
+        }
 
         if (keypadLive && !_override.Problem.StaticFault)
             options.Add(() =>
@@ -988,6 +1008,35 @@ public partial class GameSession : Node
         Piano.SetActive(false);
         _endScreen = new GameOverScreen();
         GetTree().Root.AddChild(_endScreen);
+    }
+
+    public void RestartCurrentLevel()
+    {
+        if (string.IsNullOrEmpty(LevelId)) return;
+        if (!Multiplayer.HasMultiplayerPeer())
+        {
+            RestartCurrentLevelRpc(LevelId);
+            return;
+        }
+
+        RpcId(1, MethodName.RestartCurrentLevelRequestRpc);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void RestartCurrentLevelRequestRpc()
+    {
+        if (!Multiplayer.IsServer() || string.IsNullOrEmpty(LevelId)) return;
+        Rpc(MethodName.RestartCurrentLevelRpc, LevelId);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void RestartCurrentLevelRpc(string levelId)
+    {
+        if (string.IsNullOrEmpty(levelId)) return;
+        if (IsInstanceValid(_endScreen)) _endScreen.QueueFree();
+        _endScreen = null;
+        BeginLevel(levelId);
+        GetTree().ReloadCurrentScene();
     }
 
     // ---------- Back to the players list ----------

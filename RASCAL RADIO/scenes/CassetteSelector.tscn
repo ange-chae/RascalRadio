@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bycf8vty60lla"]
+[gd_scene format=3 uid="uid://brak7fe7kmgoa"]
 
 [ext_resource type="Script" uid="uid://c4iq22jg76hpk" path="res://Scripts/CassetteSelector.cs" id="1_lmpi3"]
 [ext_resource type="Texture2D" uid="uid://btb6x3rgcifww" path="res://assets/images/cassette_placeholder.svg" id="2_oxbgq"]

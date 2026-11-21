@@ -110,6 +110,7 @@ public partial class KeypadModule : VBoxContainer
                 CustomMinimumSize = new Vector2(KeySize, KeySize),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
                 SizeFlagsVertical = SizeFlags.ShrinkCenter,
+                FocusMode = FocusModeEnum.None,
             };
             b.AddThemeFontSizeOverride("font_size", k.Length > 1 ? 13 : 26);
             Color fill = k == "ROUTE" ? UiStyle.Yellow : k == "CLEAR" ? Orange : UiStyle.Cream;
@@ -272,6 +273,38 @@ public partial class KeypadModule : VBoxContainer
         }
 
         _entry.Text = _currentEntry == "" ? "_" : _currentEntry;
+    }
+
+    public override void _UnhandledKeyInput(InputEvent e)
+    {
+        if (_solved || !IsVisibleInTree() || e is not InputEventKey { Pressed: true, Echo: false } keyEvent)
+            return;
+
+        string key = keyEvent.Keycode switch
+        {
+            Key.Key0 or Key.Kp0 => "0",
+            Key.Key1 or Key.Kp1 => "1",
+            Key.Key2 or Key.Kp2 => "2",
+            Key.Key3 or Key.Kp3 => "3",
+            Key.Key4 or Key.Kp4 => "4",
+            Key.Key5 or Key.Kp5 => "5",
+            Key.Key6 or Key.Kp6 => "6",
+            Key.Key7 or Key.Kp7 => "7",
+            Key.Key8 or Key.Kp8 => "8",
+            Key.Key9 or Key.Kp9 => "9",
+            Key.Enter or Key.KpEnter => "ROUTE",
+            _ => null,
+        };
+        if (key == null) return;
+
+        Button button = _keys.Find(k => k.Text == key);
+        if (button == null || button.Disabled) return;
+
+        GetNodeOrNull<ClickSfx>("/root/ClickSfx")?.PlayClick();
+        button.Modulate = new Color(0.82f, 0.82f, 0.82f);
+        CreateTween().TweenProperty(button, "modulate", Colors.White, 0.12);
+        button.EmitSignal(BaseButton.SignalName.Pressed);
+        GetViewport().SetInputAsHandled();
     }
 
     private void OnFeedback(string text, bool success)

@@ -40,6 +40,16 @@ public partial class ClickSfx : Node
 		HandleClick(@event, GetViewport());
 	}
 
+	public void PlayClick()
+	{
+		if (Muted || _click == null || _voices.Count == 0) return;
+
+		var voice = _voices[_nextVoice];
+		_nextVoice = (_nextVoice + 1) % _voices.Count;
+		voice.Stream = _click;
+		voice.Play();
+	}
+
 	private void OnNodeAdded(Node node)
 	{
 		if (node is Window window && window != GetTree().Root)
@@ -65,10 +75,7 @@ public partial class ClickSfx : Node
 				return;
 			}
 
-			var voice = _voices[_nextVoice];
-			_nextVoice = (_nextVoice + 1) % _voices.Count;
-			voice.Stream = _click;
-			voice.Play();
+			PlayClick();
 		}
 	}
 }

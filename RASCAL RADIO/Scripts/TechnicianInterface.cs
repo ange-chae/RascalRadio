@@ -50,6 +50,8 @@ public partial class TechnicianInterface : PopupFrame
     private Label _toastLabel;
     private const double ScrambleSeconds = 18;
     private Button _manualBtn;
+    private InGameMenu _gameMenu;
+    private bool _menuOpen;
 
     private const int ModulePageIndex = 4;
 
@@ -107,7 +109,11 @@ public partial class TechnicianInterface : PopupFrame
     private static string SoundboardPage()
     {
         var sb = new System.Text.StringBuilder();
-        sb.Append("The Operator reads out each sound cue on their soundboard screen. Check the number of strikes on your computer, then tell them which pad to press.\n");
+        var module = GameSession.Instance?.Soundboard;
+        if (module == null || module.Sequence.Count == 0)
+            return "Waiting for the next Soundboard round. The pad labels and cue order change each round.";
+
+        sb.Append("The pad labels and cue order change each round. The Operator reads the cue on their screen. Check the number of strikes, then tell them which labeled pad to press.\n");
 
         string[] cues = SoundboardData.Pads;
         string[] headings = { "If there are no strikes:", "If there is one strike:", "If there are two or more strikes:" };
@@ -117,8 +123,8 @@ public partial class TechnicianInterface : PopupFrame
             sb.Append($"\n[b]{headings[row]}[/b]\n");
             for (int i = 0; i < cues.Length; i++)
             {
-                string cue = SoundboardUI.NameOf(cues[i]);
-                string press = SoundboardUI.NameOf(SoundboardData.PadToPress(cues[i], row));
+                string cue = module.SoundForPad(cues[i]);
+                string press = module.SoundForPad(module.PadToPress(cues[i], row));
 
                 string lead = i == 0 ? "If" : "Otherwise, if";
                 sb.Append($"{lead} the cue is [b]{cue}[/b], press [b]{press}[/b].\n");
@@ -139,6 +145,8 @@ public partial class TechnicianInterface : PopupFrame
         if (gs != null && gs.IsTutorial) AddChild(new TutorialOverlay { RoleName = "Technician" });
 
         base._Ready();
+        _gameMenu = new InGameMenu();
+        AddChild(_gameMenu);
         StyleBars();
         SetupBlackoutSystem();
 
@@ -203,6 +211,7 @@ public partial class TechnicianInterface : PopupFrame
         gs.FlipChanged += OnHealth;        // NEW
         gs.PrompterColorMapChanged += OnPrompterColorMapChanged;
         gs.PianoColorMapChanged += OnPianoColorMapChanged;
+        if (gs.Soundboard != null) gs.Soundboard.Configured += OnSoundboardConfigured;
         if (gs.Piano != null) gs.Piano.FaultChanged += OnPianoFault;
         OnHealth();
         OnStrikes();
@@ -325,6 +334,7 @@ public partial class TechnicianInterface : PopupFrame
         gs.TopicChanged -= RefreshTasks;   // NEW
         gs.FlipChanged -= OnHealth;        // NEW
         gs.PrompterColorMapChanged -= OnPrompterColorMapChanged;
+        if (gs.Soundboard != null) gs.Soundboard.Configured -= OnSoundboardConfigured;
         if (gs.Piano != null) gs.Piano.FaultChanged -= OnPianoFault;
         gs.StepChanged -= OnStep;
         gs.QuotaChanged -= OnQuota;
@@ -340,6 +350,11 @@ public partial class TechnicianInterface : PopupFrame
     private void OnPrompterColorMapChanged()
     {
         if (_page == 4) ShowPage(4);
+    }
+
+    private void OnSoundboardConfigured()
+    {
+        if (_page == 2) ShowPage(2);
     }
 
     private void OnStep(TutorialStep step)
@@ -755,7 +770,15 @@ public partial class TechnicianInterface : PopupFrame
     {
         if (!e.IsActionPressed("ui_cancel")) return;
         var popup = GetNodeOrNull<Control>("%Popup");
-        if (popup != null && popup.Visible) popup.Visible = false;
+        if (popup != null && popup.Visible)
+        {
+            popup.Visible = false;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        _menuOpen = !_menuOpen;
+        _gameMenu?.SetOpen(_menuOpen);
+        GetViewport().SetInputAsHandled();
     }
 
 

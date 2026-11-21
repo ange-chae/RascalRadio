@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://kfeyviypcu2f"]
+[gd_scene format=3 uid="uid://clb1pwneeronq"]
 
 [ext_resource type="Script" uid="uid://c7n0xldsu4vqn" path="res://Scripts/TechnicianInterface.cs" id="1_t02kc"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_8d4vc"]

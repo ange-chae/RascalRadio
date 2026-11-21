@@ -262,6 +262,8 @@ public partial class SoundboardUI : PanelContainer
     private void RefreshAll()
     {
         if (_module == null) return;
+        foreach (var entry in _padButtons)
+            entry.Value.Text = _module.SoundForPad(entry.Key);
         OnStatusChanged(_module.Status);
         OnProgressChanged(_module.Progress, _module.Sequence.Count);
         OnTimeChanged(_module.TimeLeft);
@@ -285,7 +287,7 @@ public partial class SoundboardUI : PanelContainer
                 && _module.Status != SoundboardModule.SoundboardStatus.Complete;
 
        
-            string text = (_module.ShowSequence || done || isNext) ? NameOf(_module.Sequence[i]) : "?";
+            string text = (_module.ShowSequence || done || isNext) ? _module.SoundForPad(_module.Sequence[i]) : "?";
             _cueRow.AddChild(MakeCue(text, done, isNext));
         }
     }
@@ -334,7 +336,7 @@ public partial class SoundboardUI : PanelContainer
             CreateTween().TweenProperty(button, "modulate", Colors.White, 0.4);
         }
 
-        _sound.Play(SoundboardData.SoundFor(padId));
+        _sound.Play(_module.SoundForPad(padId));
 
         // Wrong pad: flash the screen red
         if (!correct && IsInstanceValid(_lcd))

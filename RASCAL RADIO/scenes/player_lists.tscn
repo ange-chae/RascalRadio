@@ -10,7 +10,7 @@
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="6_80ye2"]
 [ext_resource type="StyleBox" uid="uid://d4bp4d1glgw57" path="res://assets/textures/readOnlyBox.tres" id="6_y8my7"]
 [ext_resource type="Texture2D" uid="uid://ddym0wphifxfa" path="res://assets/images/3.png" id="8_gnd4y"]
-[ext_resource type="PackedScene" uid="uid://bycf8vty60lla" path="res://scenes/CassetteSelector.tscn" id="8_lrnsx"]
+[ext_resource type="PackedScene" uid="uid://brak7fe7kmgoa" path="res://scenes/CassetteSelector.tscn" id="8_lrnsx"]
 [ext_resource type="FontFile" uid="uid://b8iit24dkehr2" path="res://assets/fonts/SpecialElite-Regular.ttf" id="9_gnd4y"]
 [ext_resource type="FontFile" uid="uid://cr26f1hy1iksj" path="res://assets/fonts/IBM_Plex_Mono/IBMPlexMono-Medium.ttf" id="10_xodqn"]
 [ext_resource type="Texture2D" uid="uid://do245gmdpspic" path="res://assets/images/PLAYERS ID.png" id="11_w676s"]
@@ -103,6 +103,9 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oxbgq"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sggwb"]
 bg_color = Color(0.31764707, 0.43137255, 0.38431373, 1)
@@ -263,7 +266,7 @@ offset_bottom = 218.0
 layout_mode = 0
 offset_left = -45.0
 offset_top = 106.0
-offset_right = 375.0
+offset_right = 384.0
 offset_bottom = 156.0
 theme_override_constants/separation = 10
 alignment = 2
@@ -279,9 +282,11 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_o2i1r")
 text = "<"
 
 [node name="HSeparator" type="HSeparator" parent="casettePanel/levelBtn" unique_id=1774444261]
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(280, 0)
+custom_maximum_size = Vector2(-1, 0)
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_oxbgq")
 
 [node name="btnNext" type="Button" parent="casettePanel/levelBtn" unique_id=549216995]
 custom_minimum_size = Vector2(60, 0)

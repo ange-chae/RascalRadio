@@ -15,6 +15,7 @@ public partial class BroadcasterInterface : Control
     // =====================================================================
     [Export] public double SegmentTime = 12.0;                          // seconds to finish one floating line (real shift only)
     [Export] public string LobbyScenePath = "res://scenes/lobby.tscn";  // CHANGE to your real lobby scene path
+    [Export] public float CueSheetScale = 0.63f;
 
     private const int AcceptGoal = 2;   // tutorial: callers to accept
     private const int MicGoal = 3;      // mic task goal (not shown in the task list yet)
@@ -27,6 +28,7 @@ public partial class BroadcasterInterface : Control
     private const double NormalColorPromptChance = 0.08;
     private const double PostBlackoutColorPromptChance = 0.75;
     private const ulong PostBlackoutBoostMs = 20000;
+    private static Font _cueSheetFont;
 
     // =====================================================================
     // NODES
@@ -48,6 +50,7 @@ public partial class BroadcasterInterface : Control
     private Label _topicLabel;
     private ProgressBar _listenerBar;
     private Control _airStatus, _pauseMenu;
+    private InGameMenu _gameMenu;
 
     private static Font _wordFont;
 
@@ -128,6 +131,8 @@ public partial class BroadcasterInterface : Control
         if (_tutorial) AddChild(new TutorialOverlay { RoleName = "Broadcaster", ShowDoneWhen = false });
 
         FindNodes();
+        _gameMenu = new InGameMenu();
+        AddChild(_gameMenu);
         WireButtons();
         AddChild(new GameMusic());
 
@@ -246,9 +251,7 @@ public partial class BroadcasterInterface : Control
     {
         BindButton("%AcceptBtn", () => OnDecision(true));
         BindButton("%RejectBtn", () => OnDecision(false));
-        BindButton("%MenuBtn", () => SetMenu(true));
-        BindButton("%ResumeBtn", () => SetMenu(false));
-        BindButton("%LobbyBtn", () => GameSession.Instance.ReturnToParty());
+        BindButton("%MenuBtn", () => _gameMenu?.SetOpen(true));
     }
 
     private void BindButton(string path, Action onPressed)
@@ -468,6 +471,9 @@ public partial class BroadcasterInterface : Control
             col.AddChild(_stageName);
             _stageHint = DeskLabel("", 12, new Color("F2D9B8"));
             col.AddChild(_stageHint);
+            _stagePanel.Scale = new Vector2(CueSheetScale, CueSheetScale);
+            _stagePanel.Resized += () => CallDeferred(nameof(PlaceStagePanel));
+            CallDeferred(nameof(PlaceStagePanel));
         }
     }
 
@@ -490,13 +496,15 @@ public partial class BroadcasterInterface : Control
     private void PlaceDeskPanel(Control p, bool rightSide)
     {
         var vp = GetViewportRect().Size;
-        p.GlobalPosition = new Vector2(rightSide ? vp.X - p.Size.X - 12f : 12f, 12f);
+        p.GlobalPosition = new Vector2(rightSide ? vp.X - p.Size.X - 12f : 148f, 12f);
     }
     private static Label DeskLabel(string text, int size, Color color)
     {
         var l = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
         l.AddThemeFontSizeOverride("font_size", size);
         l.AddThemeColorOverride("font_color", color);
+        _cueSheetFont ??= GD.Load<Font>("res://assets/fonts/ShortStack-Regular.ttf");
+        if (_cueSheetFont != null) l.AddThemeFontOverride("font", _cueSheetFont);
         return l;
     }
 
@@ -539,14 +547,13 @@ public partial class BroadcasterInterface : Control
     // =====================================================================
     private void SetMenu(bool open)
     {
-        if (_pauseMenu == null) return;   // no pause menu in the scene yet
         _menuOpen = open;
-        _pauseMenu.Visible = open;
+        _gameMenu?.SetOpen(open);
     }
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (_pauseMenu != null && e.IsActionPressed("ui_cancel"))
+        if (e.IsActionPressed("ui_cancel"))
             SetMenu(!_menuOpen);   // Esc opens/closes the pause menu
     }
 

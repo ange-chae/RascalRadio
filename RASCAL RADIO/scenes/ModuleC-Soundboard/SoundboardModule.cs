@@ -24,6 +24,14 @@ public partial class SoundboardModule : Node
 	public bool ShowSequence { get; private set; } = true;
 	public SoundboardStatus Status { get; private set; } = SoundboardStatus.Ready;
 	public List<string> Sequence { get; private set; } = new();
+	private string[] _padSoundMap = SoundboardData.DefaultSoundMap();
+	private string[] _pressMap = SoundboardData.DefaultPressMap();
+	public string SoundForPad(string padId)
+	{
+		int index = Array.IndexOf(SoundboardData.Pads, padId);
+		return index >= 0 && index < _padSoundMap.Length ? _padSoundMap[index] : SoundboardData.SoundFor(padId);
+	}
+	public string PadToPress(string cue, int strikes) => SoundboardData.PadToPress(cue, strikes, _pressMap);
 	public int Progress { get; private set; }
 	public float TimeLimit { get; private set; }
 	public float TimeLeft { get; private set; }
@@ -36,6 +44,9 @@ public partial class SoundboardModule : Node
 	private bool CanAcceptInput => Active && _running;
 
 	public void Configure(IEnumerable<string> sequence, float timeLimit = 0f, bool showSequence = true)
+		=> Configure(sequence, SoundboardData.DefaultSoundMap(), SoundboardData.DefaultPressMap(), timeLimit, showSequence);
+
+	public void Configure(IEnumerable<string> sequence, IEnumerable<string> padSoundMap, IEnumerable<string> pressMap, float timeLimit = 0f, bool showSequence = true)
 	{
 		Sequence = new List<string>();
 		foreach (string padId in sequence)
@@ -49,6 +60,12 @@ public partial class SoundboardModule : Node
 				GD.PushWarning($"[Soundboard] Unknown pad '{padId}' skipped.");
 			}
 		}
+		string[] sounds = padSoundMap == null ? Array.Empty<string>() : new List<string>(padSoundMap).ToArray();
+		string[] presses = pressMap == null ? Array.Empty<string>() : new List<string>(pressMap).ToArray();
+		_padSoundMap = sounds.Length == SoundboardData.Pads.Length && Array.TrueForAll(sounds, SoundboardData.IsSound)
+			? sounds : SoundboardData.DefaultSoundMap();
+		_pressMap = presses.Length == SoundboardData.Pads.Length * 3 && Array.TrueForAll(presses, SoundboardData.IsPad)
+			? presses : SoundboardData.DefaultPressMap();
 		TimeLimit = timeLimit;
 		ShowSequence = showSequence;
 		Reset();
@@ -106,7 +123,7 @@ public partial class SoundboardModule : Node
 		}
 
         int strikes = GameSession.Instance?.Strikes ?? Strikes;
-        string expected = SoundboardData.PadToPress(Sequence[Progress], strikes);
+		string expected = PadToPress(Sequence[Progress], strikes);
 
         if (padId == expected)
 		{

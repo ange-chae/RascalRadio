@@ -8,6 +8,7 @@ public partial class OperatorInterface : Control
     [Export] public string LobbyScenePath = "res://scenes/lobby.tscn";   // same path as the Broadcaster
     private KeypadModule _keypad;
     private Control _pauseMenu;
+    private InGameMenu _gameMenu;
     private RichTextLabel _taskLabel;
     private bool _menuOpen;
     private readonly System.Collections.Generic.List<ModuleSlot> _modules = new();
@@ -39,6 +40,8 @@ public partial class OperatorInterface : Control
 
         // module popup
         BuildUi();
+        _gameMenu = new InGameMenu();
+        AddChild(_gameMenu);
 
         _callerPanel = FindChild("CallerPanel", true, false) as Control;
         _phone = FindChild("Phone", true, false) as Control;
@@ -55,11 +58,7 @@ public partial class OperatorInterface : Control
         }
         _pauseMenu = GetNodeOrNull<Control>("%PauseMenu");
         var menuBtn = GetNodeOrNull<Button>("%MenuBtn");
-        var resumeBtn = GetNodeOrNull<Button>("%ResumeBtn");
-        var lobbyBtn = GetNodeOrNull<Button>("%LobbyBtn");
         if (menuBtn != null) menuBtn.Pressed += () => SetMenu(true);
-        if (resumeBtn != null) resumeBtn.Pressed += () => SetMenu(false);
-        if (lobbyBtn != null) lobbyBtn.Pressed += () => GameSession.Instance.ReturnToParty();
         if (_pauseMenu != null) _pauseMenu.Visible = false;
 
         var timeLabel = FindChild("TimeLabel", true, false) as Label;
@@ -177,9 +176,8 @@ public partial class OperatorInterface : Control
     // ===== menu =====
     private void SetMenu(bool open)
     {
-        if (_pauseMenu == null) return;
         _menuOpen = open;
-        _pauseMenu.Visible = open;
+        _gameMenu?.SetOpen(open);
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -187,6 +185,7 @@ public partial class OperatorInterface : Control
         if (!e.IsActionPressed("ui_cancel")) return;
         if (_popup != null && _popup.Visible) { CloseModule(); return; }   // Esc closes a module first
         SetMenu(!_menuOpen);
+        GetViewport().SetInputAsHandled();
     }
 
     // ===== tasks =====
