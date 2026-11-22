@@ -198,7 +198,6 @@ content_margin_right = 10.0
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_0gnke")
-LobbyScenePath = null
 
 [node name="Background" type="TextureRect" parent="." unique_id=901204624]
 unique_name_in_owner = true

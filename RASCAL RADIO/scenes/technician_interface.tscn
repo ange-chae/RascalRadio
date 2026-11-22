@@ -192,7 +192,6 @@ horizontal_alignment = 1
 
 [node name="MenuBtn" type="Button" parent="." unique_id=372048623]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 offset_left = 21.0
 offset_top = 13.0
@@ -252,9 +251,6 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/background = SubResource("StyleBoxFlat_kawat")
 show_percentage = false
 script = ExtResource("9_cl4jf")
-Segments = null
-DangerBelow = null
-WarnBelow = null
 
 [node name="SignalLabel" type="Label" parent="Computer/compScreen" unique_id=1034367335]
 unique_name_in_owner = true
@@ -285,9 +281,6 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/background = SubResource("StyleBoxFlat_kawat")
 show_percentage = false
 script = ExtResource("9_cl4jf")
-Segments = null
-DangerBelow = null
-WarnBelow = null
 
 [node name="StrikeCount" type="Label" parent="Computer/compScreen" unique_id=1903162605]
 unique_name_in_owner = true
@@ -320,9 +313,9 @@ text = "Strikes"
 [node name="ManualBtn" type="Button" parent="." unique_id=1273922493]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 440.0
-offset_top = 512.0
-offset_right = 693.0
+offset_left = 325.0
+offset_top = 555.0
+offset_right = 797.0
 offset_bottom = 604.0
 text = "Open Manual "
 
@@ -506,7 +499,8 @@ alignment = 0
 layout_mode = 2
 theme_override_colors/font_color = Color(0.30507714, 0.30507714, 0.30507714, 1)
 theme_override_fonts/font = ExtResource("10_3x1qp")
-text = "* Press ESC to put down the manual *"
+text = "* Q opens or closes the manual. 
+W and S switch modules. *"
 horizontal_alignment = 1
 
 [node name="Instruction" type="PanelContainer" parent="Popup/Margin/VBox/Column" unique_id=1932407167]

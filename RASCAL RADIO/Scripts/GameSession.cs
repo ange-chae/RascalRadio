@@ -147,8 +147,11 @@ public partial class GameSession : Node
     }
     private ulong _levelStartMs;
 
+    // Seconds of the shift actually played. Stays 0 while the title card covers the screen.
+    private double ShiftElapsed => Math.Max(0.0, ((long)Time.GetTicksMsec() - (long)_levelStartMs) / 1000.0);
+
     public bool ShiftTimeUp =>
-        CurrentLevel != null && (Time.GetTicksMsec() - _levelStartMs) / 1000.0 >= CurrentLevel.ShiftSeconds;
+        CurrentLevel != null && ShiftElapsed >= CurrentLevel.ShiftSeconds;
     private bool LevelHas(TaskKind k) => k switch
     {
         TaskKind.Keypad => CurrentLevel.HasKeypad,
@@ -228,7 +231,7 @@ public partial class GameSession : Node
         var d = CurrentLevel;
         if (d == null) return "8:00 AM";   // tutorial: fixed time
 
-        double t = Math.Clamp((Time.GetTicksMsec() - _levelStartMs) / 1000.0 / d.ShiftSeconds, 0.0, 1.0);
+        double t = Math.Clamp(ShiftElapsed / d.ShiftSeconds, 0.0, 1.0);
         int minutes = (int)(d.ClockStartMinute + t * (d.ClockEndMinute - d.ClockStartMinute));
         int h24 = (minutes / 60) % 24, m = minutes % 60;
         int h12 = h24 % 12 == 0 ? 12 : h24 % 12;
@@ -245,6 +248,8 @@ public partial class GameSession : Node
         Soundboard = new SoundboardModule();
         AddChild(Soundboard);
         Soundboard.Completed += OnSoundboardCompleted;
+
+        CallDeferred(MethodName.HookNetwork);
     }
 
     public override void _ExitTree()
@@ -254,10 +259,114 @@ public partial class GameSession : Node
         if (Soundboard != null) Soundboard.Completed -= OnSoundboardCompleted;
     }
 
+    // ---------- Pause (shared by everyone) ----------
+    // Anyone can pause or resume. The host tells every peer, and each peer pauses its own scene tree.
+    public bool IsPaused { get; private set; }
+    public string PausedBy { get; private set; } = "";
+    public event Action PauseChanged;
+    private ulong _pauseStartMs;
+
+    public void RequestPause(bool pause)
+    {
+        if (pause == IsPaused) return;
+        if (pause && (string.IsNullOrEmpty(LevelId) || Ended)) return;   // nothing to pause
+
+        if (!Multiplayer.HasMultiplayerPeer()) { ApplyPause(pause, "You"); return; }
+        RpcId(1, MethodName.PauseRequestRpc, pause);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void PauseRequestRpc(bool pause)
+    {
+        if (!Multiplayer.IsServer() || pause == IsPaused) return;
+        if (pause && (string.IsNullOrEmpty(LevelId) || Ended)) return;
+
+        string who = "A player";
+        var net = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+        if (net != null && net.Players.TryGetValue(SenderId(), out var n) && !string.IsNullOrEmpty(n)) who = n;
+
+        Rpc(MethodName.SetPausedRpc, pause, pause ? who : "");
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SetPausedRpc(bool paused, string by) => ApplyPause(paused, by);
+
+    private void ApplyPause(bool paused, string by)
+    {
+        if (paused == IsPaused) return;
+        IsPaused = paused;
+        PausedBy = paused ? by : "";
+
+        if (paused) _pauseStartMs = Time.GetTicksMsec();
+        else
+        {
+            // the shift clock runs on real time, so push it forward by however long we were paused
+            ulong gap = Time.GetTicksMsec() - _pauseStartMs;
+            _levelStartMs += gap;
+            if (_lastModuleStrikeMs != 0) _lastModuleStrikeMs += gap;
+            if (_lastLevel3PianoRecalibrationMs != 0) _lastLevel3PianoRecalibrationMs += gap;
+        }
+
+        GetTree().Paused = paused;
+        Fire(PauseChanged);
+    }
+
+    // Drops the pause without telling anyone: a level restarted or ended, or the room closed.
+    private void ClearPause()
+    {
+        if (!IsPaused) return;
+        IsPaused = false;
+        PausedBy = "";
+        GetTree().Paused = false;
+        Fire(PauseChanged);
+    }
+
+    private void HookNetwork()
+    {
+        var net = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+        if (net != null) net.RoomTerminated += _ => ClearPause();   // never leave the lobby frozen
+    }
+
+    // ---------- Level title card ----------
+    // Edit the names here. Any level not listed falls back to its id.
+    private static readonly Dictionary<string, string> LevelTitles = new()
+    {
+        ["tutorial"] = "First Day",
+        ["morning_broadcast"] = "Morning Radio",
+        ["afternoon_broadcast"] = "Afternoon Air",
+        ["emergency_broadcast"] = "EMERGENCY",
+    };
+    private const float LevelIntroHold = 1.4f;                  // seconds the title stays after it fades in
+    private const float LevelIntroTotal = 0.8f + LevelIntroHold + 0.6f;   // fade in + hold + fade out
+    private float _introSeconds;                                 // how long the card covers the start of this level
+
+    // Shows the title card for a level that is starting. Returns how long it covers the screen.
+    // Does nothing (returns 0) if another title card is already up, like the tutorial -> Level 1 one.
+    private float ShowLevelTitleCard(string levelId)
+    {
+        var tree = GetTree();
+        if (tree == null || tree.GetNodesInGroup("level_title_card").Count > 0) return 0f;
+
+        string title = LevelTitles.TryGetValue(levelId, out var name) ? name : levelId.Replace('_', ' ').ToUpperInvariant();
+        var card = new LevelTitleCard
+        {
+            Title = title,
+            Hold = LevelIntroHold,
+            StartCovered = true,        // hides the scene swap underneath
+            FadeOutWhenDone = true,
+            Accent = levelId == "emergency_broadcast" ? new Color("E5484D") : new Color("FFD25A"),
+            GlitchStatic = levelId == "emergency_broadcast",
+        };
+        tree.Root.CallDeferred(Node.MethodName.AddChild, card);   // on the root so it survives the scene change
+        return LevelIntroTotal;
+    }
+
     // Called on EVERY peer from PlayerList.StartGameRpc.
     public void BeginLevel(string levelId)
     {
         LevelId = levelId;
+        ClearPause();
+        _introSeconds = ShowLevelTitleCard(levelId);
         _prompterColorKeyMap = Array.Empty<int>();
         PrompterColorMapChanged?.Invoke();
         _pianoColorMap = Array.Empty<int>(); Fire(PianoColorMapChanged);
@@ -284,7 +393,7 @@ public partial class GameSession : Node
         _qualityLow = 0; _signalLow = 0;
         _lastModuleStrikeMs = 0;
         _lastLevel3PianoRecalibrationMs = 0;
-        _levelStartMs = Time.GetTicksMsec();
+        _levelStartMs = Time.GetTicksMsec() + (ulong)(_introSeconds * 1000f);   // the shift clock starts when the card clears
 
 
         Piano.SetActive(false);
@@ -295,7 +404,7 @@ public partial class GameSession : Node
         _session++; _callerOnLine = false;
 
         int revealSession = _session;
-        GetTree().CreateTimer(CurrentLevel?.TaskRevealSeconds ?? 10).Timeout += () =>
+        GetTree().CreateTimer(CurrentLevel?.TaskRevealSeconds ?? 10, false).Timeout += () =>
         {
             if (revealSession != _session) return;   // a different level started
             TasksExpanded = false;                   // collapse to the main task
@@ -359,8 +468,8 @@ public partial class GameSession : Node
             _override = new LineOverrideSession(_rng, LineOverrideRule.NewRandom(_rng, def.KeypadRule), def.AllowStatic, def.KeypadMinLine, def.KeypadMaxLine);
 
         SetLiveMask(0);
-        ScheduleModuleSpawn(def.FirstModuleDelay);
-        if (_callers.Count > 0) ScheduleNextCaller(0, 5.0);
+        ScheduleModuleSpawn(def.FirstModuleDelay + _introSeconds);
+        if (_callers.Count > 0) ScheduleNextCaller(0, 5.0 + _introSeconds);
     }
 
     // ---------- Requests (any peer -> host) ----------
@@ -474,10 +583,13 @@ public partial class GameSession : Node
         string phase = CurrentLevel?.BackgroundId;
         if (string.IsNullOrEmpty(phase)) phase = IsTutorial ? "morning" : "";
 
+        // How strong the morning/afternoon tint is. 1 = the old look, 0 = no tint at all.
+        const float DayTintStrength = 0.5f;
+
         Color tint = phase switch
         {
-            "morning" => new Color(1f, 0.84f, 0.66f),
-            "afternoon" => new Color(1f, 0.90f, 0.72f),
+            "morning" => Colors.White.Lerp(new Color(1f, 0.84f, 0.66f), DayTintStrength),
+            "afternoon" => Colors.White.Lerp(new Color(1f, 0.90f, 0.72f), DayTintStrength),
             "night" => new Color(0.68f, 0.78f, 1f),
             _ => Colors.White
         };
@@ -563,7 +675,7 @@ public partial class GameSession : Node
     private void ScheduleNextCaller(int index, double delay)
     {
         int session = _session;
-        GetTree().CreateTimer(delay).Timeout += () =>
+        GetTree().CreateTimer(delay, false).Timeout += () =>
         {
             // do nothing if the level ended or restarted while we waited
             if (session != _session || GameOver || _broadcaster == null || index >= _callers.Count) return;
@@ -1004,6 +1116,7 @@ public partial class GameSession : Node
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void GameOverRpc()
     {
+        ClearPause();
         GameOver = true;
         Piano.SetActive(false);
         _endScreen = new GameOverScreen();
@@ -1063,6 +1176,7 @@ public partial class GameSession : Node
 
     private void ResetSession()
     {
+        ClearPause();
         if (IsInstanceValid(_endScreen)) _endScreen.QueueFree();
         _endScreen = null;
         Tasks.Clear(); FlippedModule = ""; LevelFinished = false;
@@ -1331,6 +1445,7 @@ public partial class GameSession : Node
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void LevelCompleteRpc(int completionPts, int accuracyPts, int completed, int total)
     {
+        ClearPause();
         LevelFinished = true;
         Piano.SetActive(false);
         _endScreen = new LevelResultScreen { CompletionPts = completionPts, AccuracyPts = accuracyPts, Completed = completed, Total = total };

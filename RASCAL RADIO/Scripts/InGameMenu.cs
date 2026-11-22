@@ -1,15 +1,18 @@
 using Godot;
 
+// Pause menu. The pause itself lives in GameSession so it is the same for everyone:
+// whoever opens it pauses every player, and the menu shows who did.
 public partial class InGameMenu : CanvasLayer
 {
     private ColorRect _dim;
     private Button _restart;
-    private bool _open;
+    private Label _pausedBy;
+    private bool _localOpen;   // only used when there is no GameSession (running a scene by itself)
 
     public override void _Ready()
     {
         Layer = 120;
-        ProcessMode = ProcessModeEnum.Always;
+        ProcessMode = ProcessModeEnum.Always;   // keeps working while the game is paused
 
         _dim = new ColorRect
         {
@@ -36,6 +39,16 @@ public partial class InGameMenu : CanvasLayer
         title.AddThemeColorOverride("font_color", UiStyle.Ink);
         column.AddChild(title);
 
+        // "Player 1 paused the game"
+        _pausedBy = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        _pausedBy.AddThemeFontSizeOverride("font_size", 18);
+        _pausedBy.AddThemeColorOverride("font_color", UiStyle.Ink);
+        column.AddChild(_pausedBy);
+
         var resume = MakeButton("RESUME");
         resume.Pressed += () => SetOpen(false);
         column.AddChild(resume);
@@ -44,17 +57,37 @@ public partial class InGameMenu : CanvasLayer
         _restart.Pressed += () => GameSession.Instance?.RestartCurrentLevel();
         column.AddChild(_restart);
 
-        var quit = MakeButton("QUIT TO MENU");
-        quit.Pressed += QuitToMenu;
-        column.AddChild(quit);
+        // Takes everyone back to the players list. Roles and the chosen level are kept there.
+        var back = MakeButton("BACK TO LOBBY");
+        back.Pressed += BackToLobby;
+        column.AddChild(back);
 
-        SetOpen(false);
+        if (GameSession.Instance != null) GameSession.Instance.PauseChanged += Refresh;
+        Refresh();
     }
 
+    public override void _ExitTree()
+    {
+        if (GameSession.Instance != null) GameSession.Instance.PauseChanged -= Refresh;
+    }
+
+    // Open or close the menu. With a GameSession this pauses or resumes for everyone.
     public void SetOpen(bool open)
     {
-        _open = open;
+        var gs = GameSession.Instance;
+        if (gs == null) { _localOpen = open; Refresh(); return; }
+        gs.RequestPause(open);
+    }
+
+    private void Refresh()
+    {
+        var gs = GameSession.Instance;
+        bool open = gs != null ? gs.IsPaused : _localOpen;
         Visible = open;
+
+        if (_pausedBy != null)
+            _pausedBy.Text = gs != null && open ? $"{gs.PausedBy} paused the game" : "";
+
         if (_restart != null)
         {
             bool host = !Multiplayer.HasMultiplayerPeer() || Multiplayer.IsServer();
@@ -67,16 +100,17 @@ public partial class InGameMenu : CanvasLayer
     {
         if (e.IsActionPressed("ui_cancel") && !e.IsEcho())
         {
-            SetOpen(!_open);
+            var gs = GameSession.Instance;
+            SetOpen(!(gs != null ? gs.IsPaused : _localOpen));
             GetViewport().SetInputAsHandled();
         }
     }
 
-    private void QuitToMenu()
+    private void BackToLobby()
     {
-        var network = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
-        network?.DisconnectFromRoom();
-        GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");
+        var gs = GameSession.Instance;
+        if (gs != null) gs.ReturnToParty();
+        else GetTree().ChangeSceneToFile(GameSession.PartyScenePath);
     }
 
     private static Button MakeButton(string text)

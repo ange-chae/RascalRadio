@@ -32,13 +32,13 @@ public partial class PlayerList : Control
 	private Button _btnStartGame;
 	private Button _btnLeave;
 	private Label _lblStatus;
-	private CanvasLayer _readyPromptLayer;
-	private bool _awaitingReadyAfterRandomize = false;
-	private BaseButton _btnPrev;
+    private Button _btnReady;
+    private BaseButton _btnPrev;
 	private BaseButton _btnNext;
 	private Label _lblLevelName;
-
-	private CassetteSelector _cassette;
+    private Button _readyBtn;
+    private const float ReadyGapBelowSlots = 6f;   // nudge up/down if it touches the hint text
+    private CassetteSelector _cassette;
 
 	private readonly Dictionary<long, string> _knownPlayers = new Dictionary<long, string>();
 	private bool _isInitialLoad = true;
@@ -59,12 +59,10 @@ public partial class PlayerList : Control
 			{ "RadioOperator",   "res://assets/images/operator-pfp.png" },
 		};
 
-	private const string BtnNormalUid = "uid://dywn3v8hwh5jo";
-	private const string BtnHoverUid = "uid://bf1agbxok27wh";
-	private const string BtnPressedUid = "uid://b2iksnxkt56yq";
-
 	private static readonly Color BtnInk = new Color(0.1254902f, 0.09019608f, 0.25490198f);
-	private Texture2D GetAvatarForRole(string role)
+    private const int ReadyBorder = 3;          // was 3
+    private const int ReadyBottomBorder = 6;   
+    private Texture2D GetAvatarForRole(string role)
 	{
 		if (!string.IsNullOrEmpty(role) && RoleAvatarPaths.TryGetValue(role, out string path))
 		{
@@ -74,8 +72,9 @@ public partial class PlayerList : Control
 		var defaultTex = GD.Load<Texture2D>("res://assets/images/PLAYERS ID.png");
 		return defaultTex ?? DefaultAvatarTexture;
 	}
+    private static int _savedLevelIndex = 0;   // survives going into a level and coming back
 
-	public override void _Ready()
+    public override void _Ready()
 	{
 		_networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
 
@@ -84,17 +83,13 @@ public partial class PlayerList : Control
 		_playerSlotsContainer = FindChild("playerSlotsContainer", true, false) as Container;
 		_btnStartGame = FindChild("btnStartGame", true, false) as Button;
 		_btnLeave = FindChild("btnLeave", true, false) as Button;
-		_lblStatus = FindChild("lblStatus", true, false) as Label;
+        _btnReady = FindChild("ReadyBtn", true, false) as Button;
+        _lblStatus = FindChild("lblStatus", true, false) as Label;
 
 		_btnPrev = FindChild("btnPrev", true, false) as BaseButton;
 		_btnNext = FindChild("btnNext", true, false) as BaseButton;
 		_lblLevelName = FindChild("LblLevelName", true, false) as Label;
 		_cassette = FindChildren("*", "VBoxContainer", true, false).OfType<CassetteSelector>().FirstOrDefault();
-		ChildExitingTree += node =>
-		{
-			if (node.Name == "RoleSelectionOverlay")
-				CallDeferred(MethodName.UpdateReadyPrompt);
-		};
 
 		if (_networkManager == null) return;
 
@@ -115,14 +110,13 @@ public partial class PlayerList : Control
 
 		if (_btnStartGame != null)
 		{
-			// FIX: Removed the code that turns the button invisible.
-			// It will always stay physical to preserve your layout.
 			_btnStartGame.Pressed += OnStartGamePressed;
 		}
 
 		if (_btnLeave != null) _btnLeave.Pressed += OnLeaveButtonPressed;
+        if (_btnReady != null) _btnReady.Pressed += OnLocalReadyClicked;
 
-		if (Multiplayer.IsServer())
+        if (Multiplayer.IsServer())
 		{
 			if (_btnPrev != null) _btnPrev.Pressed += OnPrevPressed;
 			if (_btnNext != null) _btnNext.Pressed += OnNextPressed;
@@ -137,10 +131,14 @@ public partial class PlayerList : Control
 		_networkManager.RoomTerminated += OnRoomTerminated;
 
 		RefreshPlayerList();
-		if (!Multiplayer.IsServer())
-			RpcId(1, MethodName.RequestStateRpc);
-		UpdateLevelVisualLocal(_currentLevelIndex);
-		_isInitialLoad = false;
+        if (!Multiplayer.IsServer())
+            GetTree().CreateTimer(0.6).Timeout += () =>
+            {
+                if (IsInstanceValid(this) && IsInsideTree()) RpcId(1, MethodName.RequestStateRpc);
+            };
+        _currentLevelIndex = Mathf.Clamp(_savedLevelIndex, 0, _availableLevels.Count - 1);
+        UpdateLevelVisualLocal(_currentLevelIndex);
+        _isInitialLoad = false;
 
 		CanvasLayer fadeLayer = new CanvasLayer { Layer = 100 };
 		AddChild(fadeLayer);
@@ -176,7 +174,8 @@ public partial class PlayerList : Control
 	private void UpdateLevelVisualLocal(int newIndex)
 	{
 		_currentLevelIndex = newIndex;
-		var level = _availableLevels[_currentLevelIndex];
+        _savedLevelIndex = 0;
+        var level = _availableLevels[_currentLevelIndex];
 
 		if (_lblLevelName != null) _lblLevelName.Text = level.Name;
 
@@ -221,10 +220,6 @@ public partial class PlayerList : Control
 	{
 		for (int i = 0; i < peerIds.Length; i++)
 			PlayerRoles[peerIds[i]] = roles[i];   // ready state is kept
-
-		long me = Multiplayer.GetUniqueId();
-		PlayerReady.TryGetValue(me, out bool alreadyReady);
-		_awaitingReadyAfterRandomize = !alreadyReady;   // only prompt people who aren't ready yet
 
 		ShowStatusMessage(
 			Multiplayer.IsServer() ? "You randomized the roles!" : "The host randomized the roles!",
@@ -438,8 +433,8 @@ public partial class PlayerList : Control
 			}
 		}
 
-		UpdateReadyPrompt();
-	}
+        RefreshReadyButton();
+    }
 
 	private CanvasLayer _toastLayer;
 
@@ -451,9 +446,18 @@ public partial class PlayerList : Control
 		AddChild(_toastLayer);
 
 		var toast = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color(1, 1, 1, 0) };
-		toast.AddThemeStyleboxOverride("panel", UiStyle.Card());
+		StyleBox cardStyle = UiStyle.Card();
+        if (cardStyle.Duplicate() is StyleBoxFlat thinCard)
+        {
+            thinCard.BorderWidthLeft = Mathf.Min(thinCard.BorderWidthLeft, 2);
+            thinCard.BorderWidthTop = Mathf.Min(thinCard.BorderWidthTop, 2);
+            thinCard.BorderWidthRight = Mathf.Min(thinCard.BorderWidthRight, 2);
+            thinCard.BorderWidthBottom = Mathf.Min(thinCard.BorderWidthBottom, 3);
+            cardStyle = thinCard;
+        }
+        toast.AddThemeStyleboxOverride("panel", cardStyle);
 
-		var row = new HBoxContainer();
+        var row = new HBoxContainer();
 		row.AddThemeConstantOverride("separation", 10);
 		toast.AddChild(row);
 		row.AddChild(new ColorRect { Color = color, CustomMinimumSize = new Vector2(8, 0) });
@@ -539,97 +543,77 @@ public partial class PlayerList : Control
 		}
 	}
 
-	private bool IsRoleOverlayOpen()
-	{
-		var overlay = GetNodeOrNull("RoleSelectionOverlay");
-		return overlay != null && !overlay.IsQueuedForDeletion();
-	}
+    // Centers the button under the player slots, on the paper
+    private void PositionReadyButton()
+    {
+        if (!IsInstanceValid(_readyBtn)) return;
 
-	// Shows or hides the big centered Ready button
-	private void UpdateReadyPrompt()
-	{
-		long me = Multiplayer.GetUniqueId();
-		PlayerRoles.TryGetValue(me, out string role);
-		PlayerReady.TryGetValue(me, out bool ready);
+        Vector2 size = _readyBtn.GetCombinedMinimumSize();
+        _readyBtn.Size = size;
+        _readyBtn.PivotOffset = size / 2f;
 
-		if (ready) _awaitingReadyAfterRandomize = false;
+        Vector2 viewport = GetViewportRect().Size;
+        Vector2 pos;
 
-		bool show = _awaitingReadyAfterRandomize
-					&& !string.IsNullOrEmpty(role)
-					&& !IsRoleOverlayOpen();   // the overlay already has its own Ready button
+        if (_playerSlotsContainer != null)
+        {
+            Rect2 box = _playerSlotsContainer.GetGlobalRect();
 
-		if (show)
-		{
-			if (!IsInstanceValid(_readyPromptLayer)) BuildReadyPrompt();
-			_readyPromptLayer.Visible = true;
-		}
-		else if (IsInstanceValid(_readyPromptLayer))
-		{
-			_readyPromptLayer.Visible = false;
-		}
-	}
+            // Use the bottom of the last real slot, not the container, since the container may stretch past the screen
+            float bottom = box.Position.Y;
+            foreach (Node child in _playerSlotsContainer.GetChildren())
+                if (child is Control c && c.Visible)
+                    bottom = Mathf.Max(bottom, c.GetGlobalRect().End.Y);
 
-	private StyleBox LoadButtonStyle(string uid, Color bg, int bottomBorder)
-	{
-		if (ResourceLoader.Exists(uid))
-			return GD.Load<StyleBox>(uid);
+            pos = new Vector2(
+                box.Position.X + (box.Size.X - size.X) / 2f,
+                bottom + ReadyGapBelowSlots);
+        }
+        else
+        {
+            pos = new Vector2((viewport.X - size.X) / 2f, viewport.Y - size.Y - 40);
+        }
 
-		// Fallback: same look as the .tres files, built in code
-		var sb = new StyleBoxFlat { BgColor = bg, BorderColor = BtnInk };
-		sb.SetBorderWidthAll(3);
-		sb.BorderWidthBottom = bottomBorder;
-		sb.SetCornerRadiusAll(8);
-		return sb;
-	}
+        // Never let it leave the window
+        pos.X = Mathf.Clamp(pos.X, 8, viewport.X - size.X - 8);
+        pos.Y = Mathf.Clamp(pos.Y, 8, viewport.Y - size.Y - 8);
+        _readyBtn.Position = pos;
 
-	private void BuildReadyPrompt()
-	{
-		_readyPromptLayer = new CanvasLayer { Layer = 40 };
-		AddChild(_readyPromptLayer);
+        GD.Print($"[ReadyBtn] pos={pos} size={size} viewport={viewport}");
+    }
+    private void OnLocalReadyClicked()
+    {
+        long me = Multiplayer.GetUniqueId();
+        PlayerRoles.TryGetValue(me, out string role);
+        PlayerReady.TryGetValue(me, out bool ready);
 
-		var btn = new Button
-		{
-			Text = "READY",
-			CustomMinimumSize = new Vector2(180, 84),
-			FocusMode = Control.FocusModeEnum.None
-		};
+        if (string.IsNullOrEmpty(role))
+        {
+            ShowStatusMessage("Pick a role first! Click your icon.", new Color("#FF9800"));
+            return;
+        }
 
-		// Your styles
-		btn.AddThemeStyleboxOverride("normal", LoadButtonStyle(BtnNormalUid, new Color(1f, 0.82f, 0.4f), 8));
-		btn.AddThemeStyleboxOverride("hover", LoadButtonStyle(BtnHoverUid, new Color(1f, 0.91f, 0.71f), 8));
-		btn.AddThemeStyleboxOverride("pressed", LoadButtonStyle(BtnPressedUid, new Color(0.99f, 0.82f, 0.4f), 3));
-		btn.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+        bool conflict = PlayerRoles.Values.Count(r => r == role) > 1;
+        if (conflict && !ready)
+        {
+            ShowStatusMessage("Someone already has that role!", new Color("#F44336"));
+            return;
+        }
 
-		// Dark navy text to match the border
-		btn.AddThemeColorOverride("font_color", BtnInk);
-		btn.AddThemeColorOverride("font_hover_color", BtnInk);
-		btn.AddThemeColorOverride("font_pressed_color", BtnInk);
-		btn.AddThemeColorOverride("font_focus_color", BtnInk);
-		btn.AddThemeFontSizeOverride("font_size", 34);
+        bool nowReady = !ready;
+        Rpc(MethodName.UpdatePlayerStateRpc, me, role, nowReady);
+        Sfx.Play(this, nowReady ? "confirm_sfx" : "cancel_sfx", -6f);
+        if (nowReady) CheckStartConditionsAndNotify();
+    }
 
-		btn.Pressed += OnLocalReadyClicked;
-		_readyPromptLayer.AddChild(btn);
+    private void RefreshReadyButton()
+    {
+        if (_btnReady == null) return;
+        PlayerReady.TryGetValue(Multiplayer.GetUniqueId(), out bool ready);
+        _btnReady.Text = ready ? "UNREADY" : "READY";
+    }
 
-		// Center bottom, 40px up from the bottom edge
-		btn.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.Minsize, 40);
-		btn.GrowHorizontal = Control.GrowDirection.Both;
-		btn.GrowVertical = Control.GrowDirection.Begin;
-	}
-
-	private void OnLocalReadyClicked()
-	{
-		long me = Multiplayer.GetUniqueId();
-		PlayerRoles.TryGetValue(me, out string role);
-		if (string.IsNullOrEmpty(role)) return;
-
-		_awaitingReadyAfterRandomize = false;
-		Rpc(MethodName.UpdatePlayerStateRpc, me, role, true);
-		Sfx.Play(this, "confirm_sfx", -6f); // I pressed ready
-		CheckStartConditionsAndNotify();
-		UpdateReadyPrompt();
-	}
-
-	private void OnRoomTerminated(string reason)
+    private void OnRoomTerminated(string reason)
 	{
 		_savedRoles.Clear();
 		GetTree().ChangeSceneToFile("res://scenes/lobby.tscn");

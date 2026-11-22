@@ -15,7 +15,8 @@ public partial class GameOverScreen : CanvasLayer
     private ColorRect _flash, _cover;
     private PanelContainer _sign;
     private Label _signLbl, _title, _reason, _sub;
-    private Button _btn;
+    private Button _btn, _restartBtn;
+    private Control _btnRow;
     private Tween _shake;
     private bool _leaving;
     private readonly List<Control> _boxes = new();
@@ -102,17 +103,23 @@ public partial class GameOverScreen : CanvasLayer
         box.AddChild(_sub);
 
         box.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
-        _btn = new Button
+        // RESTART + BACK TO LOBBY side by side, both in the same maroon/red style
+        _btnRow = new HBoxContainer
         {
-            Text = "BACK TO LOBBY",
-            CustomMinimumSize = new Vector2(240, 56),
+            Alignment = BoxContainer.AlignmentMode.Center,
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
-            Disabled = true,
             Modulate = new Color(1, 1, 1, 0),
         };
-        StyleBackButton(_btn);
+        _btnRow.AddThemeConstantOverride("separation", 16);
+        box.AddChild(_btnRow);
+
+        _restartBtn = MakeButton("RESTART", outline: true);
+        _restartBtn.Pressed += Restart;
+        _btnRow.AddChild(_restartBtn);
+
+        _btn = MakeButton("BACK TO LOBBY");
         _btn.Pressed += Leave;
-        box.AddChild(_btn);
+        _btnRow.AddChild(_btn);
 
         // ---------- red flash and black cover, both on top ----------
         _flash = new ColorRect { Color = new Color(0.9f, 0.1f, 0.1f, 0.75f), MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -190,8 +197,13 @@ public partial class GameOverScreen : CanvasLayer
         var tw = CreateTween().SetParallel();
         tw.TweenProperty(_reason, "modulate:a", 1.0f, 0.4);
         tw.TweenProperty(_sub, "modulate:a", 1.0f, 0.4).SetDelay(0.2);
-        tw.TweenProperty(_btn, "modulate:a", 1.0f, 0.4).SetDelay(0.5);
-        tw.Chain().TweenCallback(Callable.From(() => { _btn.Disabled = false; _btn.GrabFocus(); }));
+        tw.TweenProperty(_btnRow, "modulate:a", 1.0f, 0.4).SetDelay(0.5);
+        tw.Chain().TweenCallback(Callable.From(() =>
+        {
+            _restartBtn.Disabled = false;
+            _btn.Disabled = false;
+            _restartBtn.GrabFocus();
+        }));
     }
 
     private void Flash(float alpha)
@@ -213,11 +225,78 @@ public partial class GameOverScreen : CanvasLayer
         _shake.TweenProperty(this, "offset", Vector2.Zero, 0.05);
     }
 
+    // Restart the same level for everyone. Fades to black first, then the game's title card takes over.
+    private void Restart()
+    {
+        if (_leaving) return;
+        _leaving = true;
+        _btn.Disabled = true;
+        _restartBtn.Disabled = true;
+        _cover.MouseFilter = Control.MouseFilterEnum.Stop;
+
+        var tw = CreateTween();
+        tw.TweenProperty(_cover, "color:a", 1.0f, 0.3);
+        tw.TweenCallback(Callable.From(() => GameSession.Instance.RestartCurrentLevel()));
+    }
+
+    private static Button MakeButton(string text, bool outline = false)
+    {
+        var b = new Button
+        {
+            Text = text,
+            CustomMinimumSize = new Vector2(240, 56),
+            Disabled = true,
+        };
+        StyleBackButton(b);
+        if (outline) StyleOutline(b);   // secondary button: red border only, no fill
+        else StyleSoftHover(b);         // main button: same soft red tint on hover
+        return b;
+    }
+
+    // Same hover feel as the outline button: a soft red tint instead of filling solid red.
+    private static void StyleSoftHover(Button b)
+    {
+        var maroon = new Color("2A0A0C");
+        StyleBoxFlat Box(Color bg, Color border)
+        {
+            var s = new StyleBoxFlat { BgColor = bg, BorderColor = border };
+            s.SetBorderWidthAll(3);
+            s.SetCornerRadiusAll(10);
+            s.ContentMarginLeft = 28; s.ContentMarginRight = 28;
+            s.ContentMarginTop = 10; s.ContentMarginBottom = 10;
+            return s;
+        }
+
+        b.AddThemeStyleboxOverride("hover", Box(maroon.Lerp(Red, 0.18f), Red));
+        b.AddThemeStyleboxOverride("pressed", Box(maroon.Lerp(Red, 0.32f), Cream));
+        b.AddThemeColorOverride("font_hover_color", Cream);
+        b.AddThemeColorOverride("font_pressed_color", Cream);
+    }
+
+    private static void StyleOutline(Button b)
+    {
+        StyleBoxFlat Box(Color bg, Color border)
+        {
+            var s = new StyleBoxFlat { BgColor = bg, BorderColor = border };
+            s.SetBorderWidthAll(3);
+            s.SetCornerRadiusAll(10);
+            s.ContentMarginLeft = 28; s.ContentMarginRight = 28;
+            s.ContentMarginTop = 10; s.ContentMarginBottom = 10;
+            return s;
+        }
+
+        b.AddThemeStyleboxOverride("normal", Box(new Color(Red, 0f), Red));
+        b.AddThemeStyleboxOverride("hover", Box(new Color(Red, 0.18f), Red));
+        b.AddThemeStyleboxOverride("pressed", Box(new Color(Red, 0.32f), Cream));
+        b.AddThemeStyleboxOverride("disabled", Box(new Color(Red, 0f), new Color("6E2A2E")));
+    }
+
     private void Leave()
     {
         if (_leaving) return;
         _leaving = true;
         _btn.Disabled = true;
+        _restartBtn.Disabled = true;
         _cover.MouseFilter = Control.MouseFilterEnum.Stop;
 
         var tw = CreateTween();

@@ -503,7 +503,7 @@ public partial class BroadcasterInterface : Control
         var l = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
         l.AddThemeFontSizeOverride("font_size", size);
         l.AddThemeColorOverride("font_color", color);
-        _cueSheetFont ??= GD.Load<Font>("res://assets/fonts/ShortStack-Regular.ttf");
+        _cueSheetFont ??= GD.Load<Font>("res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf");
         if (_cueSheetFont != null) l.AddThemeFontOverride("font", _cueSheetFont);
         return l;
     }

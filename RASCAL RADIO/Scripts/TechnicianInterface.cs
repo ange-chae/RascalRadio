@@ -55,6 +55,23 @@ public partial class TechnicianInterface : PopupFrame
 
     private const int ModulePageIndex = 4;
 
+    // ===== UNIFORM MANUAL LAYOUT =====
+    // Every module page uses the same sections, in the same order:
+    //   WHO SEES WHAT  /  WHAT TO DO  /  RULES  /  IF SOMETHING GOES WRONG
+    // Rules are always written as "If ..., ..." and "Otherwise, ...". Keep sentences short.
+    private static string Section(string heading, string body) =>
+        $"[b]{heading}[/b]\n{body.TrimEnd()}\n\n";
+
+    private static string FlipLine() =>
+        "If the module is upside down, the raccoon turned it. The Operator presses FLIP BACK on the module panel. It is at the opposite corner while the panel is upside down.";
+
+    // Module-specific faults first, then the flip line every module shares.
+    private static string Faults(params string[] ifLines) =>
+        Section("IF SOMETHING GOES WRONG", string.Join("\n", ifLines.Append(FlipLine())));
+
+    //private static string KeyHint() =>
+    //    "[color=#7A7A7A]Q opens or closes the manual. W and S switch modules.[/color]";
+
     // Only the Technician sees the level and the suffixes. The Operator only sees the line number.
     private static string MathPage()
     {
@@ -69,70 +86,89 @@ public partial class TechnicianInterface : PopupFrame
             ? "Add up all the digits of the line number. If the total is even,"
             : "If the line number is even,";
 
-        return
-            "Ask the Operator for the incoming line number. It is only on their keypad.\n\n" +
-            $"{rule} append {even}.\n" +
-            $"Otherwise, append {odd}.\n\n" +
-            "Tell the Operator the code. They type it and press ROUTE.\n" +
-            "If there is a static fault, the Operator presses CLEAR, enters 0000, then presses ROUTE.\n\n" +
-            (gs != null && gs.IsTutorial ? "In practice mode a wrong code costs nothing." : "") + FlipHelp();
+        var sb = new System.Text.StringBuilder();
+        sb.Append(Section("WHO SEES WHAT", "The Operator sees only the line number, on their keypad.\nYou see the rules."));
+        sb.Append(Section("WHAT TO DO", "Ask the Operator for the line number.\nWork out the code with the rules below.\nTell the Operator the code. They type it and press ROUTE."));
+        sb.Append(Section("RULES", $"{rule} append {even}.\nOtherwise, append {odd}."));
+        sb.Append(Faults("If there is a static fault, the Operator presses CLEAR, enters 0000, then presses ROUTE."));
+        if (gs != null && gs.IsTutorial) sb.Append("In practice mode, a wrong code costs nothing.\n\n");
+
+        return sb.ToString();
     }
 
     private static string PianoPage()
     {
         var gs = GameSession.Instance;
+        bool tutorial = gs != null && gs.IsTutorial;
+
         var sb = new System.Text.StringBuilder();
-        sb.Append("The Operator only sees the jingle name. The BROADCASTER sees the CUE SHEET, a colored light.\n");
-        sb.Append("Ask the Broadcaster for the color, find it below, and tell the Operator which key to press. Then ask for the next color.\n\n");
-        if (gs == null || !gs.IsTutorial) sb.Append("If the keys are flashing red, the cue sheet blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
+        sb.Append(Section("WHO SEES WHAT", "The Operator sees only the jingle name.\nThe Broadcaster sees the cue sheet, a colored light."));
+        sb.Append(Section("WHAT TO DO", "Ask the Broadcaster for the color.\nFind it in the rules below and tell the Operator which key to press.\nThen ask for the next color."));
+
+        var rules = new System.Text.StringBuilder();
         if (gs == null || !gs.HasPianoColorMap)
         {
-            sb.Append("Waiting for a jingle... the code changes every time one starts.");
-            sb.Append(FlipHelp());
-            return sb.ToString();
+            rules.Append("Waiting for a jingle. The code changes every time one starts.");
         }
-
-        sb.Append("[b]This jingle's code:[/b]\n");
-        for (int c = 0; c < PianoColorCode.Keys().Count; c++)
+        else
         {
-            string key = gs.PianoKeyFor(c);
-            if (key == "") continue;
-            sb.Append($"  [color={PianoColorCode.HexOf(c)}][b]{PianoColorCode.NameOf(c)}[/b][/color]  →  [b]{key}[/b]\n");
+            bool first = true;
+            for (int c = 0; c < PianoColorCode.Keys().Count; c++)
+            {
+                string key = gs.PianoKeyFor(c);
+                if (key == "") continue;
+                string lead = first ? "If" : "Otherwise, if";
+                first = false;
+                rules.Append($"{lead} the color is [color={PianoColorCode.HexOf(c)}][b]{PianoColorCode.NameOf(c)}[/b][/color], press [b]{key}[/b].\n");
+            }
+            rules.Append("The code is reshuffled for every jingle. Check this page, don't trust your memory.");
         }
+        sb.Append(Section("RULES", rules.ToString()));
 
-        sb.Append("\nThe code is reshuffled for every jingle. Check this page, don't trust your memory.\n\n");
-        if (gs == null || !gs.IsTutorial) sb.Append("If the keys are flashing red, the stage light blinks. Read each color it shows, one at a time, and give the Operator the matching key. Then the jingle continues.");
-        sb.Append(FlipHelp());
+        string[] faults = tutorial
+            ? new string[0]
+            : new[] { "If the piano keys are flashing red, ask the Broadcaster to read each color the cue sheet blinks, one at a time. Give the Operator the matching key for each. Then the jingle continues." };
+        sb.Append(Faults(faults));
+
         return sb.ToString();
     }
 
     private static string SoundboardPage()
     {
         var sb = new System.Text.StringBuilder();
+        sb.Append(Section("WHO SEES WHAT", "The Operator sees the cue on their screen.\nThe pad labels and cue order change every round."));
+        sb.Append(Section("WHAT TO DO", "Check the number of strikes.\nFind the cue in the rules below.\nTell the Operator which labeled pad to press."));
+
         var module = GameSession.Instance?.Soundboard;
         if (module == null || module.Sequence.Count == 0)
-            return "Waiting for the next Soundboard round. The pad labels and cue order change each round.";
-
-        sb.Append("The pad labels and cue order change each round. The Operator reads the cue on their screen. Check the number of strikes, then tell them which labeled pad to press.\n");
-
-        string[] cues = SoundboardData.Pads;
-        string[] headings = { "If there are no strikes:", "If there is one strike:", "If there are two or more strikes:" };
-
-        for (int row = 0; row < headings.Length; row++)
         {
-            sb.Append($"\n[b]{headings[row]}[/b]\n");
-            for (int i = 0; i < cues.Length; i++)
-            {
-                string cue = module.SoundForPad(cues[i]);
-                string press = module.SoundForPad(module.PadToPress(cues[i], row));
+            sb.Append(Section("RULES", "Waiting for the next Soundboard round."));
+        }
+        else
+        {
+            var rules = new System.Text.StringBuilder();
+            string[] cues = SoundboardData.Pads;
+            string[] headings = { "If there are no strikes:", "If there is one strike:", "If there are two or more strikes:" };
 
-                string lead = i == 0 ? "If" : "Otherwise, if";
-                sb.Append($"{lead} the cue is [b]{cue}[/b], press [b]{press}[/b].\n");
+            for (int row = 0; row < headings.Length; row++)
+            {
+                if (row > 0) rules.Append('\n');
+                rules.Append($"[b]{headings[row]}[/b]\n");
+                for (int i = 0; i < cues.Length; i++)
+                {
+                    string cue = module.SoundForPad(cues[i]);
+                    string press = module.SoundForPad(module.PadToPress(cues[i], row));
+
+                    string lead = i == 0 ? "If" : "Otherwise, if";
+                    rules.Append($"{lead} the cue is [b]{cue}[/b], press [b]{press}[/b].\n");
+                }
             }
+            rules.Append("\nCheck the strikes again before every cue, because they can change.");
+            sb.Append(Section("RULES", rules.ToString()));
         }
 
-        sb.Append("\nCheck the strikes again before every cue, because they can change.");
-        sb.Append(FlipHelp());
+        sb.Append(Faults());
+
         return sb.ToString();
     }
 
@@ -177,16 +213,19 @@ public partial class TechnicianInterface : PopupFrame
             ?? FindChildren("*", "Button", true, false).OfType<Button>()
                 .FirstOrDefault(b => b.Text.ToLower().Contains("manual"));
 
-        if (_manualBtn != null) _manualBtn.Pressed += ToggleManual;
+        if (_manualBtn != null)
+        {
+            _manualBtn.Pressed += ToggleManual;
+            if (!_manualBtn.Text.Contains("(Q)")) _manualBtn.Text = _manualBtn.Text.TrimEnd() + " (Q)";   // key hint; delete this line if you don't want it
+        }
         else GD.PushError("TechnicianInterface: manual button not found. Name it ManualBtn.");
 
         // NEW: task box setup (step 8b)
         _taskLabel = GetNodeOrNull<RichTextLabel>("%TaskLabel");
         if (_taskLabel != null) { _taskLabel.BbcodeEnabled = true; _taskLabel.FitContent = true; _taskLabel.ScrollActive = false; GameSession.Instance?.HookTaskToggle(_taskLabel); }
 
-        // The Prompter Color Code page is specific to Level 3.
-        var prompterTab = GetNodeOrNull<Button>("%TabE");
-        if (prompterTab != null) prompterTab.Visible = gs?.LevelId == "emergency_broadcast";
+        // Only list the modules this level actually uses.
+        ApplyLevelTabs(gs);
 
         string[] tabs = { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" };
         for (int i = 0; i < tabs.Length; i++)
@@ -196,7 +235,7 @@ public partial class TechnicianInterface : PopupFrame
             if (b != null) b.Pressed += () => SelectTab(idx);
             else GD.PushError($"TechnicianInterface: {tabs[i]} not found.");
         }
-        SelectTab(0);
+        SelectTab(VisibleTabIdx().FirstOrDefault());
 
         if (gs == null) return;
 
@@ -359,8 +398,8 @@ public partial class TechnicianInterface : PopupFrame
 
     private void OnStep(TutorialStep step)
     {
-        if (step == TutorialStep.KeypadModule) ShowPage(KeypadPageIndex);   // open the keypad page automatically
-        if (step == TutorialStep.PianoModule) ShowPage(PianoPageIndex);     // and the piano page at the piano step
+        if (step == TutorialStep.KeypadModule) SelectTab(KeypadPageIndex);   // open the keypad page automatically
+        if (step == TutorialStep.PianoModule) SelectTab(PianoPageIndex);     // and the piano page at the piano step
     }
 
     private void OnQuota() =>
@@ -371,11 +410,6 @@ public partial class TechnicianInterface : PopupFrame
         var l = GetNodeOrNull<Label>(path);
         if (l != null) l.Text = text;
     }
-
-    private static string FlipHelp() =>
-    "\n\nMODULE UPSIDE DOWN?\n" +
-    "The raccoon turned it. Operator presses the FLIP BACK button on the module panel.\n" +
-    "It is at the opposite corner while the panel is upside down.";
 
     private void ShowPage(int i)
     {
@@ -391,8 +425,7 @@ public partial class TechnicianInterface : PopupFrame
             text.Text = i == KeypadPageIndex ? MathPage()
                       : i == PianoPageIndex ? PianoPage()
                       : i == 2 ? SoundboardPage()
-                      : i == 2 ? SoundboardPage()
-                      : i == 3 ? MemoryManual.PageText()
+                      : i == 3 ? MemoryManual.PageText() + "\n\n"
                       : i == 4 ? PrompterColorPage()
                       : "";
             text.BbcodeEnabled = true;
@@ -407,23 +440,36 @@ public partial class TechnicianInterface : PopupFrame
     private static string PrompterColorPage()
     {
         var gs = GameSession.Instance;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append(Section("WHO SEES WHAT", "During signal interference, the Broadcaster sees random letters in colors.\nThe letter is not the key to press. The color is."));
+        sb.Append(Section("WHAT TO DO", "Ask the Broadcaster for the color of the letter.\nTell them which WASD key matches it."));
+
         if (gs?.LevelId != "emergency_broadcast")
-            return "This page is used during signal interference in Level 3.\n\n" +
-                   "During an interruption, the Broadcaster sees random letters in colors. " +
-                   "Tell them which WASD key matches each color.";
+        {
+            sb.Append(Section("RULES", "This page is only used in Level 3."));
+        }
+        else
+        {
+            int[] colorToKey = gs.PrompterColorKeyMap;
+            if (colorToKey.Length != 4)
+            {
+                sb.Append(Section("RULES", "The Level 3 color code is synchronizing..."));
+            }
+            else
+            {
+                var rules = new System.Text.StringBuilder();
+                for (int color = 0; color < 4; color++)
+                {
+                    string lead = color == 0 ? "If" : "Otherwise, if";
+                    rules.Append($"{lead} the color is [color={GameSession.PrompterColorHex(color)}][b]{GameSession.PrompterColorName(color)}[/b][/color], press [b]{GameSession.PrompterKeyName(colorToKey[color])}[/b].\n");
+                }
+                sb.Append(Section("RULES", rules.ToString()));
+            }
+        }
 
-        int[] colorToKey = gs.PrompterColorKeyMap;
-        if (colorToKey.Length != 4)
-            return "Level 3 prompter color code is synchronizing...";
 
-        string[] rows = Enumerable.Range(0, 4).Select(color =>
-            $"[color={GameSession.PrompterColorHex(color)}][b]{GameSession.PrompterColorName(color)}[/b][/color]  →  " +
-            $"[b]{GameSession.PrompterKeyName(colorToKey[color])}[/b]").ToArray();
-
-        return "[b]LEVEL 3: PROMPTER SIGNAL INTERFERENCE[/b]\n\n" +
-               "When random colored letters appear on the Broadcaster's monitor, the color tells them which WASD key to press. " +
-               "The letter itself is not the key to press. Read this mapping aloud:\n\n" +
-               string.Join("\n", rows);
+        return sb.ToString();
     }
 
     public void SetHealth(int signal, int quality)
@@ -674,9 +720,44 @@ public partial class TechnicianInterface : PopupFrame
             .Select(p => GetNodeOrNull<Button>(p))
             .Where(b => b != null && b.Visible).ToList();
 
+    // A = Math Keypad, B = Piano, C = Soundboard, D = Simon Says, E = Prompter colors (Level 3).
+    // The tutorial teaches the keypad and the piano only. Real levels follow the level's Has... flags.
+    private void ApplyLevelTabs(GameSession gs)
+    {
+        var d = gs?.CurrentLevel;
+        bool tutorial = gs != null && gs.IsTutorial;
+
+        bool[] show =
+        {
+            tutorial || (d?.HasKeypad ?? true),
+            tutorial || (d?.HasPiano ?? true),
+            !tutorial && (d?.HasSoundboard ?? true),
+            !tutorial && (d?.HasMemory ?? true),
+            gs?.LevelId == "emergency_broadcast",
+        };
+        if (!show.Any(x => x)) show[0] = true;   // never leave the manual with no tabs
+
+        for (int i = 0; i < TabPaths.Length; i++)
+            if (GetNodeOrNull<Button>(TabPaths[i]) is { } b) b.Visible = show[i];
+    }
+
+    // W = previous module, S = next module (wraps around).
+    private void StepTab(int dir)
+    {
+        var idx = VisibleTabIdx();
+        if (idx.Count == 0) return;
+        int pos = idx.IndexOf(_tab);
+        if (pos < 0) pos = 0;
+        SelectTab(idx[(pos + dir + idx.Count) % idx.Count]);
+    }
+
     private void SelectTab(int tab)
     {
         _tab = tab;
+        // keep the highlighted tab in sync, and make sure ONLY the selected tab looks pressed
+        for (int i = 0; i < TabPaths.Length; i++)
+            if (GetNodeOrNull<Button>(TabPaths[i]) is { ToggleMode: true } b)
+                b.SetPressedNoSignal(i == tab);
         ShowPage(_tabToPage[tab]);
     }
 
@@ -768,14 +849,30 @@ public partial class TechnicianInterface : PopupFrame
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (!e.IsActionPressed("ui_cancel")) return;
-        var popup = GetNodeOrNull<Control>("%Popup");
-        if (popup != null && popup.Visible)
+        // Manual keys: Q opens/closes it, W/S move between modules while it is open.
+        if (e is InputEventKey { Pressed: true, Echo: false } key)
         {
-            popup.Visible = false;
-            GetViewport().SetInputAsHandled();
-            return;
+            switch (key.Keycode)
+            {
+                case Key.Q:
+                    ToggleManual();
+                    GetViewport().SetInputAsHandled();
+                    return;
+
+                case Key.W:
+                case Key.S:
+                    var popup = GetNodeOrNull<Control>("%Popup");
+                    if (popup != null && popup.Visible && !_manualLocked)
+                    {
+                        StepTab(key.Keycode == Key.W ? -1 : 1);
+                        GetViewport().SetInputAsHandled();
+                    }
+                    return;
+            }
         }
+
+        // Esc is only the pause menu now.
+        if (!e.IsActionPressed("ui_cancel")) return;
         _menuOpen = !_menuOpen;
         _gameMenu?.SetOpen(_menuOpen);
         GetViewport().SetInputAsHandled();

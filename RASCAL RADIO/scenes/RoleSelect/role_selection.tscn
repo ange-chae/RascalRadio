@@ -6,7 +6,6 @@
 [ext_resource type="StyleBox" uid="uid://dywn3v8hwh5jo" path="res://assets/textures/buttonNormal.tres" id="5_jxjpo"]
 [ext_resource type="StyleBox" uid="uid://b2iksnxkt56yq" path="res://assets/textures/buttonPressed.tres" id="6_gpa3m"]
 [ext_resource type="StyleBox" uid="uid://bf1agbxok27wh" path="res://assets/textures/buttonHover.tres" id="7_a784v"]
-[ext_resource type="StyleBox" uid="uid://dlsb3tykebw0m" path="res://assets/textures/outlineNormal.tres" id="8_7e6jv"]
 [ext_resource type="StyleBox" uid="uid://b76x3bigg5n80" path="res://assets/textures/outlinePressed.tres" id="9_11vu1"]
 [ext_resource type="StyleBox" uid="uid://bervfje88404a" path="res://assets/textures/outlineHover.tres" id="10_3clr0"]
 [ext_resource type="StyleBox" uid="uid://d37rv72t32v1q" path="res://assets/textures/buttonNorma.tres" id="10_11vu1"]
@@ -20,14 +19,14 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_hpu7o")
 
-[node name="Background" type="ColorRect" parent="." unique_id=294616286]
+[node name="TextureRect" type="ColorRect" parent="." unique_id=514036218]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.35141936, 0.2700238, 0.35723943, 1)
+color = Color(0.08627451, 0.05490196, 0.09019608, 0.88235295)
 
 [node name="Margin" type="MarginContainer" parent="." unique_id=2145801026]
 layout_mode = 1
@@ -111,9 +110,9 @@ theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.254901
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("4_jxjpo")
 theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = ExtResource("8_7e6jv")
-theme_override_styles/pressed = ExtResource("9_11vu1")
-theme_override_styles/hover = ExtResource("10_3clr0")
+theme_override_styles/normal = ExtResource("5_jxjpo")
+theme_override_styles/pressed = ExtResource("6_gpa3m")
+theme_override_styles/hover = ExtResource("7_a784v")
 text = "Randomize "
 
 [node name="StatusLabel" type="Label" parent="Margin/Main/BottomBar" unique_id=833625498]
@@ -123,7 +122,7 @@ size_flags_horizontal = 3
 text = "Waiting for players..."
 horizontal_alignment = 1
 
-[node name="ReadyButton" type="Button" parent="Margin/Main/BottomBar" unique_id=1036450557]
+[node name="PickButton" type="Button" parent="Margin/Main/BottomBar" unique_id=1036450557]
 custom_minimum_size = Vector2(120, 60)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
@@ -136,4 +135,4 @@ theme_override_styles/normal = ExtResource("5_jxjpo")
 theme_override_styles/pressed = ExtResource("9_11vu1")
 theme_override_styles/hover = ExtResource("10_3clr0")
 theme_override_styles/disabled = ExtResource("10_11vu1")
-text = "Ready"
+text = "Pick"

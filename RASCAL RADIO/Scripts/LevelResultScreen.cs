@@ -19,7 +19,7 @@ public partial class LevelResultScreen : CanvasLayer
     private PanelContainer _paper;
     private Control _stamp;
     private ColorRect _dim, _cover;
-    private Button _btn;
+    private Button _btn, _restartBtn;
     private Label _scoreLbl, _compVal, _accVal;
     private ProgressBar _compBar, _accBar;
     private readonly List<Control> _rows = new();
@@ -145,16 +145,22 @@ public partial class LevelResultScreen : CanvasLayer
         }
 
         col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
-        _btn = new Button
+        // RESTART + BACK TO LOBBY side by side, same paper-and-yellow style
+        var btnRow = new HBoxContainer
         {
-            Text = "BACK TO LOBBY",
-            CustomMinimumSize = new Vector2(240, 52),
+            Alignment = BoxContainer.AlignmentMode.Center,
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
         };
-        UiStyle.StyleButton(_btn, UiStyle.Yellow);
-        if (ShortStack() != null) _btn.AddThemeFontOverride("font", ShortStack());
+        btnRow.AddThemeConstantOverride("separation", 14);
+        col.AddChild(btnRow);
+
+        _restartBtn = MakeButton("RESTART", outline: true);
+        _restartBtn.Pressed += Restart;
+        btnRow.AddChild(_restartBtn);
+
+        _btn = MakeButton("BACK TO LOBBY");
         _btn.Pressed += Leave;
-        col.AddChild(_btn);
+        btnRow.AddChild(_btn);
 
         // ---------- black cover on top: fades out (transition in) and back in (transition out) ----------
         _cover = new ColorRect { Color = Colors.Black, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -299,11 +305,60 @@ public partial class LevelResultScreen : CanvasLayer
         MoveChild(_cover, GetChildCount() - 1);
     }
 
+    // Restart the same level for everyone. Fades to black first, then the game's title card takes over.
+    private void Restart()
+    {
+        if (_leaving) return;
+        _leaving = true;
+        _btn.Disabled = true;
+        _restartBtn.Disabled = true;
+        _cover.MouseFilter = Control.MouseFilterEnum.Stop;
+
+        var tw = CreateTween();
+        tw.TweenProperty(_cover, "color:a", 1.0f, 0.3);
+        tw.TweenCallback(Callable.From(() => GameSession.Instance.RestartCurrentLevel()));
+    }
+
+    private static Button MakeButton(string text, bool outline = false)
+    {
+        var b = new Button { Text = text, CustomMinimumSize = new Vector2(220, 52) };
+        UiStyle.StyleButton(b, UiStyle.Yellow);
+        if (outline) StyleOutline(b);   // secondary button: border only, no fill
+        if (ShortStack() != null) b.AddThemeFontOverride("font", ShortStack());
+        return b;
+    }
+
+    // Outline-only button so it doesn't compete with the main (yellow) one.
+    private static void StyleOutline(Button b)
+    {
+        StyleBoxFlat Box(Color bg)
+        {
+            var s = new StyleBoxFlat { BgColor = bg, BorderColor = Ink };
+            s.SetBorderWidthAll(3);
+            s.SetCornerRadiusAll(10);
+            s.ContentMarginLeft = 24; s.ContentMarginRight = 24;
+            s.ContentMarginTop = 8; s.ContentMarginBottom = 8;
+            return s;
+        }
+
+        b.AddThemeStyleboxOverride("normal", Box(new Color(Ink, 0f)));      // transparent
+        b.AddThemeStyleboxOverride("hover", Box(new Color(Ink, 0.08f)));    // faint tint on hover
+        b.AddThemeStyleboxOverride("pressed", Box(new Color(Ink, 0.16f)));
+        b.AddThemeStyleboxOverride("disabled", Box(new Color(Ink, 0f)));
+        b.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+        b.AddThemeColorOverride("font_color", Ink);
+        b.AddThemeColorOverride("font_hover_color", Ink);
+        b.AddThemeColorOverride("font_pressed_color", Ink);
+        b.AddThemeColorOverride("font_focus_color", Ink);
+        b.AddThemeColorOverride("font_disabled_color", Muted);
+    }
+
     private void Leave()
     {
         if (_leaving) return;
         _leaving = true;
         _btn.Disabled = true;
+        _restartBtn.Disabled = true;
         _cover.MouseFilter = Control.MouseFilterEnum.Stop;
 
         var tw = CreateTween();

@@ -6,168 +6,195 @@ using RascalRadio.Core.Models;
 
 public partial class RoleSelection : Control
 {
-	private PlayerList _playerList;
-	private int LocalPlayerId => (int)Multiplayer.GetUniqueId();
+    private PlayerList _playerList;
+    private int LocalPlayerId => (int)Multiplayer.GetUniqueId();
 
-	// Add the image paths to the tuple
-	private static readonly Dictionary<Role, (string Name, string Blurb, string ImagePath)> RoleInfo = new()
-	{
-		{ Role.Broadcaster,     ("Broadcaster", "Runs the show. Picks the callers.", "res://assets/images/broadcaster.png") },
-		{ Role.RadioTechnician, ("Technician",  "Keeps the gear alive. Fixes what the raccoon breaks.", "res://assets/images/tech.png") },
-		{ Role.RadioOperator,   ("Operator",    "Sets the quota and keeps the schedule.", "res://assets/images/operator.png") },
-	};
+    // Add the image paths to the tuple
+    private static readonly Dictionary<Role, (string Name, string Blurb, string ImagePath)> RoleInfo = new()
+    {
+        { Role.Broadcaster,     ("Broadcaster", "Runs the show. Picks the callers.", "res://assets/images/broadcaster.png") },
+        { Role.RadioTechnician, ("Technician",  "Keeps the gear alive. Fixes what the raccoon breaks.", "res://assets/images/tech.png") },
+        { Role.RadioOperator,   ("Operator",    "Sets the quota and keeps the schedule.", "res://assets/images/operator.png") },
+    };
 
-	private const string CardScenePath = "res://scenes/RoleSelect/role_card.tscn";
-	private readonly Dictionary<Role, RoleCard> _cards = new();
+    private const string CardScenePath = "res://scenes/RoleSelect/role_card.tscn";
+    private readonly Dictionary<Role, RoleCard> _cards = new();
 
-	private HBoxContainer _cardsRow;
-	private Button _randomizeButton;
-	private Button _readyButton;
-	private Button _backButton;
-	private Label _statusLabel;
+    private HBoxContainer _cardsRow;
+    private Button _randomizeButton;
+    private Button _pickButton;
+    private Button _backButton;
+    private Label _statusLabel;
 
-	private string _selectedRole = "";
-	private bool _isReady = false;
+    // The role currently highlighted (always mirrors the network state).
+    private string _selectedRole = "";
 
-	public override void _Ready()
-	{
-		SetAnchorsPreset(LayoutPreset.FullRect);
-		GetNodeOrNull<Control>("Background")?.SetAnchorsPreset(LayoutPreset.FullRect);
+    // The role the player has locked in with Pick (or already had when this screen opened).
+    // Pick stays disabled while _selectedRole == _pickedRole.
+    private string _pickedRole = "";
 
-		var margin = GetNodeOrNull<MarginContainer>("Margin");
-		if (margin != null) margin.SetAnchorsPreset(LayoutPreset.FullRect);
+    // Lobby ready state is owned by the lobby's own Ready button now.
+    // We only carry it along so role changes don't overwrite it.
+    private bool _isReady = false;
 
-		var mainContainer = GetNodeOrNull<VBoxContainer>("Margin/Main");
-		if (mainContainer != null)
-		{
-			mainContainer.SizeFlagsVertical = SizeFlags.ExpandFill;
-			mainContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-			mainContainer.Alignment = BoxContainer.AlignmentMode.Center;
-		}
+    public override void _Ready()
+    {
+        SetAnchorsPreset(LayoutPreset.FullRect);
+        GetNodeOrNull<Control>("Background")?.SetAnchorsPreset(LayoutPreset.FullRect);
 
-		_cardsRow = GetNode<HBoxContainer>("Margin/Main/CardsRow");
-		if (_cardsRow != null)
-		{
-			_cardsRow.SizeFlagsVertical = SizeFlags.ExpandFill;
-			_cardsRow.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-			_cardsRow.Alignment = BoxContainer.AlignmentMode.Center;
-		}
+        var margin = GetNodeOrNull<MarginContainer>("Margin");
+        if (margin != null) margin.SetAnchorsPreset(LayoutPreset.FullRect);
 
-		_randomizeButton = GetNode<Button>("Margin/Main/BottomBar/RandomizeButton");
-		_readyButton = GetNode<Button>("Margin/Main/BottomBar/ReadyButton");
-		_statusLabel = GetNode<Label>("Margin/Main/BottomBar/StatusLabel");
-		_backButton = GetNode<Button>("Margin/Main/TopBar/BackButton");
+        var mainContainer = GetNodeOrNull<VBoxContainer>("Margin/Main");
+        if (mainContainer != null)
+        {
+            mainContainer.SizeFlagsVertical = SizeFlags.ExpandFill;
+            mainContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            mainContainer.Alignment = BoxContainer.AlignmentMode.Center;
+        }
+
+        _cardsRow = GetNode<HBoxContainer>("Margin/Main/CardsRow");
+        if (_cardsRow != null)
+        {
+            _cardsRow.SizeFlagsVertical = SizeFlags.ExpandFill;
+            _cardsRow.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            _cardsRow.Alignment = BoxContainer.AlignmentMode.Center;
+        }
+
+        _randomizeButton = GetNode<Button>("Margin/Main/BottomBar/RandomizeButton");
+        _pickButton = GetNode<Button>("Margin/Main/BottomBar/PickButton");
+        _statusLabel = GetNodeOrNull<Label>("Margin/Main/BottomBar/StatusLabel");
+        _backButton = GetNode<Button>("Margin/Main/TopBar/BackButton");
 
         _randomizeButton.Visible = Multiplayer.IsServer();
 
         foreach (Node child in _cardsRow.GetChildren()) child.QueueFree();
 
-		// Get the parent lobby to handle networking
-		_playerList = GetParent<PlayerList>();
+        // Get the parent lobby to handle networking
+        _playerList = GetParent<PlayerList>();
 
-		BuildCards();
+        // If they already had a role when opening this screen, count it as picked
+        // so the Pick button starts disabled until they choose something different.
+        _playerList.PlayerRoles.TryGetValue(LocalPlayerId, out string existingRole);
+        _pickedRole = existingRole ?? "";
 
-		_randomizeButton.Pressed += OnRandomizePressed;
-		_readyButton.Pressed += OnReadyPressed;
-		_backButton.Pressed += QueueFree;
+        BuildCards();
 
-		RefreshFromPlayerList();
-	}
+        _randomizeButton.Pressed += OnRandomizePressed;
+        _pickButton.Pressed += OnPickPressed;
+        _backButton.Pressed += QueueFree;
 
-	private void BuildCards()
-	{
-		var cardScene = GD.Load<PackedScene>(CardScenePath);
+        RefreshFromPlayerList();
+    }
 
-		foreach (Role role in RoleInfo.Keys)
-		{
-			var card = cardScene.Instantiate<RoleCard>();
-			card.CustomMinimumSize = new Vector2(250, 400);
-			_cardsRow.AddChild(card);
+    // Esc closes the screen, same as the Back button.
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event.IsActionPressed("ui_cancel"))
+        {
+            GetViewport().SetInputAsHandled();
+            QueueFree();
+        }
+    }
 
-			var info = RoleInfo[role];
+    private void BuildCards()
+    {
+        var cardScene = GD.Load<PackedScene>(CardScenePath);
 
-			// --- NEW: Load the image and pass it to the card ---
-			Texture2D roleArt = GD.Load<Texture2D>(info.ImagePath);
-			card.Setup(info.Name, info.Blurb, roleArt);
+        foreach (Role role in RoleInfo.Keys)
+        {
+            var card = cardScene.Instantiate<RoleCard>();
+            card.CustomMinimumSize = new Vector2(250, 400);
+            _cardsRow.AddChild(card);
 
-			string capturedRoleStr = role.ToString();
+            var info = RoleInfo[role];
 
-			card.SelectPressed += () =>
-			{
-				_selectedRole = capturedRoleStr;
-				_playerList.Rpc(PlayerList.MethodName.UpdatePlayerStateRpc, LocalPlayerId, _selectedRole, _isReady);
-			};
+            Texture2D roleArt = GD.Load<Texture2D>(info.ImagePath);
+            card.Setup(info.Name, info.Blurb, roleArt);
 
-			_cards[role] = card;
-		}
-	}
+            string capturedRoleStr = role.ToString();
+
+            card.SelectPressed += () =>
+            {
+                _selectedRole = capturedRoleStr;
+                _playerList.Rpc(PlayerList.MethodName.UpdatePlayerStateRpc, LocalPlayerId, _selectedRole, _isReady);
+                UpdatePickButton(); // enables Pick right away if this differs from the picked role
+            };
+
+            _cards[role] = card;
+        }
+    }
+
     private void OnRandomizePressed()
     {
         if (!Multiplayer.IsServer()) return;
         _playerList.RandomizeAllRoles();
     }
 
-    private void OnReadyPressed()
-	{
-		_isReady = !_isReady;
-		_playerList.Rpc(PlayerList.MethodName.UpdatePlayerStateRpc, LocalPlayerId, _selectedRole, _isReady);
+    private void OnPickPressed()
+    {
+        if (string.IsNullOrEmpty(_selectedRole)) return;
 
-		// If the player just clicked "Ready", notify them of the status and close the overlay
-		if (_isReady)
-		{
-			_playerList.CheckStartConditionsAndNotify();
-			QueueFree();
-		}
-	}
+        _pickedRole = _selectedRole;
+        _playerList.Rpc(PlayerList.MethodName.UpdatePlayerStateRpc, LocalPlayerId, _selectedRole, _isReady);
 
-	// Called automatically by PlayerList when network state updates
-	public void RefreshFromPlayerList()
-	{
-		if (_playerList == null) return;
+        UpdatePickButton(); // disables it
+        QueueFree();        // close the screen
+    }
 
-		// Fetch our latest state from the network dictionary
-		_playerList.PlayerRoles.TryGetValue(LocalPlayerId, out _selectedRole);
-		_playerList.PlayerReady.TryGetValue(LocalPlayerId, out _isReady);
+    private void UpdatePickButton()
+    {
+        if (_pickButton == null) return;
 
-		// Count how many people have each role to find duplicates
-		var roleCounts = new Dictionary<string, int>();
-		foreach (var r in _playerList.PlayerRoles.Values)
-		{
-			if (!string.IsNullOrEmpty(r))
-			{
-				if (roleCounts.ContainsKey(r)) roleCounts[r]++;
-				else roleCounts[r] = 1;
-			}
-		}
+        bool hasRole = !string.IsNullOrEmpty(_selectedRole);
+        bool alreadyPicked = hasRole && _selectedRole == _pickedRole;
 
-		foreach (var pair in _cards)
-		{
-			string rStr = pair.Key.ToString();
-			bool isMine = _selectedRole == rStr;
+        _pickButton.Disabled = !hasRole || alreadyPicked;
 
-			// Cards are NEVER "Taken" anymore, they are always "Available" so anyone can click them
-			pair.Value.SetState(isMine ? RoleCard.CardState.Mine : RoleCard.CardState.Available);
+        if (_statusLabel != null)
+        {
+            _statusLabel.Text = !hasRole ? "Pick a role to continue"
+                : alreadyPicked ? "Role locked in"
+                : "Press Pick to confirm";
+        }
+    }
 
-			// Turn the card red if there is a conflict
-			if (roleCounts.ContainsKey(rStr) && roleCounts[rStr] > 1)
-			{
-				pair.Value.Modulate = new Color("#F44336"); // Red tint
-			}
-			else
-			{
-				pair.Value.Modulate = new Color(1, 1, 1); // Normal
-			}
-		}
+    // Called automatically by PlayerList when network state updates
+    public void RefreshFromPlayerList()
+    {
+        if (_playerList == null) return;
 
-		bool hasRole = !string.IsNullOrEmpty(_selectedRole);
-		_readyButton.Disabled = !hasRole;
-		_readyButton.Text = _isReady ? "Not Ready" : "Ready";
+        // Fetch our latest state from the network dictionary
+        _playerList.PlayerRoles.TryGetValue(LocalPlayerId, out _selectedRole);
+        _selectedRole ??= "";
+        _playerList.PlayerReady.TryGetValue(LocalPlayerId, out _isReady);
 
-		int readyCount = _playerList.PlayerReady.Values.Count(r => r);
-		int totalPlayers = _playerList.GetPlayerCount();
+        // Count how many people have each role to find duplicates
+        var roleCounts = new Dictionary<string, int>();
+        foreach (var r in _playerList.PlayerRoles.Values)
+        {
+            if (!string.IsNullOrEmpty(r))
+            {
+                if (roleCounts.ContainsKey(r)) roleCounts[r]++;
+                else roleCounts[r] = 1;
+            }
+        }
 
-		_statusLabel.Text = hasRole
-			? $"{readyCount}/{totalPlayers} ready"
-			: "Pick a role to continue";
-	}
+        foreach (var pair in _cards)
+        {
+            string rStr = pair.Key.ToString();
+            bool isMine = _selectedRole == rStr;
+
+            // Cards are never "Taken", they are always clickable
+            pair.Value.SetState(isMine ? RoleCard.CardState.Mine : RoleCard.CardState.Available);
+
+            // Turn the card red if there is a conflict
+            if (roleCounts.ContainsKey(rStr) && roleCounts[rStr] > 1)
+                pair.Value.Modulate = new Color("#F44336");
+            else
+                pair.Value.Modulate = new Color(1, 1, 1);
+        }
+
+        UpdatePickButton();
+    }
 }
