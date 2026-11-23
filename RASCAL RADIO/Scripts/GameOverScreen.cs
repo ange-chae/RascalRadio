@@ -122,6 +122,8 @@ public partial class GameOverScreen : CanvasLayer
         _btn = MakeButton("BACK TO LOBBY");
         _btn.Pressed += Leave;
         _btnRow.AddChild(_btn);
+        WireSfx(_restartBtn);
+        WireSfx(_btn);
 
         // ---------- red flash and black cover, both on top ----------
         _flash = new ColorRect { Color = new Color(0.9f, 0.1f, 0.1f, 0.75f), MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -151,6 +153,18 @@ public partial class GameOverScreen : CanvasLayer
             seq.TweenInterval(0.3);
         }
         seq.TweenCallback(Callable.From(ShowText));
+    }
+
+
+    // ===== sounds (files in res://assets/sfx/, name without extension) =====
+    private const string ClickSfx = "click";    // button pressed
+    private const string HoverSfx = "button";   // mouse moves onto a button
+
+    private void WireSfx(Button b)
+    {
+        if (b == null) return;
+        b.MouseEntered += () => { if (!b.Disabled) Sfx.Play(this, HoverSfx, -10f); };
+        b.Pressed += () => Sfx.Play(this, ClickSfx, -6f);
     }
 
     private void StopActiveBgm()
@@ -197,7 +211,7 @@ public partial class GameOverScreen : CanvasLayer
         player.Play();
     }
 
-// ===== animation =====
+    // ===== animation =====
     private void FlickerSign()
     {
         var tw = CreateTween();

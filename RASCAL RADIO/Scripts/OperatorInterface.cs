@@ -20,6 +20,13 @@ public partial class OperatorInterface : Control
     private Control _callerPanel;
     private Control _phone;
     private Tween _buzzTween;
+    private bool _ringing;
+    private void StopRing()
+    {
+        if (!_ringing) return;
+        _ringing = false;
+        Sfx.Stop(this, "phone_sfx");
+    }
     private string _lastCallerKey = "";
     private ModuleSlot _openSlot;
     private Button _flipBtn;
@@ -172,6 +179,7 @@ public partial class OperatorInterface : Control
         gs.CallerChanged -= OnCaller;
         gs.QuotaChanged -= OnQuota;
         gs.KeypadChanged -= OnKeypadChanged;
+        StopRing();
     }
 
     // ===== menu =====
@@ -247,7 +255,7 @@ public partial class OperatorInterface : Control
 
         if (_callerPanel != null) _callerPanel.Visible = hasCaller;
 
-        if (!hasCaller) { _lastCallerKey = ""; return; }
+        if (!hasCaller) { _lastCallerKey = ""; StopRing(); return; }
 
         SetCaller(gs.CallerName, gs.CallerNumber, gs.CallerTotal, gs.CallerStory);
 
@@ -263,6 +271,9 @@ public partial class OperatorInterface : Control
     private void BuzzPhone()
     {
         if (_phone == null) return;
+        StopRing();                        // never stack two rings
+        Sfx.Play(this, "phone_sfx", -16f);
+        _ringing = true;
         _buzzTween?.Kill();
         _phone.PivotOffset = _phone.Size / 2;
         _phone.Rotation = 0;

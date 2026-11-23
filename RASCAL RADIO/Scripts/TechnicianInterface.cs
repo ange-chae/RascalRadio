@@ -34,8 +34,9 @@ public partial class TechnicianInterface : PopupFrame
     "Module C: Soundboard",
     "Module D: Simon Says",
     "Prompter Color Code",
+    "General Rules",
 };
-
+    private const int RulesPageIndex = 5;
     private const int KeypadPageIndex = 0;
     private const int PianoPageIndex = 1;
     private int _page;
@@ -43,8 +44,9 @@ public partial class TechnicianInterface : PopupFrame
     private Timer _scrambleTimer, _restoreTimer;
     private bool _tabsScrambled;
     private readonly Dictionary<Button, string> _tabLabels = new();
-    private static readonly string[] TabPaths = { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" };
-    private readonly int[] _tabToPage = { 0, 1, 2, 3, 4 };   // which page each tab button opens
+    private static readonly string[] TabPaths = { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE", "%TabF" };
+    private readonly int[] _tabToPage = { 0, 1, 2, 3, 4, 5 };   // which page each tab button opens
+    private static readonly int[] TabOrder = { 5, 0, 1, 2, 3, 4 };
     private int _tab;                                          // which tab button is selected
     private PanelContainer _toast;
     private Label _toastLabel;
@@ -233,7 +235,7 @@ public partial class TechnicianInterface : PopupFrame
         {
             int idx = i;
             var b = GetNodeOrNull<Button>(tabs[i]);
-            if (b != null) b.Pressed += () => SelectTab(idx);
+            if (b != null) b.Pressed += () => { PlayFlipSfx(); SelectTab(idx); };
             else GD.PushError($"TechnicianInterface: {tabs[i]} not found.");
         }
         SelectTab(VisibleTabIdx().FirstOrDefault());
@@ -304,6 +306,7 @@ public partial class TechnicianInterface : PopupFrame
         if (popup == null) return;
 
         popup.Visible = !popup.Visible;
+        PlayFlipSfx();
         if (popup.Visible)   // same pop-in as before
         {
             popup.PivotOffset = popup.Size / 2;
@@ -428,6 +431,7 @@ public partial class TechnicianInterface : PopupFrame
                       : i == 2 ? SoundboardPage()
                       : i == 3 ? MemoryManual.PageText() + "\n\n"
                       : i == 4 ? PrompterColorPage()
+                      : i == RulesPageIndex ? RulesPage()
                       : "";
             text.BbcodeEnabled = true;
         }
@@ -436,6 +440,48 @@ public partial class TechnicianInterface : PopupFrame
         // (PageVisual isn't a unique-name node, so use FindChild)
         // var pic = FindChild("PageVisual", true, false) as TextureRect;
         // if (pic != null) pic.Texture = GD.Load<Texture2D>("res://assets/images/your_picture.png");
+    }
+
+    private static string RulesPage()
+    {
+        int max = GameSession.MaxStrikes;
+        int secs = (int)GameSession.CallerTimeoutSeconds;
+        var sb = new System.Text.StringBuilder();
+
+        sb.Append(Section("STRIKES",
+            $"You have {max} strikes. At {max}, the station goes down and the shift is over.\n" +
+            "A wrong module press gives a strike. A wrong caller decision gives a strike.\n" +
+            "Wrong presses in quick succession count as one strike."));
+
+        sb.Append(Section("CALLERS",
+            $"A caller waits {secs} seconds. After that they hang up. That is a strike.\n" +
+            "The Broadcaster must ACCEPT or REJECT before then.\n" +
+            "Accept real callers. Reject the raccoon. Accepting the raccoon sets off sabotage."));
+
+        sb.Append(Section("QUALITY AND SIGNAL",
+            "Quality drops while any module is faulty and recovers when everything is calm.\n" +
+            "Signal drops with every fault: static, a piano fault or an upside-down module.\n" +
+            "If either stays under its floor for too long, that task fails and costs you score."));
+
+        sb.Append(Section("DEAD AIR",
+            "The Broadcaster must keep typing the prompter. 3 seconds of silence is dead air and drains Quality fast."));
+
+        sb.Append(Section("THE RACCOON",
+            "It sabotages on its own. It can flip a module, put static on the keypad, chew the piano keys, scramble these tabs or cut the power.\n" +
+            "If the tabs look wrong, check each page title before you read out a rule."));
+
+        sb.Append(Section("BLACKOUT",
+            "When the power cuts, the manual is locked. Hold the reboot control until the meter fills (about 6 seconds). Letting go drains it."));
+
+        sb.Append(Section("SCORE",
+            "Out of 50: Task Completion 25 + Accuracy 25. Every mistake on a task takes 25% of that task's accuracy points.\n" +
+            "S 40-50, A 31-40, B 25-30, F 0-24. An F means the level is lost."));
+
+        sb.Append(Section("TEAMWORK",
+            "Nobody can solve a module alone. Read the rules out loud and let the Operator press.\n" +
+            "Anyone can pause the game. The shift clock stops while it is paused."));
+
+        return sb.ToString();
     }
 
     private static string PrompterColorPage()
@@ -735,6 +781,7 @@ public partial class TechnicianInterface : PopupFrame
             !tutorial && (d?.HasSoundboard ?? true),
             !tutorial && (d?.HasMemory ?? true),
             gs?.LevelId == "emergency_broadcast",
+            !tutorial,
         };
         if (!show.Any(x => x)) show[0] = true;   // never leave the manual with no tabs
 
@@ -749,6 +796,7 @@ public partial class TechnicianInterface : PopupFrame
         if (idx.Count == 0) return;
         int pos = idx.IndexOf(_tab);
         if (pos < 0) pos = 0;
+        PlayFlipSfx();
         SelectTab(idx[(pos + dir + idx.Count) % idx.Count]);
     }
 
@@ -762,9 +810,10 @@ public partial class TechnicianInterface : PopupFrame
         ShowPage(_tabToPage[tab]);
     }
 
+    private void PlayFlipSfx() => Sfx.Play(this, "module_sfx", -6f);
+
     private List<int> VisibleTabIdx() =>
-        Enumerable.Range(0, TabPaths.Length)
-            .Where(i => GetNodeOrNull<Button>(TabPaths[i]) is { Visible: true }).ToList();
+    TabOrder.Where(i => GetNodeOrNull<Button>(TabPaths[i]) is { Visible: true }).ToList();
     private void StartScramble()
     {
         var gs = GameSession.Instance;
@@ -845,6 +894,7 @@ public partial class TechnicianInterface : PopupFrame
             if (child is Control c && c.Visible && c is not ColorRect && c.GetGlobalRect().HasPoint(mb.GlobalPosition))
                 return;
 
+        PlayFlipSfx();
         popup.Visible = false;   // clicked outside: close the manual
     }
 

@@ -747,6 +747,38 @@ public partial class GameSession : Node
         };
     }
 
+    public const double CallerTimeoutSeconds = 60.0;
+
+    private void StartCallerTimeout(int index)
+    {
+        if (_tutorial != null || CurrentLevel == null) return;   // the tutorial never times out
+        int session = _session;
+        // second argument false = the timer freezes while the game is paused
+        GetTree().CreateTimer(CallerTimeoutSeconds, false).Timeout += () => MissCaller(index, session);
+    }
+
+    private void MissCaller(int index, int session)
+    {
+        if (session != _session || Ended || _broadcaster == null) return;
+        if (!_callerOnLine || _callerIndex != index) return;   // already accepted or rejected
+        _callerOnLine = false;
+
+        var callersTask = TaskOf(TaskKind.Callers);
+        if (callersTask != null) callersTask.Mistakes++;
+
+        _broadcaster.ExternalStrike();
+        Rpc(MethodName.SyncStrikesRpc, _broadcaster.Strikes);
+        Say("📞 The caller hung up. A missed call is a strike.");
+        if (_broadcaster.Strikes >= _broadcaster.MaxStrikes) { Rpc(MethodName.GameOverRpc); return; }
+
+        SyncTasks();
+        Rpc(MethodName.SyncCallerRpc, "", "", 0, _callers.Count);   // line goes quiet, ring stops
+
+        if (_callerIndex + 1 < _callers.Count)
+            ScheduleNextCaller(_callerIndex + 1, (CurrentLevel?.CallerGap ?? 6) * (0.75 + _rng.NextDouble() * 0.5));
+        else
+            FinishLevel();
+    }
 
     // ---------- Host logic ----------
     private long SenderId()
@@ -783,6 +815,7 @@ public partial class GameSession : Node
         _callerIndex = index;
         Caller c = _callers[index];
         Rpc(MethodName.SyncCallerRpc, c.Name, c.Story, index + 1, _callers.Count);
+        StartCallerTimeout(index);
     }
 
     private void Say(string text, bool success = false) => Rpc(MethodName.FeedbackRpc, text, success);
@@ -1174,7 +1207,7 @@ public partial class GameSession : Node
         bool gotStrike = strikes > Strikes;
         Strikes = strikes;
         Fire(StrikesChanged);
-        if (gotStrike) ShowStrikeFlash();
+        if (gotStrike) { Sfx.Play(this, "wrong_sfx", -6f); ShowStrikeFlash(); }   // every strike source ends up here
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -1182,6 +1215,7 @@ public partial class GameSession : Node
     {
         ClearPause();
         GameOver = true;
+        Sfx.Stop(this, "phone_sfx");   // silence the ringing phone
         Piano.SetActive(false);
         _endScreen = new GameOverScreen();
         GetTree().Root.AddChild(_endScreen);

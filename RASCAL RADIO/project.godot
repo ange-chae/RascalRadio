@@ -17,11 +17,11 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-AudioSettings="*res://Scripts/AudioSettingsManager.cs"
 NetworkManager="*uid://bpbnl2x5r4uie"
 GameSession="*uid://bnbls78oak5u1"
 QuitGuard="*uid://dts5ehretllf1"
 ClickSfx="*uid://w0yytqhman1m"
+AudioSettings="*res://Scripts/AudioSettingsManager.cs"
 
 [display]
 

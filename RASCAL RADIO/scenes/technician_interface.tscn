@@ -251,6 +251,9 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/background = SubResource("StyleBoxFlat_kawat")
 show_percentage = false
 script = ExtResource("9_cl4jf")
+Segments = null
+DangerBelow = null
+WarnBelow = null
 
 [node name="SignalLabel" type="Label" parent="Computer/compScreen" unique_id=1034367335]
 unique_name_in_owner = true
@@ -281,6 +284,9 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/background = SubResource("StyleBoxFlat_kawat")
 show_percentage = false
 script = ExtResource("9_cl4jf")
+Segments = null
+DangerBelow = null
+WarnBelow = null
 
 [node name="StrikeCount" type="Label" parent="Computer/compScreen" unique_id=1903162605]
 unique_name_in_owner = true
@@ -344,7 +350,6 @@ text = "Task"
 
 [node name="Popup" type="PanelContainer" parent="." unique_id=811324710]
 unique_name_in_owner = true
-visible = false
 custom_minimum_size = Vector2(1000, 580)
 clip_contents = true
 layout_mode = 1
@@ -394,6 +399,26 @@ theme_override_colors/font_color = Color(0.3647059, 0.21176471, 0.11372549, 1)
 theme_override_fonts/font = ExtResource("2_8d4vc")
 theme_override_font_sizes/font_size = 24
 text = "  MANUAL"
+
+[node name="TabF" type="Button" parent="Popup/Margin/VBox/Column/ManualTabs/LeftVBox" unique_id=256230824]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_pressed_color = Color(0, 0, 0, 0.99607843)
+theme_override_fonts/font = SubResource("SystemFont_bj2yc")
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBoxFlat_xncut")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_5lucv")
+theme_override_styles/hover = SubResource("StyleBoxFlat_bkebu")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_v0ep5")
+text = " General Rules
+"
+alignment = 0
 
 [node name="TabA" type="Button" parent="Popup/Margin/VBox/Column/ManualTabs/LeftVBox" unique_id=1938108888]
 unique_name_in_owner = true
