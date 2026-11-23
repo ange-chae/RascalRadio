@@ -31,6 +31,7 @@ public partial class OperatorInterface : Control
     public override void _Ready()
     {
         var gs = GameSession.Instance;
+        AddChild(new GameMusic());
 
         // FIRST, so nothing below can stop the narrator from appearing
         if (gs != null && gs.IsTutorial)

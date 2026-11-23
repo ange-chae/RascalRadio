@@ -128,7 +128,7 @@ public partial class TutorialOverlay : CanvasLayer
         };
         _row.AddChild(_gotIt);
 
-        _voice = new AudioStreamPlayer();
+        _voice = new AudioStreamPlayer { Bus = AudioSettingsManager.SfxBusName };
         AddChild(_voice);
 
         _dialogue.LineShown += ShowLine;

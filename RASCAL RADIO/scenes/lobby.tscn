@@ -18,6 +18,8 @@
 [ext_resource type="Texture2D" uid="uid://8vecrc78v8kg" path="res://assets/images/Join.png" id="11_m1sns"]
 [ext_resource type="Texture2D" uid="uid://c8gtt45cqvv7v" path="res://assets/images/Host.png" id="12_dyhay"]
 [ext_resource type="AudioStream" uid="uid://b5240ixt4jjb1" path="res://assets/sfx/BGM/LOBBY.mp3" id="18_o2i1r"]
+[ext_resource type="Script" path="res://Scripts/LobbyAudioSettings.cs" id="19_audio_settings"]
+[ext_resource type="Texture2D" path="res://assets/images/audio_settings/settingsIcon.png" id="20_settings_icon"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -576,4 +578,21 @@ theme_override_styles/focus = ExtResource("9_yad6j")
 [node name="LobbyBgm" type="AudioStreamPlayer" parent="." unique_id=296655055]
 stream = ExtResource("18_o2i1r")
 volume_db = -16.0
+bus = &"BGM"
 autoplay = true
+
+[node name="AudioSettingsUI" type="CanvasLayer" parent="."]
+layer = 25
+script = ExtResource("19_audio_settings")
+
+[node name="SettingsButton" type="TextureButton" parent="AudioSettingsUI"]
+layout_mode = 0
+offset_left = 1054.0
+offset_top = 10.0
+offset_right = 1144.0
+offset_bottom = 92.0
+texture_normal = ExtResource("20_settings_icon")
+texture_pressed = ExtResource("20_settings_icon")
+ignore_texture_size = true
+stretch_mode = 0
+z_index = 100

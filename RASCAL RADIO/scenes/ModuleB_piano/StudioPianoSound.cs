@@ -61,7 +61,7 @@ public partial class StudioPianoSound : Node
 		}
 		for (int i = 0; i < VoiceCount; i++)
 		{
-			var player = new AudioStreamPlayer { VolumeDb = -6f };
+			var player = new AudioStreamPlayer { VolumeDb = -6f, Bus = AudioSettingsManager.SfxBusName };
 			AddChild(player);
 			_voices.Add(player);
 		}

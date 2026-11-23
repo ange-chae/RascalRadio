@@ -16,7 +16,7 @@ public static class Sfx
 		}
 
 		// Add the player to the root so the sound keeps playing if the scene changes
-		var player = new AudioStreamPlayer { Stream = stream, VolumeDb = volumeDb };
+		var player = new AudioStreamPlayer { Stream = stream, VolumeDb = volumeDb, Bus = AudioSettingsManager.SfxBusName };
 		source.GetTree().Root.AddChild(player);
 
 		// Delete the player once the sound is done

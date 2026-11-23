@@ -55,7 +55,7 @@ public partial class SoundboardSound : Node
 		}
 		for (int i = 0; i < VoiceCount; i++)
 		{
-			var player = new AudioStreamPlayer { VolumeDb = DefaultVolumeDb };
+			var player = new AudioStreamPlayer { VolumeDb = DefaultVolumeDb, Bus = AudioSettingsManager.SfxBusName };
 			AddChild(player);
 			_voices.Add(player);
 		}

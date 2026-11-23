@@ -9,10 +9,12 @@ public partial class GameMusic : Node
 	private AudioStreamPlayer _player;
 	private string _currentTrack = "";
 	private Tween _fade;
+	private bool _stoppedForGameOver;
 
 	public override void _Ready()
 	{
-		_player = new AudioStreamPlayer { VolumeDb = PlayingDb };
+		AddToGroup("game_music");
+		_player = new AudioStreamPlayer { VolumeDb = PlayingDb, Bus = AudioSettingsManager.BgmBusName };
 		AddChild(_player);
 
 		// Check once a second, in case the level isn't set yet on the first frame
@@ -23,9 +25,16 @@ public partial class GameMusic : Node
 		CheckLevel();
 	}
 
+	public void StopForGameOver()
+	{
+		_stoppedForGameOver = true;
+		_fade?.Kill();
+		_fade = null;
+		_player?.Stop();
+	}
 	private void CheckLevel()
 	{
-		if (GameSession.Instance == null)
+		if (_stoppedForGameOver || GameSession.Instance == null || GameSession.Instance.GameOver)
 		{
 			return;
 		}

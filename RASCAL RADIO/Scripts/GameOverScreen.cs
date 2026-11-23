@@ -24,6 +24,8 @@ public partial class GameOverScreen : CanvasLayer
     public override void _Ready()
     {
         Layer = 100;
+        StopActiveBgm();
+        StartGameOverBgm();
 
         // ---------- dark red backdrop (blocks clicks on the game underneath) ----------
         var bg = new ColorRect { Color = new Color(0.14f, 0.01f, 0.03f, 0f) };
@@ -151,7 +153,51 @@ public partial class GameOverScreen : CanvasLayer
         seq.TweenCallback(Callable.From(ShowText));
     }
 
-    // ===== animation =====
+    private void StopActiveBgm()
+    {
+        foreach (Node candidate in GetTree().GetNodesInGroup("game_music"))
+        {
+            if (candidate is GameMusic gameplayMusic)
+            {
+                gameplayMusic.StopForGameOver();
+            }
+        }
+        foreach (Node candidate in GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false))
+        {
+            if (candidate is AudioStreamPlayer player && player.Bus == AudioSettingsManager.BgmBusName)
+            {
+                player.Stop();
+            }
+        }
+    }
+
+    private void StartGameOverBgm()
+    {
+        const string musicPath = "res://assets/sfx/BGM/gameover.mp3";
+        AudioStream stream = GD.Load<AudioStream>(musicPath);
+        if (stream == null)
+        {
+            GD.PushError($"[GameOverScreen] Could not load game-over music at {musicPath}.");
+            return;
+        }
+
+        if (stream is AudioStreamMP3 mp3)
+        {
+            mp3.Loop = false;
+        }
+
+        var player = new AudioStreamPlayer
+        {
+            Name = "GameOverBgm",
+            Stream = stream,
+            VolumeDb = -14.0f,
+            Bus = AudioSettingsManager.BgmBusName,
+        };
+        AddChild(player);
+        player.Play();
+    }
+
+// ===== animation =====
     private void FlickerSign()
     {
         var tw = CreateTween();

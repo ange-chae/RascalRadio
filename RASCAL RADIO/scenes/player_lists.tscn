@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dyvgbhnn2mgxc"]
 
 [ext_resource type="Script" uid="uid://bp8h10qbt0i8i" path="res://Scripts/PlayerList.cs" id="1_dbpi1"]
+[ext_resource type="AudioStream" path="res://assets/sfx/BGM/playerLobby.mp3" id="16_player_lobby_bgm"]
 [ext_resource type="Texture2D" uid="uid://oldxf226hrjh" path="res://assets/images/lobbyBG.png" id="2_gnd4y"]
 [ext_resource type="FontFile" uid="uid://bqgowbxbifop6" path="res://assets/fonts/VT323-Regular.ttf" id="2_jone8"]
 [ext_resource type="FontFile" uid="uid://do36l8egc4o0k" path="res://assets/fonts/Fredoka/static/Fredoka-SemiBold.ttf" id="2_wl1yt"]
@@ -193,6 +194,11 @@ corner_radius_bottom_left = 6
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dbpi1")
+
+[node name="PlayerListBgm" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("16_player_lobby_bgm")
+volume_db = -14.0
+bus = &"BGM"
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1138372938]
 layout_mode = 0

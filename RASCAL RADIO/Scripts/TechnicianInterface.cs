@@ -176,6 +176,7 @@ public partial class TechnicianInterface : PopupFrame
     public override void _Ready()
     {
         var gs = GameSession.Instance;
+        AddChild(new GameMusic());
 
         // FIRST, so nothing below can stop the tutorial from appearing
         if (gs != null && gs.IsTutorial) AddChild(new TutorialOverlay { RoleName = "Technician" });

@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://buphp0v361wts"]
+
+[ext_resource type="Texture2D" uid="uid://cg07vt1hibylb" path="res://assets/images/audio_settings/radioBody.png" id="1_6m00s"]
+[ext_resource type="Texture2D" uid="uid://yap6nflrug0q" path="res://assets/images/audio_settings/BGM.png" id="2_qmcas"]
+[ext_resource type="Texture2D" uid="uid://cwlo684wdvva0" path="res://assets/images/audio_settings/sound.png" id="3_kxkry"]
+[ext_resource type="Texture2D" uid="uid://dkxn0svxhp86n" path="res://assets/images/audio_settings/dragger.png" id="4_6nfyw"]
+[ext_resource type="Texture2D" uid="uid://t8k4g1ljptbt" path="res://assets/images/audio_settings/volumeLine.png" id="5_hcxxe"]
+[ext_resource type="Script" path="res://Scripts/RadioSettings.cs" id="6_radio_settings"]
+
+[node name="Radio" type="Node2D" unique_id=1159502467]
+script = ExtResource("6_radio_settings")
+
+[node name="radioBody_png" type="TextureRect" parent="." unique_id=1666702818]
+offset_left = 300.0
+offset_top = 6.0
+offset_right = 869.0
+offset_bottom = 642.0
+texture = ExtResource("1_6m00s")
+
+[node name="BGMbutton" type="TextureRect" parent="." unique_id=1234419688]
+offset_left = 536.0
+offset_top = 326.0
+offset_right = 723.0
+offset_bottom = 496.0
+texture = ExtResource("2_qmcas")
+
+[node name="BGMbutton2" type="TextureRect" parent="." unique_id=868537650]
+offset_left = 643.0
+offset_top = 324.0
+offset_right = 830.0
+offset_bottom = 494.0
+texture = ExtResource("3_kxkry")
+
+[node name="drag bar" type="TextureRect" parent="." unique_id=1947604620]
+top_level = true
+offset_left = 580.0
+offset_top = 253.0
+offset_right = 596.0
+offset_bottom = 316.0
+texture = ExtResource("4_6nfyw")
+expand_mode = 1
+
+[node name="lineBar" type="TextureRect" parent="." unique_id=429180980]
+offset_left = 576.0
+offset_top = 270.0
+offset_right = 779.0
+offset_bottom = 298.0
+texture = ExtResource("5_hcxxe")
+expand_mode = 1

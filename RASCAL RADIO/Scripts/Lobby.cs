@@ -71,7 +71,7 @@ private void PlaySfx(AudioStream stream, float volumeDb)
 	{
 		return;
 	}
-	var player = new AudioStreamPlayer { Stream = stream, VolumeDb = volumeDb };
+	var player = new AudioStreamPlayer { Stream = stream, VolumeDb = volumeDb, Bus = AudioSettingsManager.SfxBusName };
 	GetTree().Root.AddChild(player);
 	player.Finished += player.QueueFree;
 	player.Play();

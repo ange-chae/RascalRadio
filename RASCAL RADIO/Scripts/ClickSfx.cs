@@ -27,7 +27,7 @@ public partial class ClickSfx : Node
 
 		for (int i = 0; i < VoiceCount; i++)
 		{
-			var player = new AudioStreamPlayer { VolumeDb = VolumeDb };
+			var player = new AudioStreamPlayer { VolumeDb = VolumeDb, Bus = AudioSettingsManager.SfxBusName };
 			AddChild(player);
 			_voices.Add(player);
 		}

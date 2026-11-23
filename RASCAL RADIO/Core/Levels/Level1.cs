@@ -25,7 +25,7 @@ public static class Level1
 		HasPiano = true,              // Piano module on or off
 		KeypadMinLine = 10,
 		KeypadMaxLine = 99,
-        CoffeeSpill = true,
+		CoffeeSpill = true,
 		// ---------- Prompter (the Broadcaster's keys) ----------
 		SegmentTime = 15.0,           // seconds to finish one line of keys. Lower = harder.
 		PrompterLineRest = 12,         // seconds of quiet after each line. Lower = harder.
@@ -58,8 +58,8 @@ public static class Level1
 		ClockEndMinute = 9 * 60,
 		ShiftSeconds = 240,
 
-        MaxSimultaneousModules = 1,
-        SimultaneousChance = 0
-        // seconds below a floor before the task fails. Lower = harder.
-    };
+		MaxSimultaneousModules = 1,
+		SimultaneousChance = 0
+		// seconds below a floor before the task fails. Lower = harder.
+	};
 }

@@ -77,6 +77,12 @@ public partial class PlayerList : Control
     public override void _Ready()
 	{
 		_networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		var playerListBgm = GetNodeOrNull<AudioStreamPlayer>("PlayerListBgm");
+		if (playerListBgm?.Stream is AudioStreamMP3 lobbyTrack)
+		{
+			lobbyTrack.Loop = true;
+			playerListBgm.Play();
+		}
 
 		_lblRoomName = FindChild("lblRoomName", true, false) as Label;
 		_txtRoomCode = FindChild("txtRoomCode", true, false) as LineEdit;
