@@ -27,7 +27,6 @@ public static class Level3
 		HasMemory = true,
 		HasKeypad = true,             // Line Override keypad active (Slot 1: top-left)
 		HasPiano = true,              // Piano module active (Slot 2: top-right)
-		HasSoundboard = true,         // Soundboard module active (Slot 3: bottom-left)
 		AllowStatic = true,           // Raccoon can cause static on keypad
 		FlipSabotage = true,          // Raccoon can flip modules upside down
         CoffeeSpill = true,
@@ -37,24 +36,23 @@ public static class Level3
         KeypadMinLine = 1000,
 		KeypadMaxLine = 9999,
 		// ---------- Prompter (Broadcaster timing) ----------
-		SegmentTime = 9.5,            // Down from 15.0s in Level 1 (faster prompter)
+		SegmentTime = 13.0,           
 		PrompterLineRest = 4.0,       // Down from 12.0s in Level 1
 		PrompterParagraphRest = 4.0,  // Down from 6.0s in Level 1
 
 		// ---------- Sabotage & Module Disruption Timers ----------
 		SabotageInterval = 22,        // Attacks every ~22s (down from 40s in Level 1)
-		FaultDrain = 4,               // Quality drops 2 points/sec per fault (up from 1 in Level 1)
+		FaultDrain = 2,               // Quality drops 2 points/sec per fault (up from 1 in Level 1)
 		HealthGrace = 6.0,            // Grace period reduced to 6s (down from 10s in Level 1)
-		QualityFloor = 85,            // Quality threshold raised to 50% (up from 45% in Level 1)
-		SignalFloor = 75,             // Signal threshold
+		QualityFloor = 65,            // Quality threshold raised to 50% (up from 45% in Level 1)
+		SignalFloor = 65,             // Signal threshold
 		CalmRecovery = 1,
 
-		KeypadTarget = 4,             // 4 lines to route
-		PianoTarget = 3,              // 3 jingles to complete
-		SoundboardTarget = 2,         // 2 sound cues to complete
-
+		KeypadTarget = 2,             // 4 lines to route
+		PianoTarget = 1,              // 3 jingles to complete
+		MemoryTarget = 3,
 		// ---------- Callers ----------
-		CallerGap = 9,                // Callers ring every ~9s (down from 16s in Level 1)
+		CallerGap = 12,                // Callers ring every ~9s (down from 16s in Level 1)
 		BuildCallers = (bank, topic) =>
 		{
 			var list = new List<Caller>();

@@ -19,7 +19,7 @@ public partial class LevelResultScreen : CanvasLayer
     private PanelContainer _paper;
     private Control _stamp;
     private ColorRect _dim, _cover;
-    private Button _btn, _restartBtn;
+    private Button _btn, _restartBtn, _nextBtn;
     private Label _scoreLbl, _compVal, _accVal;
     private ProgressBar _compBar, _accBar;
     private readonly List<Control> _rows = new();
@@ -67,7 +67,7 @@ public partial class LevelResultScreen : CanvasLayer
         // ---------- the paper ----------
         _paper = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(580, 0),
+            CustomMinimumSize = new Vector2(660, 0),   // wider so three buttons fit
             Modulate = new Color(1, 1, 1, 0),
         };
         var ps = new StyleBoxFlat { BgColor = PaperCol, BorderColor = new Color("D9C7A0") };
@@ -145,7 +145,11 @@ public partial class LevelResultScreen : CanvasLayer
         }
 
         col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
-        // RESTART + BACK TO LOBBY side by side, same paper-and-yellow style
+        // BACK TO LOBBY, RESTART, NEXT LEVEL side by side. The yellow one is the main action:
+        // NEXT LEVEL when it can be played, otherwise BACK TO LOBBY.
+        bool hasNext = gs != null && gs.HasNextLevel;
+        bool canNext = gs != null && gs.CanPlayNextLevel;
+
         var btnRow = new HBoxContainer
         {
             Alignment = BoxContainer.AlignmentMode.Center,
@@ -154,13 +158,24 @@ public partial class LevelResultScreen : CanvasLayer
         btnRow.AddThemeConstantOverride("separation", 14);
         col.AddChild(btnRow);
 
+        _btn = MakeButton("BACK TO LOBBY", outline: canNext);
+        _btn.Pressed += Leave;
+        btnRow.AddChild(_btn);
+
         _restartBtn = MakeButton("RESTART", outline: true);
         _restartBtn.Pressed += Restart;
         btnRow.AddChild(_restartBtn);
 
-        _btn = MakeButton("BACK TO LOBBY");
-        _btn.Pressed += Leave;
-        btnRow.AddChild(_btn);
+        if (hasNext)   // hidden on the last level
+        {
+            _nextBtn = MakeButton("NEXT LEVEL", outline: !canNext);
+            _nextBtn.Disabled = !canNext;
+            _nextBtn.Pressed += NextLevel;
+            btnRow.AddChild(_nextBtn);
+        }
+
+        if (hasNext && !canNext)
+            col.AddChild(Lbl("Get an A or S to unlock the next level.", 13, Muted));
 
         // ---------- black cover on top: fades out (transition in) and back in (transition out) ----------
         _cover = new ColorRect { Color = Colors.Black, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -310,8 +325,7 @@ public partial class LevelResultScreen : CanvasLayer
     {
         if (_leaving) return;
         _leaving = true;
-        _btn.Disabled = true;
-        _restartBtn.Disabled = true;
+        DisableButtons();
         _cover.MouseFilter = Control.MouseFilterEnum.Stop;
 
         var tw = CreateTween();
@@ -319,9 +333,29 @@ public partial class LevelResultScreen : CanvasLayer
         tw.TweenCallback(Callable.From(() => GameSession.Instance.RestartCurrentLevel()));
     }
 
+    // Start the next level for everyone. Fades to black first, then its title card takes over.
+    private void NextLevel()
+    {
+        if (_leaving) return;
+        _leaving = true;
+        DisableButtons();
+        _cover.MouseFilter = Control.MouseFilterEnum.Stop;
+
+        var tw = CreateTween();
+        tw.TweenProperty(_cover, "color:a", 1.0f, 0.3);
+        tw.TweenCallback(Callable.From(() => GameSession.Instance.RequestNextLevel()));
+    }
+
+    private void DisableButtons()
+    {
+        _btn.Disabled = true;
+        _restartBtn.Disabled = true;
+        if (_nextBtn != null) _nextBtn.Disabled = true;
+    }
+
     private static Button MakeButton(string text, bool outline = false)
     {
-        var b = new Button { Text = text, CustomMinimumSize = new Vector2(220, 52) };
+        var b = new Button { Text = text, CustomMinimumSize = new Vector2(170, 52) };
         UiStyle.StyleButton(b, UiStyle.Yellow);
         if (outline) StyleOutline(b);   // secondary button: border only, no fill
         if (ShortStack() != null) b.AddThemeFontOverride("font", ShortStack());
@@ -357,8 +391,7 @@ public partial class LevelResultScreen : CanvasLayer
     {
         if (_leaving) return;
         _leaving = true;
-        _btn.Disabled = true;
-        _restartBtn.Disabled = true;
+        DisableButtons();
         _cover.MouseFilter = Control.MouseFilterEnum.Stop;
 
         var tw = CreateTween();
