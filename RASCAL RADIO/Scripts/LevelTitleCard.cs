@@ -1,10 +1,9 @@
 using Godot;
+using System.Text;
 
-// Title card between levels. Same public API as before (Title, Delay, Hold, ReportWhenDone, ...).
-// Transition: the screen cuts to radio static, settles to black, then the title SLAMS in with a flash and
-// screen shake. With GlitchStatic on (Level 3 only) the whole title then stays covered in live static: thin
-// noise bars crawl across it and red/cyan ghost copies of the letters jitter, with glitch bursts now and then.
-// Fades out again when the next level has loaded.
+// Title card between levels. Same public API as before (Title, Delay, Hold, ReportWhenDone).
+// Transition: the screen cuts to radio static, settles to black, then the title fades in
+// with a yellow underline that wipes across. Fades out again when the next level has loaded.
 public partial class LevelTitleCard : CanvasLayer
 {
     public string Title { get; set; } = "LEVEL 1";
@@ -13,22 +12,26 @@ public partial class LevelTitleCard : CanvasLayer
     public bool ReportWhenDone { get; set; } = false; // true when this card leads into a level
     public bool StartCovered { get; set; } = false;   // true = screen is already black when the card appears (hides a scene swap)
     public bool FadeOutWhenDone { get; set; } = false; // true = fades itself away after the hold (cards that don't lead into a level)
-    public Color Accent { get; set; } = new("FFD25A"); // underline + small tag color
-    public bool GlitchStatic { get; set; } = false;   // true = constant dramatic static + glitch over the title (Level 3 only)
 
     private static readonly Color Cream = new("FBEFD9");
     private static readonly Color Ink = new("2B1B2E");
-    private static readonly Color GhostRed = new("E5484D");
-    private static readonly Color GhostCyan = new("5AE0FF");
-    private const int BarCount = 16;      // the quick static cut at the start
-    private const int NoiseCount = 26;    // the constant static over the title
+    private static readonly Color Yellow = new("FFD25A");
+    private const int BarCount = 16;
 
-    private ColorRect _dim, _line, _flash;
+    private ColorRect _dim, _line;
     private Control _lineHolder;
-    private Label _label, _tag, _ghostR, _ghostC;
-    private Control _static, _noise;
-    private Timer _glitchTimer;
+    private Label _label, _tag;
+    private Control _static;
     private readonly RandomNumberGenerator _rng = new();
+
+    // Glitch text + continuous static
+    private const string GlitchChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&@$?<>/=+*";
+    private const double TickStep = 0.05;     // static and text refresh every 50 ms
+    private const double DecodeStart = 0.45;  // when the title begins to lock in (same moment it fades in)
+    private const double CharStep = 0.06;     // one more letter locks in every step
+    private double _t, _nextTick, _burstUntil;
+    private int _locked;                      // how many letters are already the real letter
+    private bool _soft;                       // static eases off once the whole title has locked in
 
     public override void _Ready()
     {
@@ -47,9 +50,12 @@ public partial class LevelTitleCard : CanvasLayer
         AddChild(_dim);
         _dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
-        // the quick static burst at the start of the cut
-        _static = MakeBarLayer(BarCount);
-        _static.Visible = false;
+        // the static layer: a bunch of thin bars that jump around for a moment
+        _static = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        AddChild(_static);
+        _static.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        for (int i = 0; i < BarCount; i++)
+            _static.AddChild(new ColorRect { Color = Cream, MouseFilter = Control.MouseFilterEnum.Ignore });
 
         // title + underline + small tag, stacked in the middle
         var center = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -60,22 +66,16 @@ public partial class LevelTitleCard : CanvasLayer
         col.AddThemeConstantOverride("separation", 10);
         center.AddChild(col);
 
-        _label = MakeLabel(Title, 104, Cream, font);
+        int titleSize = FitTitleSize(font, Title);
+        _label = MakeLabel(ScrambledTitle(), titleSize, Cream, font);
+        // fixed size + clipped, so random characters never make the title (or the underline) jump around
+        Font measure = font ?? ThemeDB.FallbackFont;
+        _label.ClipText = true;
+        _label.VerticalAlignment = VerticalAlignment.Center;
+        _label.CustomMinimumSize = new Vector2(
+            measure.GetStringSize(Title, HorizontalAlignment.Left, -1, titleSize).X + 32,
+            measure.GetHeight(titleSize) + 16);
         col.AddChild(_label);
-        _label.Resized += () => _label.PivotOffset = _label.Size / 2f;
-
-        // Level 3 only: two ghost copies behind the title (red + cyan) that jitter sideways, like a bad signal
-        if (GlitchStatic)
-        {
-            _ghostR = MakeGhost(Title, 104, new Color(GhostRed, 0.8f), font);
-            _ghostC = MakeGhost(Title, 104, new Color(GhostCyan, 0.8f), font);
-            _label.AddChild(_ghostR);
-            _label.AddChild(_ghostC);
-            _ghostR.ShowBehindParent = true;
-            _ghostC.ShowBehindParent = true;
-            _ghostR.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-            _ghostC.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        }
 
         // holder fills the column (= the title's width), so the line lines up with the title
         _lineHolder = new Control
@@ -85,30 +85,11 @@ public partial class LevelTitleCard : CanvasLayer
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         col.AddChild(_lineHolder);
-        _line = new ColorRect { Color = Accent, Size = new Vector2(0, 6), MouseFilter = Control.MouseFilterEnum.Ignore };
+        _line = new ColorRect { Color = Yellow, Size = new Vector2(0, 6), MouseFilter = Control.MouseFilterEnum.Ignore };
         _lineHolder.AddChild(_line);
 
-        _tag = MakeLabel("RASCAL RADIO", 20, Accent, font);
+        _tag = MakeLabel("RASCAL RADIO", 20, Yellow, font);
         col.AddChild(_tag);
-
-        // Level 3 only: constant static ON TOP of the title (thin, see-through bars so the text stays readable)
-        if (GlitchStatic)
-        {
-            _noise = MakeBarLayer(NoiseCount);
-            _noise.Visible = false;
-        }
-
-        // white-hot flash for the slam
-        _flash = new ColorRect { Color = new Color(Cream, 0f), MouseFilter = Control.MouseFilterEnum.Ignore };
-        AddChild(_flash);
-        _flash.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-
-        if (GlitchStatic)
-        {
-            _glitchTimer = new Timer { WaitTime = 0.05, OneShot = false, Autostart = false };
-            _glitchTimer.Timeout += GlitchTick;
-            AddChild(_glitchTimer);
-        }
 
         _dim.Modulate = new Color(1, 1, 1, StartCovered ? 1f : 0f);
         _label.Modulate = new Color(1, 1, 1, 0);
@@ -117,9 +98,9 @@ public partial class LevelTitleCard : CanvasLayer
         // ---- timeline ----
         var t = CreateTween().SetParallel();
         if (!StartCovered) t.TweenProperty(_dim, "modulate:a", 1.0f, 0.5).SetDelay(Delay);                 // cut to black
-        t.TweenCallback(Callable.From(Slam)).SetDelay(Delay + 0.45);                                       // title slams in
-        t.TweenProperty(_tag, "modulate:a", 1.0f, 0.5).SetDelay(Delay + 0.85);
-        // the underline wipes out from the middle once the title is up
+        t.TweenProperty(_label, "modulate:a", 1.0f, 0.8).SetDelay(Delay + 0.45);
+        t.TweenProperty(_tag, "modulate:a", 1.0f, 0.8).SetDelay(Delay + 0.65);
+        // the underline wipes out from the left once the title is up
         t.TweenCallback(Callable.From(() =>
         {
             if (!IsInstanceValid(_line)) return;
@@ -127,9 +108,9 @@ public partial class LevelTitleCard : CanvasLayer
             _line.Size = new Vector2(w, 6);
             _line.PivotOffset = new Vector2(w / 2f, 3f);   // grows outwards from the middle
             _line.Scale = new Vector2(0f, 1f);
-            CreateTween().TweenProperty(_line, "scale:x", 1.0f, 0.5)
+            CreateTween().TweenProperty(_line, "scale:x", 1.0f, 0.6)
                 .SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
-        })).SetDelay(Delay + 0.8);
+        })).SetDelay(Delay + 0.9);
 
         // radio static flickers for a moment at the start of the cut
         GetTree().CreateTimer(Delay).Timeout += () =>
@@ -156,130 +137,60 @@ public partial class LevelTitleCard : CanvasLayer
         if (GameSession.Instance != null) GameSession.Instance.LevelStarted -= OnLevelStarted;
     }
 
-    // ===== the slam =====
-    private void Slam()
+    // Static now runs for as long as the card is up. _Process keeps shuffling the bars.
+    private void PlayStatic() => _static.Visible = true;
+
+    public override void _Process(double delta)
     {
-        if (!IsInstanceValid(_label)) return;
+        _t += delta;
+        if (_t < Delay) return;
+        double since = _t - Delay;
+        if (since < _nextTick) return;
+        _nextTick = since + TickStep;
 
-        _label.PivotOffset = _label.Size / 2f;
-        _label.Scale = new Vector2(2.2f, 2.2f);
+        // 1) static bars, every tick
+        if (_static.Visible) ShuffleBars();
 
-        var tw = CreateTween().SetParallel();
-        tw.TweenProperty(_label, "modulate:a", 1.0f, 0.08);
-        tw.TweenProperty(_label, "scale", Vector2.One, 0.22)
-            .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
-        tw.Chain().TweenCallback(Callable.From(Impact));
+        // 2) title letters: lock in one by one, then keep glitching now and then
+        if (since >= DecodeStart)
+            _locked = Mathf.Min(Title.Length, (int)((since - DecodeStart) / CharStep) + 1);
+        _soft = _locked >= Title.Length;
+
+        if (_soft && _rng.Randf() < 0.04f) _burstUntil = since + 0.15;   // now and then a short burst
+        _glitchChance = since < _burstUntil ? 0.3f : 0.025f;
+        _label.Text = ScrambledTitle();
     }
 
-    private void Impact()
+    private float _glitchChance = 0.025f;
+
+    // The title with the letters that aren't locked in yet (and a few flickering ones) swapped for random characters.
+    private string ScrambledTitle()
     {
-        if (!IsInstanceValid(this)) return;
-
-        // flash + screen shake
-        _flash.Color = new Color(Cream, 0.65f);
-        CreateTween().TweenProperty(_flash, "color:a", 0.0f, 0.4);
-        Shake(GlitchStatic ? 26f : 18f);
-
-        // Level 3: the static never leaves again
-        if (GlitchStatic)
+        var sb = new StringBuilder(Title.Length);
+        for (int i = 0; i < Title.Length; i++)
         {
-            _noise.Visible = true;
-            _glitchTimer.Start();
+            char ch = Title[i];
+            if (!char.IsLetterOrDigit(ch)) { sb.Append(ch); continue; }   // spaces, ':' and '!' stay put
+
+            bool locked = i < _locked;
+            bool flicker = locked && _rng.Randf() < _glitchChance;
+            sb.Append(locked && !flicker ? ch : GlitchChars[_rng.RandiRange(0, GlitchChars.Length - 1)]);
         }
+        return sb.ToString();
     }
 
-    private void Shake(float amount)
+    private void ShuffleBars()
     {
-        var tw = CreateTween();
-        for (int i = 0; i < 7; i++)
-        {
-            var off = new Vector2(_rng.RandfRange(-amount, amount), _rng.RandfRange(-amount, amount));
-            tw.TweenProperty(this, "offset", off, 0.03);
-            amount *= 0.8f;
-        }
-        tw.TweenProperty(this, "offset", Vector2.Zero, 0.04);
-    }
-
-    // ===== constant static / glitch (runs every 0.05 s while the title is up) =====
-    private void GlitchTick()
-    {
-        if (!IsInstanceValid(_noise) || !IsInstanceValid(_label)) return;
-
-        bool burst = _rng.Randf() < 0.26f;
-
-        // thin see-through bars crawl over the title; a burst makes them thicker and brighter
-        ScatterBars(_noise,
-            burst ? 2f : 1f, burst ? 26f : 5f,
-            burst ? 0.2f : 0.04f, burst ? 0.6f : 0.22f);
-
-        // ghost letters jitter sideways
-        float j = burst ? 16f : 3.5f;
-        SetGhostOffset(_ghostR, _rng.RandfRange(-j, 0f), _rng.RandfRange(-j * 0.3f, j * 0.3f));
-        SetGhostOffset(_ghostC, _rng.RandfRange(0f, j), _rng.RandfRange(-j * 0.3f, j * 0.3f));
-
-        // on a burst the title itself stretches and the whole screen twitches for a moment
-        if (burst)
-        {
-            _label.Scale = new Vector2(1f + _rng.RandfRange(0f, 0.07f), 1f + _rng.RandfRange(-0.03f, 0.03f));
-            Offset = new Vector2(_rng.RandfRange(-7f, 7f), _rng.RandfRange(-3f, 3f));
-        }
-        else
-        {
-            _label.Scale = Vector2.One;
-            Offset = Vector2.Zero;
-        }
-    }
-
-    private static void SetGhostOffset(Label ghost, float x, float y)
-    {
-        ghost.OffsetLeft = x;
-        ghost.OffsetRight = x;
-        ghost.OffsetTop = y;
-        ghost.OffsetBottom = y;
-    }
-
-    // ===== static layers =====
-    private Control MakeBarLayer(int count)
-    {
-        var layer = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
-        AddChild(layer);
-        layer.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        for (int i = 0; i < count; i++)
-            layer.AddChild(new ColorRect { Color = Cream, MouseFilter = Control.MouseFilterEnum.Ignore });
-        return layer;
-    }
-
-    private void ScatterBars(Control layer, float minH, float maxH, float minA, float maxA)
-    {
+        if (!IsInstanceValid(_static)) return;
         var size = GetViewport().GetVisibleRect().Size;
-        foreach (var child in layer.GetChildren())
+        foreach (var child in _static.GetChildren())
         {
             if (child is not ColorRect bar) continue;
-            float h = _rng.RandfRange(minH, maxH);
-            bar.Position = new Vector2(0, _rng.RandfRange(0f, Mathf.Max(1f, size.Y - h)));
+            float h = _rng.RandfRange(3f, 40f);
+            bar.Position = new Vector2(0, _rng.RandfRange(0f, size.Y - h));
             bar.Size = new Vector2(size.X, h);
-
-            // mostly cream, with some red and cyan bars mixed in
-            float pick = _rng.Randf();
-            Color baseCol = pick < 0.7f ? Cream : pick < 0.85f ? GhostRed : GhostCyan;
-            bar.Color = new Color(baseCol, _rng.RandfRange(minA, maxA));
+            bar.Color = new Color(Cream, _soft ? _rng.RandfRange(0.08f, 0.3f) : _rng.RandfRange(0.25f, 0.8f));
         }
-    }
-
-    // the quick static cut at the start
-    private void PlayStatic()
-    {
-        _static.Visible = true;
-        var tw = CreateTween();
-        for (int i = 0; i < 8; i++)
-        {
-            tw.TweenCallback(Callable.From(() =>
-            {
-                if (IsInstanceValid(_static)) ScatterBars(_static, 3f, 40f, 0.15f, 0.7f);
-            }));
-            tw.TweenInterval(0.05);
-        }
-        tw.TweenCallback(Callable.From(() => { if (IsInstanceValid(_static)) _static.Visible = false; }));
     }
 
     // the new level loads underneath, then the card fades away
@@ -293,8 +204,23 @@ public partial class LevelTitleCard : CanvasLayer
         t.TweenProperty(_label, "modulate:a", 0.0f, 0.6).SetDelay(wait);
         t.TweenProperty(_tag, "modulate:a", 0.0f, 0.6).SetDelay(wait);
         t.TweenProperty(_line, "modulate:a", 0.0f, 0.6).SetDelay(wait);
-        if (_noise != null) t.TweenProperty(_noise, "modulate:a", 0.0f, 0.6).SetDelay(wait);
+        t.TweenProperty(_static, "modulate:a", 0.0f, 0.6).SetDelay(wait);
         t.Chain().TweenCallback(Callable.From(QueueFree));
+    }
+
+    // Biggest title size that still fits on screen. Long names shrink instead of running off the edge.
+    private const int MaxTitleSize = 60;       // size for short titles (was 84)
+    private const float TitleMaxWidth = 0.78f;  // share of the window width the title may use
+
+    private int FitTitleSize(Font font, string text)
+    {
+        float maxWidth = GetViewport().GetVisibleRect().Size.X * TitleMaxWidth;
+        Font f = font ?? ThemeDB.FallbackFont;
+
+        int size = MaxTitleSize;
+        while (size > 24 && f.GetStringSize(text, HorizontalAlignment.Left, -1, size).X > maxWidth)
+            size -= 2;
+        return size;
     }
 
     private static Label MakeLabel(string text, int size, Color color, Font font)
@@ -310,14 +236,6 @@ public partial class LevelTitleCard : CanvasLayer
         l.AddThemeColorOverride("font_color", color);
         l.AddThemeColorOverride("font_outline_color", Ink);
         l.AddThemeConstantOverride("outline_size", 6);
-        return l;
-    }
-
-    private static Label MakeGhost(string text, int size, Color color, Font font)
-    {
-        var l = MakeLabel(text, size, color, font);
-        l.VerticalAlignment = VerticalAlignment.Center;
-        l.AddThemeConstantOverride("outline_size", 0);   // no dark outline, so the color shows cleanly
         return l;
     }
 }

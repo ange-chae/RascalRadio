@@ -249,6 +249,7 @@ public partial class GameSession : Node
         AddChild(Soundboard);
         Soundboard.Completed += OnSoundboardCompleted;
 
+        LoadProgress();
         CallDeferred(MethodName.HookNetwork);
     }
 
@@ -257,6 +258,69 @@ public partial class GameSession : Node
         if (Piano != null) Piano.Completed -= OnPianoCompleted;
         if (Piano != null) Piano.KeyResult -= OnPianoKey;
         if (Soundboard != null) Soundboard.Completed -= OnSoundboardCompleted;
+    }
+
+    // ---------- Level locking ----------
+    // TURN LOCKING ON/OFF HERE.
+    //   true  = a level only opens after the level before it was finished with an A or S rank
+    //   false = every level is open (handy for testing)
+    public static bool LevelLockingEnabled = false;
+
+    private const string ProgressPath = "user://progress.cfg";
+    private readonly HashSet<string> _clearedLevels = new();   // levels finished with an A or S
+
+    public bool IsLevelCleared(string levelId) => _clearedLevels.Contains(levelId);
+
+    // Wipes saved progress (every locked level locks again). Call it from a debug button if you need it.
+    public void ResetProgress()
+    {
+        _clearedLevels.Clear();
+        SaveProgress();
+    }
+
+    private void LoadProgress()
+    {
+        var cfg = new ConfigFile();
+        if (cfg.Load(ProgressPath) != Error.Ok) return;
+        foreach (string id in cfg.GetValue("progress", "cleared", Array.Empty<string>()).AsStringArray())
+            _clearedLevels.Add(id);
+    }
+
+    private void SaveProgress()
+    {
+        // Progress lives on the host's machine. Clients just mirror it.
+        if (Multiplayer.HasMultiplayerPeer() && !Multiplayer.IsServer()) return;
+
+        var arr = new string[_clearedLevels.Count];
+        _clearedLevels.CopyTo(arr);
+        var cfg = new ConfigFile();
+        cfg.SetValue("progress", "cleared", arr);
+        cfg.Save(ProgressPath);
+    }
+
+    // Runs on every peer when a level is finished. Only A and S unlock the next level.
+    private void RecordLevelResult(int score)
+    {
+        string rank = Rating(score).Rank;
+        if (rank != "S" && rank != "A") return;
+        if (string.IsNullOrEmpty(LevelId) || !_clearedLevels.Add(LevelId)) return;
+        SaveProgress();
+    }
+
+    // The host calls this for a player who just joined, so their lobby shows the same locks.
+    public void SendProgressTo(long peerId)
+    {
+        if (!Multiplayer.IsServer()) return;
+        var arr = new string[_clearedLevels.Count];
+        _clearedLevels.CopyTo(arr);
+        RpcId(peerId, MethodName.SyncProgressRpc, arr);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void SyncProgressRpc(string[] cleared)
+    {
+        _clearedLevels.Clear();
+        foreach (string id in cleared) _clearedLevels.Add(id);
     }
 
     // ---------- Pause (shared by everyone) ----------
@@ -331,13 +395,14 @@ public partial class GameSession : Node
     // Edit the names here. Any level not listed falls back to its id.
     private static readonly Dictionary<string, string> LevelTitles = new()
     {
-        ["tutorial"] = "First Day",
-        ["morning_broadcast"] = "Morning Radio",
-        ["afternoon_broadcast"] = "Afternoon Air",
-        ["emergency_broadcast"] = "EMERGENCY",
+        ["tutorial"] = "TUTORIAL",
+        ["morning_broadcast"] = "01: MORNING BROADCAST",
+        ["afternoon_broadcast"] = "02: AFTERNOON BROADCAST",
+        ["emergency_broadcast"] = "03: EMERGENCY BROADCAST!",
     };
     private const float LevelIntroHold = 1.4f;                  // seconds the title stays after it fades in
-    private const float LevelIntroTotal = 0.8f + LevelIntroHold + 0.6f;   // fade in + hold + fade out
+    private const float LevelIntroDelay = 0.3f;                  // wait for the new scene to finish loading before the static starts
+    private const float LevelIntroTotal = LevelIntroDelay + 0.8f + LevelIntroHold + 0.6f;   // wait + fade in + hold + fade out
     private float _introSeconds;                                 // how long the card covers the start of this level
 
     // Shows the title card for a level that is starting. Returns how long it covers the screen.
@@ -351,11 +416,10 @@ public partial class GameSession : Node
         var card = new LevelTitleCard
         {
             Title = title,
+            Delay = LevelIntroDelay,
             Hold = LevelIntroHold,
             StartCovered = true,        // hides the scene swap underneath
             FadeOutWhenDone = true,
-            Accent = levelId == "emergency_broadcast" ? new Color("E5484D") : new Color("FFD25A"),
-            GlitchStatic = levelId == "emergency_broadcast",
         };
         tree.Root.CallDeferred(Node.MethodName.AddChild, card);   // on the root so it survives the scene change
         return LevelIntroTotal;
@@ -1152,6 +1216,49 @@ public partial class GameSession : Node
         GetTree().ReloadCurrentScene();
     }
 
+    // ---------- Next level ----------
+    // The order levels are played in. Edit this if you add a level.
+    private static readonly string[] LevelOrder = { "morning_broadcast", "afternoon_broadcast", "emergency_broadcast" };
+
+    public string NextLevelId
+    {
+        get
+        {
+            int i = Array.IndexOf(LevelOrder, LevelId);
+            return i >= 0 && i + 1 < LevelOrder.Length ? LevelOrder[i + 1] : "";
+        }
+    }
+
+    public bool HasNextLevel => NextLevelId != "";
+
+    // With locking on, the next level only opens after this one was cleared with an A or S.
+    public bool CanPlayNextLevel => HasNextLevel && (!LevelLockingEnabled || IsLevelCleared(LevelId));
+
+    // For the result screen's NEXT LEVEL button. Anyone can press it, the host starts it for everyone.
+    public void RequestNextLevel()
+    {
+        if (!CanPlayNextLevel) return;
+        if (!Multiplayer.HasMultiplayerPeer()) { NextLevelRpc(NextLevelId); return; }
+        RpcId(1, MethodName.NextLevelRequestRpc);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void NextLevelRequestRpc()
+    {
+        if (!Multiplayer.IsServer() || !CanPlayNextLevel) return;
+        Rpc(MethodName.NextLevelRpc, NextLevelId);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void NextLevelRpc(string levelId)
+    {
+        if (string.IsNullOrEmpty(levelId)) return;
+        if (IsInstanceValid(_endScreen)) _endScreen.QueueFree();
+        _endScreen = null;
+        BeginLevel(levelId);                 // shows the next level's title card too
+        GetTree().ReloadCurrentScene();
+    }
+
     // ---------- Back to the players list ----------
     // Anyone can ask. The host tells EVERYONE to go back together.
     public void ReturnToParty()
@@ -1447,6 +1554,7 @@ public partial class GameSession : Node
     {
         ClearPause();
         LevelFinished = true;
+        RecordLevelResult(completionPts + accuracyPts);   // A or S unlocks the next level
         Piano.SetActive(false);
         _endScreen = new LevelResultScreen { CompletionPts = completionPts, AccuracyPts = accuracyPts, Completed = completed, Total = total };
         GetTree().Root.AddChild(_endScreen);

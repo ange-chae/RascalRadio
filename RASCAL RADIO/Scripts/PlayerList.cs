@@ -8,7 +8,8 @@ public partial class PlayerList : Control
 	// --- LEVEL DATA SETUP ---
 	public class LevelData
 	{
-		public string Name;
+        public bool StartsLocked;   // needs an A or S on the level before it
+        public string Name;
 		public string LevelId;
 		public string TapePath;   // cassette picture for this level
 	}
@@ -18,9 +19,10 @@ public partial class PlayerList : Control
 	// Tutorial has no tape picture yet, so it borrows tape1 for now. Make a tape0 later and change this path.
 	new LevelData { Name = "Tutorial",                LevelId = "tutorial",            TapePath = "res://assets/images/tape1.png" },
 	new LevelData { Name = "01: Morning Broadcast",   LevelId = "morning_broadcast",   TapePath = "res://assets/images/tape2.png" },
-	new LevelData { Name = "02: Afternoon Broadcast", LevelId = "afternoon_broadcast", TapePath = "res://assets/images/tape3.png" },
-	new LevelData { Name = "03: EMERGENCY BROADCAST!",LevelId = "emergency_broadcast",TapePath = "res://assets/images/tape4.png" }
+    new LevelData { Name = "02: Afternoon Broadcast", LevelId = "afternoon_broadcast", TapePath = "res://assets/images/tape3.png", StartsLocked = true },
+	new LevelData { Name = "03: EMERGENCY BROADCAST!", LevelId = "emergency_broadcast", TapePath = "res://assets/images/tape4.png", StartsLocked = true }
 };
+
 	private int _currentLevelIndex = 0;
 	// -------------------------
 
@@ -73,6 +75,19 @@ public partial class PlayerList : Control
 		return defaultTex ?? DefaultAvatarTexture;
 	}
     private static int _savedLevelIndex = 0;   // survives going into a level and coming back
+
+    private bool IsLevelLocked(int index)
+    {
+        if (!GameSession.LevelLockingEnabled) { GD.Print("[Lock] locking is OFF"); return false; }
+        if (index <= 0 || index >= _availableLevels.Count) return false;
+        if (!_availableLevels[index].StartsLocked) { GD.Print($"[Lock] {_availableLevels[index].Name}: StartsLocked is false"); return false; }
+
+        var gs = GameSession.Instance;
+        string prev = _availableLevels[index - 1].LevelId;
+        bool cleared = gs != null && gs.IsLevelCleared(prev);
+        GD.Print($"[Lock] {_availableLevels[index].Name}: previous '{prev}' cleared = {cleared}");
+        return !cleared;
+    }
 
     public override void _Ready()
 	{
@@ -168,7 +183,10 @@ public partial class PlayerList : Control
 		if (newIndex < 0) newIndex = _availableLevels.Count - 1;
 		if (newIndex >= _availableLevels.Count) newIndex = 0;
 
-		Rpc(MethodName.UpdateTapeVisualRpc, newIndex);
+        if (IsLevelLocked(newIndex))
+            ShowStatusMessage($"Locked! Get an A or S on {_availableLevels[newIndex - 1].Name} first.", new Color("#FF9800"));
+
+        Rpc(MethodName.UpdateTapeVisualRpc, newIndex);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -177,19 +195,22 @@ public partial class PlayerList : Control
 		UpdateLevelVisualLocal(newIndex);
 	}
 
-	private void UpdateLevelVisualLocal(int newIndex)
-	{
-		_currentLevelIndex = newIndex;
-        _savedLevelIndex = 0;
+    private void UpdateLevelVisualLocal(int newIndex)
+    {
+        _currentLevelIndex = newIndex;
+        _savedLevelIndex = newIndex;     // not 0
         var level = _availableLevels[_currentLevelIndex];
 
-		if (_lblLevelName != null) _lblLevelName.Text = level.Name;
+        bool locked = IsLevelLocked(newIndex);
 
-		var tape = ResourceLoader.Exists(level.TapePath) ? GD.Load<Texture2D>(level.TapePath) : null;
-		_cassette?.UpdateTapeVisual(level.Name, tape);
-	}
+        var tape = ResourceLoader.Exists(level.TapePath) ? GD.Load<Texture2D>(level.TapePath) : null;
+        _cassette?.UpdateTapeVisual(level.Name, tape);
+        if (_cassette != null) _cassette.Modulate = locked ? new Color(0.45f, 0.45f, 0.45f) : Colors.White;   // delete this line if you don't want the dimming
 
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+        RefreshPlayerList();   // re-checks the Start Game button for this level
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	public void UpdatePlayerStateRpc(long peerId, string role, bool isReady)
 	{
 		long senderId = Multiplayer.GetRemoteSenderId();
@@ -247,8 +268,8 @@ public partial class PlayerList : Control
 		var ids = PlayerRoles.Keys.Union(PlayerReady.Keys).ToArray();
 		var roles = ids.Select(id => PlayerRoles.TryGetValue(id, out var r) ? r : "").ToArray();
 		var ready = ids.Select(id => (PlayerReady.TryGetValue(id, out var b) && b) ? 1 : 0).ToArray();
-
-		RpcId(requester, MethodName.SyncAllStateRpc, ids, roles, ready, _currentLevelIndex);
+        GameSession.Instance?.SendProgressTo(requester);
+        RpcId(requester, MethodName.SyncAllStateRpc, ids, roles, ready, _currentLevelIndex);
 	}
 
 	// Host -> the new player only. Fills in everything they missed.
@@ -421,17 +442,15 @@ public partial class PlayerList : Control
 		{
 			if (Multiplayer.IsServer())
 			{
-				bool enoughPlayers = playerCount >= 2;
+                bool enoughPlayers = playerCount >= 2;
+                bool levelLocked = IsLevelLocked(_currentLevelIndex);
+                _btnStartGame.Disabled = !everyoneReady || hasRoleConflict || !enoughPlayers || levelLocked;
 
-				_btnStartGame.Disabled = !everyoneReady || hasRoleConflict || !enoughPlayers;
-
-				if (!enoughPlayers)
-					_btnStartGame.Text = "Waiting..";
-				else if (!everyoneReady)
-					_btnStartGame.Text = "Not Ready";
-				else
-					_btnStartGame.Text = "Start Game";
-			}
+                if (levelLocked) _btnStartGame.Text = "Locked";
+                else if (!enoughPlayers) _btnStartGame.Text = "Waiting..";
+                else if (!everyoneReady) _btnStartGame.Text = "Not Ready";
+                else _btnStartGame.Text = "Start Game";
+            }
 			else
 			{
 				_btnStartGame.Disabled = true;
@@ -628,8 +647,8 @@ public partial class PlayerList : Control
 	private void OnStartGamePressed()
 	{
 		if (!Multiplayer.IsServer()) return;
-
-		Rpc(MethodName.StartGameRpc, _currentLevelIndex);
+        if (IsLevelLocked(_currentLevelIndex)) return;
+        Rpc(MethodName.StartGameRpc, _currentLevelIndex);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
