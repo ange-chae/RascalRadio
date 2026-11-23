@@ -12,6 +12,10 @@ public partial class LevelTitleCard : CanvasLayer
     public bool ReportWhenDone { get; set; } = false; // true when this card leads into a level
     public bool StartCovered { get; set; } = false;   // true = screen is already black when the card appears (hides a scene swap)
     public bool FadeOutWhenDone { get; set; } = false; // true = fades itself away after the hold (cards that don't lead into a level)
+    // Dramatic radio static + glitching title. Only for level 3. Set it to true where you create the card,
+    // or leave it alone: a title containing "LEVEL 3" turns it on automatically.
+    public bool DramaticStatic { get; set; } = false;
+    private bool UseStatic => DramaticStatic || Title.ToUpperInvariant().Contains("LEVEL 3");
 
     private static readonly Color Cream = new("FBEFD9");
     private static readonly Color Ink = new("2B1B2E");
@@ -67,7 +71,7 @@ public partial class LevelTitleCard : CanvasLayer
         center.AddChild(col);
 
         int titleSize = FitTitleSize(font, Title);
-        _label = MakeLabel(ScrambledTitle(), titleSize, Cream, font);
+        _label = MakeLabel(UseStatic ? ScrambledTitle() : Title, titleSize, Cream, font);
         // fixed size + clipped, so random characters never make the title (or the underline) jump around
         Font measure = font ?? ThemeDB.FallbackFont;
         _label.ClipText = true;
@@ -117,7 +121,7 @@ public partial class LevelTitleCard : CanvasLayer
         {
             if (!IsInstanceValid(this)) return;
             _dim.MouseFilter = Control.MouseFilterEnum.Stop;   // block the mouse once the cut begins
-            PlayStatic();
+            if (UseStatic) PlayStatic();
         };
 
         if (ReportWhenDone && GameSession.Instance != null)
@@ -142,6 +146,7 @@ public partial class LevelTitleCard : CanvasLayer
 
     public override void _Process(double delta)
     {
+        if (!UseStatic) return;   // tutorial, level 1 and 2: plain title fade, no static, no glitch text
         _t += delta;
         if (_t < Delay) return;
         double since = _t - Delay;

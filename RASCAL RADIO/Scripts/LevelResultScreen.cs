@@ -46,6 +46,8 @@ public partial class LevelResultScreen : CanvasLayer
         int score = CompletionPts + AccuracyPts;
         var (rank, title) = GameSession.Rating(score);
         _rank = rank;
+        bool failed = rank == "F";   // score under 25: no NEXT LEVEL
+        Sfx.Play(this, failed ? "fail" : "success", -6f);   // jingle when the report appears
 
         Color rankColor = rank switch
         {
@@ -147,8 +149,8 @@ public partial class LevelResultScreen : CanvasLayer
         col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
         // BACK TO LOBBY, RESTART, NEXT LEVEL side by side. The yellow one is the main action:
         // NEXT LEVEL when it can be played, otherwise BACK TO LOBBY.
-        bool hasNext = gs != null && gs.HasNextLevel;
-        bool canNext = gs != null && gs.CanPlayNextLevel;
+        bool hasNext = gs != null && gs.HasNextLevel && !failed;   // failed: the NEXT LEVEL button is removed
+        bool canNext = gs != null && gs.CanPlayNextLevel && !failed;
 
         var btnRow = new HBoxContainer
         {
@@ -173,6 +175,10 @@ public partial class LevelResultScreen : CanvasLayer
             _nextBtn.Pressed += NextLevel;
             btnRow.AddChild(_nextBtn);
         }
+
+        WireSfx(_btn);
+        WireSfx(_restartBtn);
+        WireSfx(_nextBtn);
 
         if (hasNext && !canNext)
             col.AddChild(Lbl("Get an A or S to unlock the next level.", 13, Muted));
@@ -199,6 +205,18 @@ public partial class LevelResultScreen : CanvasLayer
         }));
         seq.TweenInterval(1.7);
         seq.TweenCallback(Callable.From(Slam));
+    }
+
+
+    // ===== sounds (files in res://assets/sfx/, name without extension) =====
+    private const string ClickSfx = "click";    // button pressed
+    private const string HoverSfx = "button";   // mouse moves onto a button
+
+    private void WireSfx(Button b)
+    {
+        if (b == null) return;
+        b.MouseEntered += () => { if (!b.Disabled) Sfx.Play(this, HoverSfx, -10f); };
+        b.Pressed += () => Sfx.Play(this, ClickSfx, -6f);
     }
 
     // ===== animation =====
@@ -250,6 +268,7 @@ public partial class LevelResultScreen : CanvasLayer
 
     private void OnStampLanded()
     {
+        Sfx.Play(this, "stamp", -4f);   // the stamp hits the paper
         // the paper jolts when the stamp hits
         var tw = CreateTween();
         tw.TweenProperty(_paper, "rotation", Mathf.DegToRad(0.8f), 0.05);
@@ -261,6 +280,7 @@ public partial class LevelResultScreen : CanvasLayer
         sq.TweenProperty(_paper, "scale", Vector2.One, 0.15);
 
         // confetti only if the shift was passed (more for a better rank)
+        if (_rank != "F") Sfx.Play(this, "horn", -6f);   // party poppers
         switch (_rank)
         {
             case "S": SpawnConfetti(20); break;

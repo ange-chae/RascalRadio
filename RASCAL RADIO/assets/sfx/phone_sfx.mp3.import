@@ -2,7 +2,7 @@
 
 importer="mp3"
 type="AudioStreamMP3"
-uid="uid://027dkuigmf8p"
+uid="uid://c5cju72wsi3yb"
 path="res://.godot/imported/phone_sfx.mp3-9e5a2eeca92e1ecfa871e23cb2bca29c.mp3str"
 
 [deps]
@@ -12,8 +12,8 @@ dest_files=["res://.godot/imported/phone_sfx.mp3-9e5a2eeca92e1ecfa871e23cb2bca29
 
 [params]
 
-loop=false
-loop_offset=0
-bpm=0
+loop=true
+loop_offset=0.0
+bpm=0.0
 beat_count=0
 bar_beats=4
