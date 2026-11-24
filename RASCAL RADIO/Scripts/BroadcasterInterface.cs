@@ -188,8 +188,7 @@ public partial class BroadcasterInterface : Control
 
     public override void _ExitTree()
     {
-        StopRing();
-        StopTalking();
+        Sfx.Stop(this, "phone_sfx");
         var gs = GameSession.Instance;
         if (gs == null) return;
         gs.StepChanged -= OnStep;
@@ -410,58 +409,9 @@ public partial class BroadcasterInterface : Control
         return found.ToArray();
     }
 
-    // ===== ringing: stop every playing phone_sfx, wherever Sfx.Play parked its player =====
-    private bool _ringing;
-
-    // ===== radio "talking" sound: loops while the player is actively typing, not once per key =====
-    private const float TalkVolumeDb =  1f;   // raise/lower to taste (0 = full, -10 = quiet)
-    private const ulong TalkHoldMs = 1000;   // keeps playing this long after the last WASD press
-    private AudioStreamPlayer _talk;
-    private bool _talking;
-    private ulong _talkUntilMs;
-    private ulong _chunkEndMs;
-    private const double ChunkMin = 0.5, ChunkMax = 1.3;   // each random slice of the recording lasts this many seconds
-
-    // jumps to a random spot in the recording, so it sounds like different words each time
-    private void PlayChunk()
-    {
-        if (_talk == null || _talk.Stream == null) return;
-        double len = _talk.Stream.GetLength();
-        double dur = ChunkMin + _rng.NextDouble() * (ChunkMax - ChunkMin);
-        double start = len > dur ? _rng.NextDouble() * (len - dur) : 0;
-        _talk.Play((float)start);
-        _chunkEndMs = Time.GetTicksMsec() + (ulong)(dur * 1000);
-    }
-
-    private void KeepTalking()
-    {
-        _talkUntilMs = Time.GetTicksMsec() + TalkHoldMs;
-        if (_talk == null)
-        {
-            var stream = Sfx.Get("broadcasting");
-            if (stream == null) return;
-            _talk = new AudioStreamPlayer { Stream = stream, VolumeDb = TalkVolumeDb, Bus = AudioSettingsManager.SfxBusName };
-            _talk.Finished += () => { if (_talking && IsInstanceValid(_talk)) PlayChunk(); };   // recording ran out: pick another spot
-            AddChild(_talk);
-        }
-        if (!_talking) { _talking = true; PlayChunk(); }
-    }
-
-    private void StopTalking()
-    {
-        _talking = false;
-        if (_talk != null && IsInstanceValid(_talk)) _talk.Stop();
-    }
-
-    private void StopRing()
-    {
-        if (!_ringing) return;
-        _ringing = false;
-        Sfx.Stop(this, "phone_sfx");
-    }
-
     private void ShowCaller(bool show)
     {
+        if (!show) Sfx.Stop(this, "phone_sfx");   // caller gone (accepted, rejected or hung up): silence the ring
         if (_caller == null) return;
 
         _callerTween?.Kill();
@@ -469,8 +419,7 @@ public partial class BroadcasterInterface : Control
         {
             if (!_caller.Visible)
             {
-                Sfx.Play(this, "phone_sfx", -16f);
-                _ringing = true;
+                Sfx.Play(this, "phone_sfx", -8f);
                 _caller.Modulate = new Color(1, 1, 1, 0);
                 _caller.Scale = new Vector2(0.8f, 0.8f);
             }
@@ -483,7 +432,6 @@ public partial class BroadcasterInterface : Control
         }
         else if (_caller.Visible)
         {
-            StopRing();
             _callerTween = CreateTween();
             _callerTween.TweenProperty(_caller, "modulate:a", 0.0f, 0.2);
             _callerTween.TweenCallback(Callable.From(() => _caller.Visible = false));
@@ -492,7 +440,7 @@ public partial class BroadcasterInterface : Control
 
     private void OnDecision(bool accept)
     {
-        StopRing();   // accepted or rejected: the phone stops ringing
+        Sfx.Stop(this, "phone_sfx");   // answered: the ringing stops
         Sfx.Play(this, accept ? "confirm_sfx" : "cancel_sfx", -6f);
         GameSession.Instance.Decide(accept);
         if (!_tutorial) ShowCaller(false);   // real shift: clear the card right away
@@ -844,11 +792,11 @@ public partial class BroadcasterInterface : Control
 
         GetViewport().SetInputAsHandled();
         _deadAir.Register();   // any prompter key counts as talking, even a wrong one
-        KeepTalking();
 
         if (key == _keys[_idx])
         {
             SpawnWord(_words[_idx], true);   // white: right key
+            Sfx.Play(this, "key_sfx", -14f);
             _idx++; _typedTotal++;
             if (_stolenIdx >= 0 && _idx > _stolenIdx) ClearStolenKey();
             RenderTarget();
@@ -875,11 +823,6 @@ public partial class BroadcasterInterface : Control
     // =====================================================================
     public override void _Process(double delta)
     {
-        if (_ringing && GameSession.Instance is { Ended: true }) StopRing();   // game over: silence the phone
-        if (_talking && Time.GetTicksMsec() >= _chunkEndMs) PlayChunk();   // next random slice
-        if (_talking && (Time.GetTicksMsec() > _talkUntilMs || !_running || _menuOpen || GameSession.Instance is { Ended: true }))
-            StopTalking();   // stopped typing, line over, paused or game over
-
         if (_stagePanel != null && GameSession.Instance is { } gsx && gsx.Piano is { } pp)
         {
             int sig = HashCode.Combine(pp.Active, pp.Cues?.Count ?? 0, pp.CueIndex, pp.Status, pp.InFault, pp.FaultIndex, gsx.HasPianoColorMap);

@@ -355,7 +355,7 @@ public partial class OperatorInterface : Control
                 {
                     var memory = new MemoryModule { PenaltiesEnabled = true, UseOwnStrikes = false };
                     memory.Strike += _ => gs.MemoryStrike();
-                    memory.Solved += gs.MemorySolved;
+                    memory.Solved += OnMemoryPuzzleSolved;
                     return memory;
                 }
             });
@@ -388,6 +388,30 @@ public partial class OperatorInterface : Control
         OnTasksChanged();
     }
 
+
+    // Level 3 asks for several memory puzzles. After each one is solved, a fresh puzzle replaces it.
+    private int _memorySolved;
+
+    private void OnMemoryPuzzleSolved()
+    {
+        var gs = GameSession.Instance;
+        gs.MemorySolved();   // the host counts it toward the task
+
+        _memorySolved++;
+        int target = gs.CurrentLevel?.MemoryTarget ?? 1;
+        if (_memorySolved >= target) return;   // that was the last puzzle: the module stays solved
+
+        // let "solved" show for a moment, then build the next puzzle
+        var slot = FindSlot("Memory");
+        GetTree().CreateTimer(1.4, false).Timeout += () =>
+        {
+            if (!IsInstanceValid(this) || slot == null) return;
+            bool wasOpen = _openSlot == slot;
+            slot.Instance?.QueueFree();
+            slot.Instance = null;                 // the next OpenModule builds a brand new MemoryModule
+            if (wasOpen) OpenModule(slot);        // popup still open: show the new puzzle straight away
+        };
+    }
 
     private void OpenModule(ModuleSlot module)
     {

@@ -264,7 +264,7 @@ public partial class GameSession : Node
     // TURN LOCKING ON/OFF HERE.
     //   true  = a level only opens after the level before it was finished with an A or S rank
     //   false = every level is open (handy for testing)
-    public static bool LevelLockingEnabled = false;
+    public static bool LevelLockingEnabled = true;
 
     private const string ProgressPath = "user://progress.cfg";
     private readonly HashSet<string> _clearedLevels = new();   // levels finished with an A or S
@@ -419,6 +419,7 @@ public partial class GameSession : Node
             Delay = LevelIntroDelay,
             Hold = LevelIntroHold,
             StartCovered = true,        // hides the scene swap underneath
+            Dramatic = levelId == "emergency_broadcast",   // static + glitch letters: Level 3 only
             FadeOutWhenDone = true,
         };
         tree.Root.CallDeferred(Node.MethodName.AddChild, card);   // on the root so it survives the scene change
@@ -1587,6 +1588,7 @@ public partial class GameSession : Node
     private void LevelCompleteRpc(int completionPts, int accuracyPts, int completed, int total)
     {
         ClearPause();
+        Sfx.Stop(this, "phone_sfx");   // no ringing over the result screen
         LevelFinished = true;
         RecordLevelResult(completionPts + accuracyPts);   // A or S unlocks the next level
         Piano.SetActive(false);
