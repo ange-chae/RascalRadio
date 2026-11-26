@@ -189,6 +189,7 @@ public partial class BroadcasterInterface : Control
     public override void _ExitTree()
     {
         Sfx.Stop(this, "phone_sfx");
+        StopTalking();
         var gs = GameSession.Instance;
         if (gs == null) return;
         gs.StepChanged -= OnStep;
@@ -407,6 +408,46 @@ public partial class BroadcasterInterface : Control
         }
         if (found.Count == 0) GD.PushWarning($"Broadcaster: no caller pictures found in {AvatarFolder}");
         return found.ToArray();
+    }
+
+    // ===== radio "talking" sound: loops while the player is actively typing, not once per key =====
+    private const float TalkVolumeDb = 1f;   // raise/lower to taste (0 = full, -10 = quiet)
+    private const ulong TalkHoldMs = 1000;   // keeps playing this long after the last WASD press
+    private AudioStreamPlayer _talk;
+    private bool _talking;
+    private ulong _talkUntilMs;
+    private ulong _chunkEndMs;
+    private const double ChunkMin = 0.5, ChunkMax = 1.3;   // each random slice of the recording lasts this many seconds
+
+    // jumps to a random spot in the recording, so it sounds like different words each time
+    private void PlayChunk()
+    {
+        if (_talk == null || _talk.Stream == null) return;
+        double len = _talk.Stream.GetLength();
+        double dur = ChunkMin + _rng.NextDouble() * (ChunkMax - ChunkMin);
+        double start = len > dur ? _rng.NextDouble() * (len - dur) : 0;
+        _talk.Play((float)start);
+        _chunkEndMs = Time.GetTicksMsec() + (ulong)(dur * 1000);
+    }
+
+    private void KeepTalking()
+    {
+        _talkUntilMs = Time.GetTicksMsec() + TalkHoldMs;
+        if (_talk == null)
+        {
+            var stream = Sfx.Get("broadcasting");
+            if (stream == null) return;
+            _talk = new AudioStreamPlayer { Stream = stream, VolumeDb = TalkVolumeDb, Bus = AudioSettingsManager.SfxBusName };
+            _talk.Finished += () => { if (_talking && IsInstanceValid(_talk)) PlayChunk(); };   // recording ran out: pick another spot
+            AddChild(_talk);
+        }
+        if (!_talking) { _talking = true; PlayChunk(); }
+    }
+
+    private void StopTalking()
+    {
+        _talking = false;
+        if (_talk != null && IsInstanceValid(_talk)) _talk.Stop();
     }
 
     private void ShowCaller(bool show)
@@ -792,6 +833,7 @@ public partial class BroadcasterInterface : Control
 
         GetViewport().SetInputAsHandled();
         _deadAir.Register();   // any prompter key counts as talking, even a wrong one
+        KeepTalking();
 
         if (key == _keys[_idx])
         {
@@ -823,6 +865,10 @@ public partial class BroadcasterInterface : Control
     // =====================================================================
     public override void _Process(double delta)
     {
+        if (_talking && Time.GetTicksMsec() >= _chunkEndMs) PlayChunk();   // next random slice
+        if (_talking && (Time.GetTicksMsec() > _talkUntilMs || !_running || _menuOpen || GameSession.Instance is { Ended: true }))
+            StopTalking();   // stopped typing, line over, paused or game over
+
         if (_stagePanel != null && GameSession.Instance is { } gsx && gsx.Piano is { } pp)
         {
             int sig = HashCode.Combine(pp.Active, pp.Cues?.Count ?? 0, pp.CueIndex, pp.Status, pp.InFault, pp.FaultIndex, gsx.HasPianoColorMap);

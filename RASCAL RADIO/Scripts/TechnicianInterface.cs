@@ -206,7 +206,7 @@ public partial class TechnicianInterface : PopupFrame
         var manual = GetNodeOrNull<Control>("%Popup");
         if (manual != null)
         {
-            manual.Visible = true;   // the manual starts open
+            manual.Visible = false;  // the manual starts closed
             manual.ZIndex = 100;      // always draw above Task, TimePanel, etc.
             manual.MoveToFront();     // and last in the tree, just in case
         }
@@ -763,7 +763,7 @@ public partial class TechnicianInterface : PopupFrame
     private void RetryScrambleSoon() { _scrambleTimer.WaitTime = 4; _scrambleTimer.Start(); }
 
     private List<Button> VisibleTabs() =>
-        new[] { "%TabA", "%TabB", "%TabC", "%TabD", "%TabE" }
+        TabPaths
             .Select(p => GetNodeOrNull<Button>(p))
             .Where(b => b != null && b.Visible).ToList();
 

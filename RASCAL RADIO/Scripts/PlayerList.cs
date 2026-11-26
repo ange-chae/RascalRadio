@@ -150,6 +150,7 @@ public partial class PlayerList : Control
 
 		_networkManager.PlayerListUpdated += RefreshPlayerList;
 		_networkManager.RoomTerminated += OnRoomTerminated;
+        if (GameSession.Instance != null) GameSession.Instance.ProgressChanged += OnProgressChanged;
 
 		RefreshPlayerList();
         if (!Multiplayer.IsServer())
@@ -698,8 +699,15 @@ public partial class PlayerList : Control
 		GetTree().ChangeSceneToFile(scenePath);
 	}
 
+    private void OnProgressChanged()
+    {
+        UpdateLevelVisualLocal(_currentLevelIndex);
+        RefreshPlayerList();
+    }
+
 	public override void _ExitTree()
 	{
+        if (GameSession.Instance != null) GameSession.Instance.ProgressChanged -= OnProgressChanged;
 		if (_btnStartGame != null && GodotObject.IsInstanceValid(_btnStartGame)) _btnStartGame.Pressed -= OnStartGamePressed;
 		if (_btnLeave != null && GodotObject.IsInstanceValid(_btnLeave)) _btnLeave.Pressed -= OnLeaveButtonPressed;
 		if (_btnPrev != null && GodotObject.IsInstanceValid(_btnPrev) && _btnPrev.IsConnected(BaseButton.SignalName.Pressed, Callable.From(OnPrevPressed))) _btnPrev.Pressed -= OnPrevPressed;
