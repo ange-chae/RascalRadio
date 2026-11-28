@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://b4gw1j2djadyf"]
+
+[ext_resource type="Script" uid="uid://bel32agqs5mcx" path="res://Scripts/Credits.cs" id="1_0bpdh"]
+[ext_resource type="Texture2D" uid="uid://bgjo5q0ao6385" path="res://assets/images/DEV DAGS LOGO (1).png" id="2_2ckv8"]
+
+[node name="Credits" type="Control" unique_id=338582120]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_0bpdh")
+TeamLogo = ExtResource("2_2ckv8")
+MarginBottom = 10

@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://dwohfb0eqoik0" path="res://assets/fonts/LuckiestGuy-Regular.ttf" id="2_ouk20"]
 [ext_resource type="StyleBox" uid="uid://cpkmick0xyjgm" path="res://assets/textures/MainPressed.tres" id="4_mhnvy"]
 [ext_resource type="AudioStream" uid="uid://c8e5gqunodvbi" path="res://assets/sfx/start_sfx.mp3" id="5_4ytvr"]
+[ext_resource type="FontFile" uid="uid://bnwbkdo3q00cm" path="res://assets/fonts/Fredoka/static/Fredoka-Medium.ttf" id="6_g3eks"]
 
 [sub_resource type="Theme" id="Theme_0mg3e"]
 
@@ -28,17 +29,7 @@ border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 corner_radius_top_left = 20
 corner_radius_bottom_right = 20
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_con2f"]
-bg_color = Color(0.99215686, 0.81960785, 0.4, 1)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
-corner_radius_top_left = 20
-corner_radius_bottom_right = 20
-
-[node name="Menu" type="Control" unique_id=519871903 node_paths=PackedStringArray("PlayButton", "QuitButton", "Fade", "StartSfx")]
+[node name="Menu" type="Control" unique_id=519871903 node_paths=PackedStringArray("PlayButton", "CreditsButton", "QuitButton", "Fade", "StartSfx")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -51,7 +42,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_con2f")
 PlayButton = NodePath("VBoxContainer/PlayHolder/PlayButton")
-QuitButton = NodePath("VBoxContainer/PlayHolder2/QuitButton")
+CreditsButton = NodePath("VBoxContainer/PlayHolder2/CreditsButton")
+QuitButton = NodePath("VBoxContainer/PlayHolder3/QuitButton")
 Fade = NodePath("Fade")
 StartSfx = NodePath("StartSfx")
 
@@ -91,12 +83,12 @@ layout_mode = 2
 
 [node name="PlayButton" type="Button" parent="VBoxContainer/PlayHolder" unique_id=1989387283]
 modulate = Color(0.99215686, 1, 1, 1)
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 70)
 layout_mode = 0
-offset_left = 2.0
-offset_top = 2.0
-offset_right = 278.59918
-offset_bottom = 85.587494
+offset_left = 22.0
+offset_top = -7.0
+offset_right = 269.31122
+offset_bottom = 63.0
 rotation = -0.034906585
 theme = SubResource("Theme_0mg3e")
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
@@ -104,24 +96,49 @@ theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.254901
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_ouk20")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
 theme_override_styles/pressed = ExtResource("4_mhnvy")
 theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
 theme_override_styles/disabled = ExtResource("4_mhnvy")
 text = "Start Game"
 
-[node name="PlayHolder2" type="Control" parent="VBoxContainer" unique_id=730981681]
+[node name="PlayHolder2" type="Control" parent="VBoxContainer" unique_id=2022521423]
 layout_mode = 2
 
-[node name="QuitButton" type="Button" parent="VBoxContainer/PlayHolder2" unique_id=1219891489]
+[node name="CreditsButton" type="Button" parent="VBoxContainer/PlayHolder2" unique_id=426064979]
 modulate = Color(0.99215686, 1, 1, 1)
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 70)
 layout_mode = 0
-offset_left = 50.0
-offset_top = 82.0
-offset_right = 316.0
-offset_bottom = 162.0
+offset_left = 94.0
+offset_top = 48.0
+offset_right = 331.0
+offset_bottom = 118.0
+theme = SubResource("Theme_0mg3e")
+theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
+theme_override_fonts/font = ExtResource("2_ouk20")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
+theme_override_styles/pressed = ExtResource("4_mhnvy")
+theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
+theme_override_styles/disabled = ExtResource("4_mhnvy")
+text = "Credits
+"
+
+[node name="PlayHolder3" type="Control" parent="VBoxContainer" unique_id=654215238]
+layout_mode = 2
+
+[node name="QuitButton" type="Button" parent="VBoxContainer/PlayHolder3" unique_id=618667704]
+modulate = Color(0.99215686, 1, 1, 1)
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 0
+offset_left = 35.0
+offset_top = 109.0
+offset_right = 259.53937
+offset_bottom = 179.0
 rotation = 0.034906585
 theme = SubResource("Theme_0mg3e")
 theme_override_colors/font_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
@@ -129,12 +146,14 @@ theme_override_colors/font_pressed_color = Color(0.1254902, 0.09019608, 0.254901
 theme_override_colors/font_hover_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_colors/font_disabled_color = Color(0.1254902, 0.09019608, 0.25490198, 1)
 theme_override_fonts/font = ExtResource("2_ouk20")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljla7")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_con2f")
+theme_override_styles/pressed = ExtResource("4_mhnvy")
 theme_override_styles/hover = SubResource("StyleBoxFlat_lti8b")
 theme_override_styles/disabled = ExtResource("4_mhnvy")
-text = "Quit"
+text = "Quit
+
+"
 
 [node name="Fade" type="ColorRect" parent="." unique_id=1081321399]
 z_index = 100
@@ -154,9 +173,16 @@ color = Color(0, 0, 0, 0)
 [node name="StartSfx" type="AudioStreamPlayer" parent="." unique_id=2061397488]
 stream = ExtResource("5_4ytvr")
 volume_db = -6.0
-bus = &"SFX"
 
 [node name="MenuBGM" type="AudioStreamPlayer" parent="." unique_id=32080819]
 volume_db = -14.0
-bus = &"BGM"
 autoplay = true
+
+[node name="Label" type="Label" parent="." unique_id=1017779431]
+layout_mode = 0
+offset_left = 23.0
+offset_right = 157.0
+offset_bottom = 23.0
+theme_override_fonts/font = ExtResource("6_g3eks")
+theme_override_font_sizes/font_size = 18
+text = "Version: Beta 1.0"

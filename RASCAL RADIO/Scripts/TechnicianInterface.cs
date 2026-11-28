@@ -186,6 +186,11 @@ public partial class TechnicianInterface : PopupFrame
         base._Ready();
         _gameMenu = new InGameMenu();
         AddChild(_gameMenu);
+
+        // The MENU button was never connected on this screen (only Esc opened the pause menu).
+        var menuBtn = GetNodeOrNull<Button>("%MenuBtn") ?? FindChild("MenuBtn", true, false) as Button;
+        if (menuBtn != null) menuBtn.Pressed += () => { _menuOpen = true; _gameMenu?.SetOpen(true); };
+        else GD.PushWarning("TechnicianInterface: menu button not found. Name it MenuBtn.");
         StyleBars();
         SetupBlackoutSystem();
 

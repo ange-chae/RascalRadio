@@ -274,6 +274,11 @@ public partial class OperatorInterface : Control
         StopRing();                        // never stack two rings
         Sfx.Play(this, "phone_sfx", -16f);
         _ringing = true;
+        if (GameSession.Instance?.IsTutorial == true)   // tutorial: nobody clears the caller on this screen, so ring for a few seconds only
+        {
+            string ringKey = _lastCallerKey;
+            GetTree().CreateTimer(4.0).Timeout += () => { if (IsInstanceValid(this) && _lastCallerKey == ringKey) StopRing(); };
+        }
         _buzzTween?.Kill();
         _phone.PivotOffset = _phone.Size / 2;
         _phone.Rotation = 0;
@@ -289,6 +294,7 @@ public partial class OperatorInterface : Control
 
     private void OnQuota()
     {
+        StopRing();   // a caller was accepted: the phone has been answered
         SetText("%QuotaCount", $"{GameSession.Instance.QuotaMet}/{GameSession.Instance.QuotaTarget}");
         RefreshTasks();
     }
@@ -540,6 +546,7 @@ public partial class OperatorInterface : Control
     private void OnStep(TutorialStep step)
     {
         GD.Print("[Operator] OnStep " + step);
+        StopRing();   // a new step: the old caller's ring must not carry over (the tutorial never clears the caller)
         // Tutorial: keypad button only becomes usable at the keypad step
         UpdateSlotButtons();   // refresh looks first, then apply the tutorial gating below
         var btn = GetNodeOrNull<Button>("%Slot1Btn");
